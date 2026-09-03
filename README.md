@@ -1,8 +1,7 @@
 # Heaven's Quill — Web Reader
 
 ## Jalanin di komputer sendiri (opsional, buat cek dulu sebelum online)
-npm install
-npm run dev
+
 Buka link yang muncul (biasanya http://localhost:5173).
 
 ## Deploy ke Vercel
