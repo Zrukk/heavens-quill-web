@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import Navbar from './components/Navbar'
 import NovelList from './pages/NovelList'
 import NovelDetail from './pages/NovelDetail'
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/novel/:slug/chapter/:number" element={<ChapterReader />} />
         <Route path="/login" element={<Login />} />
       </Routes>
+      <Analytics />
     </div>
   )
 }
