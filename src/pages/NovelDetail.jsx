@@ -1,0 +1,119 @@
+import { useEffect, useState } from 'react'
+import { useParams, Link } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/AuthContext'
+
+export default function NovelDetail() {
+  const { slug } = useParams()
+  const { user } = useAuth()
+  const [novel, setNovel] = useState(null)
+  const [chapters, setChapters] = useState([])
+  const [bookmark, setBookmark] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function load() {
+      const { data: novelData } = await supabase
+        .from('novels')
+        .select('*')
+        .eq('slug', slug)
+        .single()
+
+      if (!novelData) {
+        setLoading(false)
+        return
+      }
+      setNovel(novelData)
+
+      const { data: chapterData } = await supabase
+        .from('chapters')
+        .select('id, chapter_number, title')
+        .eq('novel_id', novelData.id)
+        .order('chapter_number', { ascending: true })
+      setChapters(chapterData ?? [])
+
+      if (user) {
+        const { data: bookmarkData } = await supabase
+          .from('bookmarks')
+          .select('last_chapter_read')
+          .eq('novel_id', novelData.id)
+          .eq('user_id', user.id)
+          .maybeSingle()
+        setBookmark(bookmarkData)
+      }
+
+      setLoading(false)
+    }
+    load()
+  }, [slug, user])
+
+  if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
+  if (!novel) return <div className="container" style={{ paddingTop: 40 }}>Novel tidak ditemukan.</div>
+
+  const nextChapter = bookmark?.last_chapter_read ? bookmark.last_chapter_read + 1 : 1
+
+  return (
+    <div className="container" style={{ paddingTop: 40, paddingBottom: 60 }}>
+      <div style={{ display: 'flex', gap: 24, marginBottom: 32 }}>
+        <div
+          style={{
+            width: 140,
+            height: 190,
+            flexShrink: 0,
+            background: novel.cover_url ? `url(${novel.cover_url}) center/cover` : 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 2,
+          }}
+        />
+        <div>
+          <h1 style={{ fontSize: '2rem', marginBottom: 10 }}>{novel.title}</h1>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              color: 'var(--text-muted)',
+              fontSize: '0.9rem',
+              marginBottom: 14,
+            }}
+          >
+            <span className={`diamond ${novel.status === 'ongoing' ? '' : 'diamond--muted'}`} />
+            <span>{novel.status === 'ongoing' ? 'Berjalan' : 'Tamat'}</span>
+            {novel.original_language && <span>· {novel.original_language}</span>}
+            <span>· {chapters.length} chapter</span>
+          </div>
+          <p style={{ color: 'var(--text-muted)', maxWidth: 600 }}>{novel.synopsis}</p>
+
+          {chapters.length > 0 && (
+            <Link
+              to={`/novel/${slug}/chapter/${Math.min(nextChapter, chapters[chapters.length - 1].chapter_number)}`}
+              className="btn btn--filled"
+              style={{ marginTop: 16 }}
+            >
+              {bookmark?.last_chapter_read ? `Lanjut ke Chapter ${nextChapter}` : 'Mulai Baca'}
+            </Link>
+          )}
+        </div>
+      </div>
+
+      <h2 style={{ fontSize: '1.3rem', marginBottom: 16 }}>Daftar Chapter</h2>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {chapters.map((ch) => (
+          <Link
+            key={ch.id}
+            to={`/novel/${slug}/chapter/${ch.chapter_number}`}
+            style={{
+              padding: '12px 16px',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 2,
+              fontSize: '0.95rem',
+            }}
+          >
+            Chapter {ch.chapter_number}{ch.title ? ` — ${ch.title}` : ''}
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+      }
