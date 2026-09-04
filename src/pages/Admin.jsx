@@ -103,13 +103,32 @@ export default function Admin() {
   async function handleAddNovel(e) {
     e.preventDefault()
     setMessage(null)
+
+    if (coverFile && coverFile.size > 5 * 1024 * 1024) {
+      setMessage('Ukuran gambar maksimal 5MB.')
+      return
+    }
+
+    let coverUrl = null
+    if (coverFile) {
+      const fileExt = coverFile.name.split('.').pop()
+      const fileName = `${slug || 'cover'}-${Date.now()}.${fileExt}`
+      const { error: uploadError } = await supabase.storage.from('covers').upload(fileName, coverFile)
+      if (uploadError) {
+        setMessage('Gagal upload gambar: ' + uploadError.message)
+        return
+      }
+      const { data: urlData } = supabase.storage.from('covers').getPublicUrl(fileName)
+      coverUrl = urlData.publicUrl
+    }
+
     const { error } = await supabase.from('novels').insert({
-      title, slug, synopsis, cover_url: coverUrl || null, original_language: language, status,
+      title, slug, synopsis, cover_url: coverUrl, original_language: language, status,
     })
     if (error) setMessage(error.message)
     else {
       setMessage('Novel ditambahkan.')
-      setTitle(''); setSlug(''); setSynopsis(''); setCoverUrl(''); setLanguage('')
+      setTitle(''); setSlug(''); setSynopsis(''); setCoverFile(null); setLanguage('')
       loadNovels()
     }
   }
