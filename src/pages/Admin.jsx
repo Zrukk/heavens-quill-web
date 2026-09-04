@@ -3,6 +3,38 @@ import JSZip from 'jszip'
 import { useAuth } from '../lib/AuthContext'
 import { supabase } from '../lib/supabase'
 
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+async function uploadEpubImage(zip, chapterPath, src) {
+  const dir = chapterPath.includes('/') ? chapterPath.split('/').slice(0, -1).join('/') : ''
+  const decodedSrc = decodeURIComponent(src)
+  const rawPath = dir ? `${dir}/${decodedSrc}` : decodedSrc
+
+  const normalizedPath = rawPath.split('/').reduce((acc, part) => {
+    if (part === '..') acc.pop()
+    else if (part !== '.') acc.push(part)
+    return acc
+  }, []).join('/')
+
+  const fileEntry = zip.file(normalizedPath)
+  if (!fileEntry) return null
+
+  const blob = await fileEntry.async('blob')
+  const ext = normalizedPath.split('.').pop()
+  const fileName = `epub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+
+  const { error } = await supabase.storage.from('chapter-images').upload(fileName, blob)
+  if (error) return null
+
+  const { data } = supabase.storage.from('chapter-images').getPublicUrl(fileName)
+  return data.publicUrl
+}
+
 async function parseEpub(file) {
   const zip = await JSZip.loadAsync(file)
   const parser = new DOMParser()
@@ -37,10 +69,27 @@ async function parseEpub(file) {
     const titleEl = htmlDoc.querySelector('h1, h2, title')
     const title = titleEl ? titleEl.textContent.trim() : ''
 
-    const paragraphs = Array.from(htmlDoc.querySelectorAll('p'))
-      .map((p) => p.textContent.trim())
-      .filter(Boolean)
-    const content = paragraphs.length > 0 ? paragraphs.join('\n\n') : (htmlDoc.body?.textContent.trim() ?? '')
+    const elements = Array.from(htmlDoc.body ? htmlDoc.body.querySelectorAll('p, img') : [])
+    const htmlParts = []
+
+    for (const el of elements) {
+      if (el.tagName.toLowerCase() === 'img') {
+        const src = el.getAttribute('src')
+        if (!src) continue
+        const uploadedUrl = await uploadEpubImage(zip, fullPath, src)
+        if (uploadedUrl) {
+          const alt = escapeHtml(el.getAttribute('alt') || '')
+          htmlParts.push(`<img src="${uploadedUrl}" alt="${alt}" />`)
+        }
+      } else {
+        const text = el.textContent.trim()
+        if (text) htmlParts.push(`<p>${escapeHtml(text)}</p>`)
+      }
+    }
+
+    const content = htmlParts.length > 0
+      ? htmlParts.join('\n')
+      : (htmlDoc.body?.textContent.trim() ? `<p>${escapeHtml(htmlDoc.body.textContent.trim())}</p>` : '')
 
     if (content) chapters.push({ title, content })
   }
@@ -57,14 +106,20 @@ function parseBulkText(text) {
   for (const line of lines) {
     if (pattern.test(line.trim())) {
       if (current) result.push(current)
-      current = { title: line.trim(), content: '' }
+      current = { title: line.trim(), paragraphs: [] }
     } else if (current) {
-      current.content += line + '\n'
+      const trimmed = line.trim()
+      if (trimmed) current.paragraphs.push(trimmed)
     }
   }
   if (current) result.push(current)
 
-  return result.map((c) => ({ ...c, content: c.content.trim() })).filter((c) => c.content)
+  return result
+    .filter((c) => c.paragraphs.length > 0)
+    .map((c) => ({
+      title: c.title,
+      content: c.paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join('\n'),
+    }))
 }
 
 export default function Admin() {
@@ -136,11 +191,17 @@ export default function Admin() {
   async function handleAddChapter(e) {
     e.preventDefault()
     setMessage(null)
+    const htmlContent = content
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => `<p>${escapeHtml(line)}</p>`)
+      .join('\n')
     const { error } = await supabase.from('chapters').insert({
       novel_id: selectedNovel,
       chapter_number: Number(chapterNumber),
       title: chapterTitle || null,
-      content,
+      content: htmlContent,
     })
     if (error) setMessage(error.message)
     else {
@@ -365,4 +426,4 @@ export default function Admin() {
       </div>
     </div>
   )
-         }
+      }
