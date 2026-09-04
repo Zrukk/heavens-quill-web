@@ -119,3 +119,15 @@ input:focus {
     transition: none !important;
   }
 }
+
+.chapter-content p {
+  margin: 0 0 1.3em;
+}
+
+.chapter-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1.5em auto;
+  border-radius: 2px;
+}
