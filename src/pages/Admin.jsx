@@ -10,6 +10,27 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
 }
 
+async function compressImage(blob) {
+  try {
+    const bitmap = await createImageBitmap(blob)
+    const maxWidth = 1400
+    if (bitmap.width <= maxWidth) {
+      bitmap.close?.()
+      return null
+    }
+    const scale = maxWidth / bitmap.width
+    const canvas = document.createElement('canvas')
+    canvas.width = maxWidth
+    canvas.height = Math.round(bitmap.height * scale)
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+    bitmap.close?.()
+    return await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82))
+  } catch {
+    return null
+  }
+}
+
 async function uploadEpubImage(zip, chapterPath, src) {
   const dir = chapterPath.includes('/') ? chapterPath.split('/').slice(0, -1).join('/') : ''
   const decodedSrc = decodeURIComponent(src)
@@ -24,8 +45,10 @@ async function uploadEpubImage(zip, chapterPath, src) {
   const fileEntry = zip.file(normalizedPath)
   if (!fileEntry) return { url: null, error: `file gak ketemu di epub: ${normalizedPath}` }
 
-  const blob = await fileEntry.async('blob')
-  const ext = normalizedPath.split('.').pop()
+  const rawBlob = await fileEntry.async('blob')
+  const compressedBlob = await compressImage(rawBlob)
+  const blob = compressedBlob || rawBlob
+  const ext = compressedBlob ? 'jpg' : normalizedPath.split('.').pop()
   const fileName = `epub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
 
   const { error } = await supabase.storage.from('chapter-images').upload(fileName, blob)
@@ -35,7 +58,7 @@ async function uploadEpubImage(zip, chapterPath, src) {
   return { url: data.publicUrl, error: null }
 }
 
-async function parseEpub(file) {
+async function parseEpub(file, range) {
   const zip = await JSZip.loadAsync(file)
   const parser = new DOMParser()
 
@@ -54,9 +77,13 @@ async function parseEpub(file) {
 
   const spineIds = Array.from(opfDoc.querySelectorAll('spine itemref')).map((el) => el.getAttribute('idref'))
 
+  const startIdx = range?.start ? Math.max(1, range.start) - 1 : 0
+  const endIdx = range?.end ? Math.min(spineIds.length, range.end) : spineIds.length
+  const targetIds = spineIds.slice(startIdx, endIdx)
+
   const chapters = []
   const imageErrors = []
-  for (const id of spineIds) {
+  for (const id of targetIds) {
     const href = manifest[id]
     if (!href) continue
     const decodedHref = decodeURIComponent(href)
@@ -97,7 +124,7 @@ async function parseEpub(file) {
     if (content) chapters.push({ title, content })
   }
 
-  return { chapters, imageErrors }
+  return { chapters, imageErrors, totalInEpub: spineIds.length }
 }
 
 function parseBulkText(text) {
@@ -148,6 +175,11 @@ export default function Admin() {
   const [bulkText, setBulkText] = useState('')
   const [parsedChapters, setParsedChapters] = useState([])
   const [importing, setImporting] = useState(false)
+
+  const [epubFile, setEpubFile] = useState(null)
+  const [epubRangeStart, setEpubRangeStart] = useState('')
+  const [epubRangeEnd, setEpubRangeEnd] = useState('')
+  const [epubTotal, setEpubTotal] = useState(null)
 
   const [manageNovel, setManageNovel] = useState('')
   const [manageChapters, setManageChapters] = useState([])
@@ -266,14 +298,27 @@ export default function Admin() {
     loadNovels()
   }
 
-  async function handleEpubFile(e) {
+  function handleEpubFileSelect(e) {
     const file = e.target.files[0]
-    if (!file) return
+    setEpubFile(file)
+    setEpubTotal(null)
+    setMessage(file ? `File dipilih: ${file.name}. Atur range chapter di bawah, lalu klik "Proses Range Ini".` : null)
+  }
+
+  async function handleProcessEpubRange() {
+    if (!epubFile) {
+      setMessage('Pilih file epub dulu.')
+      return
+    }
     setMessage('Membaca epub...')
     try {
-      const { chapters, imageErrors } = await parseEpub(file)
+      const range = {}
+      if (epubRangeStart) range.start = Number(epubRangeStart)
+      if (epubRangeEnd) range.end = Number(epubRangeEnd)
+      const { chapters, imageErrors, totalInEpub } = await parseEpub(epubFile, range)
+      setEpubTotal(totalInEpub)
       applyParsed(chapters)
-      let msg = `${chapters.length} chapter terdeteksi. Cek & sesuaikan nomor di bawah sebelum import.`
+      let msg = `${chapters.length} chapter diproses (total item di epub ini: ${totalInEpub}). Cek & sesuaikan nomor di bawah sebelum import.`
       if (imageErrors.length > 0) {
         const uniqueErrors = [...new Set(imageErrors)].slice(0, 3)
         msg += ` ⚠️ ${imageErrors.length} gambar gagal diupload — ${uniqueErrors.join(' | ')}`
@@ -417,7 +462,36 @@ export default function Admin() {
           </div>
 
           {importSource === 'epub' && (
-            <input type="file" accept=".epub" onChange={handleEpubFile} />
+            <>
+              <input type="file" accept=".epub" onChange={handleEpubFileSelect} />
+              {epubFile && (
+                <>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>
+                    Epub berat (banyak chapter/gambar) bisa bikin browser HP nge-lag kalau diproses sekaligus.
+                    Proses per beberapa chapter aja (misal 1–30, lalu 31–60, dst).
+                    {epubTotal ? ` Total item di epub ini: ${epubTotal}.` : ''}
+                  </p>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input
+                      type="number"
+                      placeholder="Dari #"
+                      value={epubRangeStart}
+                      onChange={(e) => setEpubRangeStart(e.target.value)}
+                      style={{ width: 90, padding: 8, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 2 }}
+                    />
+                    <span style={{ color: 'var(--text-muted)' }}>sampai</span>
+                    <input
+                      type="number"
+                      placeholder="ke #"
+                      value={epubRangeEnd}
+                      onChange={(e) => setEpubRangeEnd(e.target.value)}
+                      style={{ width: 90, padding: 8, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 2 }}
+                    />
+                  </div>
+                  <button className="btn btn--filled" onClick={handleProcessEpubRange}>Proses Range Ini</button>
+                </>
+              )}
+            </>
           )}
 
           {importSource === 'bulk' && (
@@ -440,7 +514,7 @@ export default function Admin() {
             <>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 400, overflowY: 'auto' }}>
                 {parsedChapters.map((c, i) => (
-                  <div key={i} style={{ padding: 12, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 2 }}>
+                        <div key={i} style={{ padding: 12, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 2 }}>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
                       <input type="checkbox" checked={c.checked} onChange={(e) => updateParsed(i, 'checked', e.target.checked)} />
                       <input
@@ -502,7 +576,6 @@ export default function Admin() {
                       padding: '10px 12px',
                       background: 'var(--surface)',
                       border: '1px solid var(--border)',
-                      border: '1px solid var(--border)',
                       borderRadius: 2,
                       fontSize: '0.9rem',
                     }}
@@ -537,4 +610,4 @@ export default function Admin() {
       </div>
     </div>
   )
-                                  }
+      }
