@@ -155,17 +155,27 @@ export default function Admin() {
     setMessage(`${chapters.length} chapter terdeteksi. Cek & sesuaikan nomor di bawah sebelum import.`)
   }
 
-  function applyParsed(chapters) {
-    setParsedChapters(
-      chapters.map((c, i) => ({
-        checked: true,
-        number: i + 1,
-        title: c.title,
-        content: c.content,
-      })),
-    )
+  function extractChapterInfo(rawTitle, fallbackNumber) {
+    const match = (rawTitle || '').match(/^(chapter|bab)\s*(\d+)\s*[:\-–—.]?\s*(.*)$/i)
+    if (match) {
+      return { number: Number(match[2]), title: match[3].trim() }
+    }
+    return { number: fallbackNumber, title: (rawTitle || '').trim() }
   }
 
+  function applyParsed(chapters) {
+    setParsedChapters(
+      chapters.map((c, i) => {
+        const { number, title } = extractChapterInfo(c.title, i + 1)
+        return {
+          checked: true,
+          number,
+          title,
+          content: c.content,
+        }
+      }),
+    )
+  }
   function updateParsed(index, field, value) {
     setParsedChapters((prev) => prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)))
   }
