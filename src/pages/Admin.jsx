@@ -195,6 +195,7 @@ export default function Admin() {
       }),
     )
   }
+
   function updateParsed(index, field, value) {
     setParsedChapters((prev) => prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)))
   }
@@ -258,7 +259,12 @@ export default function Admin() {
           <input type="text" placeholder="Judul novel" value={title} onChange={(e) => setTitle(e.target.value)} required />
           <input type="text" placeholder="Slug (contoh: sword-of-coming)" value={slug} onChange={(e) => setSlug(e.target.value)} required />
           <textarea placeholder="Sinopsis" value={synopsis} onChange={(e) => setSynopsis(e.target.value)} rows={4} style={inputStyle} />
-          <input type="text" placeholder="URL cover (opsional)" value={coverUrl} onChange={(e) => setCoverUrl(e.target.value)} />
+          <div>
+            <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 6 }}>
+              Cover (opsional, maks 5MB)
+            </label>
+            <input type="file" accept="image/*" onChange={(e) => setCoverFile(e.target.files[0])} />
+          </div>
           <input type="text" placeholder="Bahasa asli (contoh: Chinese)" value={language} onChange={(e) => setLanguage(e.target.value)} />
           <select value={status} onChange={(e) => setStatus(e.target.value)} style={inputStyle}>
             <option value="ongoing">Berjalan</option>
@@ -359,4 +365,4 @@ export default function Admin() {
       </div>
     </div>
   )
-                                           }
+         }
