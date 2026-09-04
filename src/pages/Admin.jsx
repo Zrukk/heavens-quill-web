@@ -76,7 +76,7 @@ export default function Admin() {
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
   const [synopsis, setSynopsis] = useState('')
-  const [coverUrl, setCoverUrl] = useState('')
+  const [coverFile, setCoverFile] = useState(null)
   const [language, setLanguage] = useState('')
   const [status, setStatus] = useState('ongoing')
 
