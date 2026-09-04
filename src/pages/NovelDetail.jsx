@@ -10,6 +10,8 @@ export default function NovelDetail() {
   const [chapters, setChapters] = useState([])
   const [bookmark, setBookmark] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortOrder, setSortOrder] = useState('asc')
 
   useEffect(() => {
     async function load() {
@@ -51,6 +53,17 @@ export default function NovelDetail() {
   if (!novel) return <div className="container" style={{ paddingTop: 40 }}>Novel tidak ditemukan.</div>
 
   const nextChapter = bookmark?.last_chapter_read ? bookmark.last_chapter_read + 1 : 1
+
+  const filteredChapters = chapters
+    .filter((ch) => {
+      if (!searchQuery.trim()) return true
+      const q = searchQuery.trim().toLowerCase()
+      return (
+        String(ch.chapter_number).includes(q) ||
+        (ch.title && ch.title.toLowerCase().includes(q))
+      )
+    })
+    .sort((a, b) => (sortOrder === 'asc' ? a.chapter_number - b.chapter_number : b.chapter_number - a.chapter_number))
 
   return (
     <div className="container" style={{ paddingTop: 40, paddingBottom: 60 }}>
@@ -96,9 +109,31 @@ export default function NovelDetail() {
         </div>
       </div>
 
-      <h2 style={{ fontSize: '1.3rem', marginBottom: 16 }}>Daftar Chapter</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8, flexWrap: 'wrap' }}>
+        <h2 style={{ fontSize: '1.3rem' }}>Daftar Chapter</h2>
+        <button
+          className="btn"
+          onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+          style={{ fontSize: '0.85rem', padding: '6px 12px' }}
+        >
+          {sortOrder === 'asc' ? 'Terlama dulu' : 'Terbaru dulu'}
+        </button>
+      </div>
+
+      <input
+        type="text"
+        placeholder="Cari nomor atau judul chapter..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        style={{ marginBottom: 16 }}
+      />
+
+      {filteredChapters.length === 0 && (
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Gak ada chapter yang cocok.</p>
+      )}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {chapters.map((ch) => (
+        {filteredChapters.map((ch) => (
           <Link
             key={ch.id}
             to={`/novel/${slug}/chapter/${ch.chapter_number}`}
@@ -116,4 +151,4 @@ export default function NovelDetail() {
       </div>
     </div>
   )
-      }
+            }
