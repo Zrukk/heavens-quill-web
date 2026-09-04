@@ -22,17 +22,17 @@ async function uploadEpubImage(zip, chapterPath, src) {
   }, []).join('/')
 
   const fileEntry = zip.file(normalizedPath)
-  if (!fileEntry) return null
+  if (!fileEntry) return { url: null, error: `file gak ketemu di epub: ${normalizedPath}` }
 
   const blob = await fileEntry.async('blob')
   const ext = normalizedPath.split('.').pop()
   const fileName = `epub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
 
   const { error } = await supabase.storage.from('chapter-images').upload(fileName, blob)
-  if (error) return null
+  if (error) return { url: null, error: error.message }
 
   const { data } = supabase.storage.from('chapter-images').getPublicUrl(fileName)
-  return data.publicUrl
+  return { url: data.publicUrl, error: null }
 }
 
 async function parseEpub(file) {
@@ -55,6 +55,7 @@ async function parseEpub(file) {
   const spineIds = Array.from(opfDoc.querySelectorAll('spine itemref')).map((el) => el.getAttribute('idref'))
 
   const chapters = []
+  const imageErrors = []
   for (const id of spineIds) {
     const href = manifest[id]
     if (!href) continue
@@ -76,10 +77,12 @@ async function parseEpub(file) {
       if (el.tagName.toLowerCase() === 'img') {
         const src = el.getAttribute('src')
         if (!src) continue
-        const uploadedUrl = await uploadEpubImage(zip, fullPath, src)
-        if (uploadedUrl) {
+        const result = await uploadEpubImage(zip, fullPath, src)
+        if (result.url) {
           const alt = escapeHtml(el.getAttribute('alt') || '')
-          htmlParts.push(`<img src="${uploadedUrl}" alt="${alt}" />`)
+          htmlParts.push(`<img src="${result.url}" alt="${alt}" />`)
+        } else {
+          imageErrors.push(result.error)
         }
       } else {
         const text = el.textContent.trim()
@@ -94,7 +97,7 @@ async function parseEpub(file) {
     if (content) chapters.push({ title, content })
   }
 
-  return chapters
+  return { chapters, imageErrors }
 }
 
 function parseBulkText(text) {
@@ -146,6 +149,11 @@ export default function Admin() {
   const [parsedChapters, setParsedChapters] = useState([])
   const [importing, setImporting] = useState(false)
 
+  const [manageNovel, setManageNovel] = useState('')
+  const [manageChapters, setManageChapters] = useState([])
+  const [selectedIds, setSelectedIds] = useState([])
+  const [deletingChapters, setDeletingChapters] = useState(false)
+
   useEffect(() => {
     loadNovels()
   }, [])
@@ -153,6 +161,48 @@ export default function Admin() {
   async function loadNovels() {
     const { data } = await supabase.from('novels').select('*').order('title')
     setNovels(data ?? [])
+  }
+
+  useEffect(() => {
+    if (manageNovel) loadManageChapters(manageNovel)
+    else {
+      setManageChapters([])
+      setSelectedIds([])
+    }
+  }, [manageNovel])
+
+  async function loadManageChapters(novelId) {
+    const { data } = await supabase
+      .from('chapters')
+      .select('id, chapter_number, title')
+      .eq('novel_id', novelId)
+      .order('chapter_number', { ascending: true })
+    setManageChapters(data ?? [])
+    setSelectedIds([])
+  }
+
+  function toggleSelect(id) {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }
+
+  function toggleSelectAll() {
+    setSelectedIds((prev) => (prev.length === manageChapters.length ? [] : manageChapters.map((c) => c.id)))
+  }
+
+  async function handleDeleteChapters() {
+    if (selectedIds.length === 0) return
+    if (!confirm(`Hapus ${selectedIds.length} chapter terpilih? Ini gak bisa dibatalin.`)) return
+
+    setDeletingChapters(true)
+    const { error } = await supabase.from('chapters').delete().in('id', selectedIds)
+    setDeletingChapters(false)
+
+    if (error) {
+      setMessage('Gagal hapus: ' + error.message)
+    } else {
+      setMessage(`${selectedIds.length} chapter berhasil dihapus.`)
+      loadManageChapters(manageNovel)
+    }
   }
 
   async function handleAddNovel(e) {
@@ -221,9 +271,14 @@ export default function Admin() {
     if (!file) return
     setMessage('Membaca epub...')
     try {
-      const chapters = await parseEpub(file)
+      const { chapters, imageErrors } = await parseEpub(file)
       applyParsed(chapters)
-      setMessage(`${chapters.length} chapter terdeteksi. Cek & sesuaikan nomor di bawah sebelum import.`)
+      let msg = `${chapters.length} chapter terdeteksi. Cek & sesuaikan nomor di bawah sebelum import.`
+      if (imageErrors.length > 0) {
+        const uniqueErrors = [...new Set(imageErrors)].slice(0, 3)
+        msg += ` ⚠️ ${imageErrors.length} gambar gagal diupload — ${uniqueErrors.join(' | ')}`
+      }
+      setMessage(msg)
     } catch (err) {
       setMessage('Gagal baca epub: ' + err.message)
     }
@@ -311,6 +366,7 @@ export default function Admin() {
         <button className={tab === 'novel' ? 'btn btn--filled' : 'btn'} onClick={() => setTab('novel')}>Tambah Novel</button>
         <button className={tab === 'chapter' ? 'btn btn--filled' : 'btn'} onClick={() => setTab('chapter')}>Tambah Chapter</button>
         <button className={tab === 'import' ? 'btn btn--filled' : 'btn'} onClick={() => setTab('import')}>Import Massal</button>
+        <button className={tab === 'manage' ? 'btn btn--filled' : 'btn'} onClick={() => setTab('manage')}>Kelola Chapter</button>
       </div>
 
       {message && <p style={{ color: 'var(--accent)', marginBottom: 16, fontSize: '0.9rem' }}>{message}</p>}
@@ -415,6 +471,61 @@ export default function Admin() {
         </div>
       )}
 
+      {tab === 'manage' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <select value={manageNovel} onChange={(e) => setManageNovel(e.target.value)} style={inputStyle}>
+            <option value="">Pilih novel</option>
+            {novels.map((n) => <option key={n.id} value={n.id}>{n.title}</option>)}
+          </select>
+
+          {manageNovel && manageChapters.length === 0 && (
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Novel ini belum punya chapter.</p>
+          )}
+
+          {manageChapters.length > 0 && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <button className="btn" onClick={toggleSelectAll} style={{ fontSize: '0.85rem', padding: '6px 12px' }}>
+                  {selectedIds.length === manageChapters.length ? 'Batal Semua' : 'Pilih Semua'}
+                </button>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{selectedIds.length} dipilih</span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 400, overflowY: 'auto' }}>
+                {manageChapters.map((c) => (
+                  <label
+                    key={c.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '10px 12px',
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 2,
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    <input type="checkbox" checked={selectedIds.includes(c.id)} onChange={() => toggleSelect(c.id)} />
+                    <span>Chapter {c.chapter_number}{c.title ? ` — ${c.title}` : ''}</span>
+                  </label>
+                ))}
+              </div>
+
+              <button
+                className="btn"
+                onClick={handleDeleteChapters}
+                disabled={selectedIds.length === 0 || deletingChapters}
+                style={{ borderColor: '#D46B5B', color: '#D46B5B' }}
+              >
+                {deletingChapters ? 'Menghapus...' : `Hapus ${selectedIds.length} Chapter`}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       <h2 style={{ fontSize: '1.2rem', marginTop: 40, marginBottom: 16 }}>Novel Terdaftar</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {novels.map((n) => (
@@ -426,4 +537,4 @@ export default function Admin() {
       </div>
     </div>
   )
-      }
+                                  }
