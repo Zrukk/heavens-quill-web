@@ -179,26 +179,24 @@ export default function Admin() {
     if (toImport.length === 0) return
 
     setImporting(true)
-    let successCount = 0
-    let errors = []
 
-    for (const c of toImport) {
-      const { error } = await supabase.from('chapters').insert({
-        novel_id: importNovel,
-        chapter_number: Number(c.number),
-        title: c.title || null,
-        content: c.content,
-      })
-      if (error) errors.push(`Ch. ${c.number}: ${error.message}`)
-      else successCount++
-    }
+    const rows = toImport.map((c) => ({
+      novel_id: importNovel,
+      chapter_number: Number(c.number),
+      title: c.title || null,
+      content: c.content,
+    }))
+
+    const { data, error } = await supabase.from('chapters').insert(rows).select()
 
     setImporting(false)
-    setMessage(
-      `${successCount} chapter berhasil diimport.` +
-      (errors.length > 0 ? ` ${errors.length} gagal — ${errors.join('; ')}` : ''),
-    )
-    if (errors.length === 0) setParsedChapters([])
+
+    if (error) {
+      setMessage(`Import gagal: ${error.message}`)
+    } else {
+      setMessage(`${data.length} chapter berhasil diimport.`)
+      setParsedChapters([])
+    }
   }
 
   if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
@@ -332,4 +330,4 @@ export default function Admin() {
       </div>
     </div>
   )
-    }
+                                           }
