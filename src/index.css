@@ -44,7 +44,7 @@ p {
   margin: 0 0 1em;
 }
 
-button, input {
+button, input, textarea, select {
   font-family: inherit;
   color: inherit;
 }
