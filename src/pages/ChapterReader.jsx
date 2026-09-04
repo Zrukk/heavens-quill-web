@@ -75,9 +75,11 @@ export default function ChapterReader() {
         Chapter {chapter.chapter_number}{chapter.title ? ` — ${chapter.title}` : ''}
       </h1>
 
-      <div style={{ fontSize: '1.05rem', whiteSpace: 'pre-wrap' }}>
-        {chapter.content}
-      </div>
+      <div
+        className="chapter-content"
+        style={{ fontSize: '1.05rem' }}
+        dangerouslySetInnerHTML={{ __html: chapter.content }}
+      />
 
       <div
         style={{
@@ -97,4 +99,4 @@ export default function ChapterReader() {
       </div>
     </div>
   )
-                                      }
+}
