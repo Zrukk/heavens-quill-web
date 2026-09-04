@@ -10,9 +10,11 @@ export default function Navbar() {
         className="container"
         style={{
           display: 'flex',
+          flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
-          height: 72,
+          gap: 10,
+          padding: '14px 24px',
         }}
       >
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -23,11 +25,22 @@ export default function Navbar() {
         </Link>
 
         {user ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             {isAdmin && (
-              <Link to="/admin" style={{ color: 'var(--accent)', fontSize: '0.9rem' }}>Admin</Link>
+              <Link to="/admin" className="btn" style={{ borderColor: 'var(--accent)' }}>Admin</Link>
             )}
-            <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{user.email}</span>
+            <span
+              style={{
+                color: 'var(--text-muted)',
+                fontSize: '0.85rem',
+                maxWidth: 140,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {user.email}
+            </span>
             <button className="btn" onClick={signOut}>Keluar</button>
           </div>
         ) : (
@@ -35,5 +48,7 @@ export default function Navbar() {
         )}
       </div>
     </header>
+  )
+}    </header>
   )
 }
