@@ -357,16 +357,6 @@ export default function Admin() {
             <input type="file" accept="image/*" onChange={(e) => setCoverFile(e.target.files[0])} />
           </div>
           <input type="text" placeholder="Bahasa asli (contoh: Chinese)" value={language} onChange={(e) => setLanguage(e.target.value)} />
-          <select value={status} onChange={(e) => setStatus(e.target.value)} style={inputStyle}>
-            <option value="ongoing">Berjalan</option>
-            <option value="completed">Tamat</option>
-          </select>
-          <button type="submit" className="btn btn--filled">Simpan Novel</button>
-        </form>
-      )}
-
-      {tab === 'chapter' && (
-        <form onSubmit={handleAddChapter} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div>
             <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 6 }}>
               Status
@@ -376,6 +366,16 @@ export default function Admin() {
               <option value="completed">Tamat</option>
             </select>
           </div>
+          <button type="submit" className="btn btn--filled">Simpan Novel</button>
+        </form>
+      )}
+
+      {tab === 'chapter' && (
+        <form onSubmit={handleAddChapter} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <select value={selectedNovel} onChange={(e) => setSelectedNovel(e.target.value)} required style={inputStyle}>
+            <option value="">Pilih novel</option>
+            {novels.map((n) => <option key={n.id} value={n.id}>{n.title}</option>)}
+          </select>
           <input type="number" placeholder="Nomor chapter" value={chapterNumber} onChange={(e) => setChapterNumber(e.target.value)} required />
           <input type="text" placeholder="Judul chapter (opsional)" value={chapterTitle} onChange={(e) => setChapterTitle(e.target.value)} />
           <textarea placeholder="Isi chapter" value={content} onChange={(e) => setContent(e.target.value)} rows={12} required style={inputStyle} />
@@ -390,9 +390,14 @@ export default function Admin() {
             {novels.map((n) => <option key={n.id} value={n.id}>{n.title}</option>)}
           </select>
 
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className={importSource === 'epub' ? 'btn btn--filled' : 'btn'} onClick={() => setImportSource('epub')}>Upload EPUB</button>
-            <button className={importSource === 'bulk' ? 'btn btn--filled' : 'btn'} onClick={() => setImportSource('bulk')}>Tempel Teks</button>
+          <div>
+            <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 6 }}>
+              Sumber chapter
+            </label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className={importSource === 'epub' ? 'btn btn--filled' : 'btn'} onClick={() => setImportSource('epub')}>Upload EPUB</button>
+              <button className={importSource === 'bulk' ? 'btn btn--filled' : 'btn'} onClick={() => setImportSource('bulk')}>Tempel Teks</button>
+            </div>
           </div>
 
           {importSource === 'epub' && (
@@ -487,15 +492,15 @@ export default function Admin() {
           </select>
 
           {manageNovel && manageChapters.length === 0 && (
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Novel ini belum punya chapter.</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Novel ini belum punya chapter.</p>
           )}
 
           {manageChapters.length > 0 && (
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <button className="btn" onClick={toggleSelectAll} style={{ fontSize: '0.85rem', padding: '6px 12px' }}>
-                  {selectedIds.length === manageChapters.length ? 'Batal Semua' : 'Pilih Semua'
-                       </button>
+                  {selectedIds.length === manageChapters.length ? 'Batal Semua' : 'Pilih Semua'}
+                </button>
                 <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{selectedIds.length} dipilih</span>
               </div>
 
