@@ -367,10 +367,15 @@ export default function Admin() {
 
       {tab === 'chapter' && (
         <form onSubmit={handleAddChapter} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <select value={selectedNovel} onChange={(e) => setSelectedNovel(e.target.value)} required style={inputStyle}>
-            <option value="">Pilih novel</option>
-            {novels.map((n) => <option key={n.id} value={n.id}>{n.title}</option>)}
-          </select>
+          <div>
+            <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 6 }}>
+              Status
+            </label>
+            <select value={status} onChange={(e) => setStatus(e.target.value)} style={inputStyle}>
+              <option value="ongoing">Berjalan</option>
+              <option value="completed">Tamat</option>
+            </select>
+          </div>
           <input type="number" placeholder="Nomor chapter" value={chapterNumber} onChange={(e) => setChapterNumber(e.target.value)} required />
           <input type="text" placeholder="Judul chapter (opsional)" value={chapterTitle} onChange={(e) => setChapterTitle(e.target.value)} />
           <textarea placeholder="Isi chapter" value={content} onChange={(e) => setContent(e.target.value)} rows={12} required style={inputStyle} />
