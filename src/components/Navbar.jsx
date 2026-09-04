@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 
 export default function Navbar() {
-  const { user, isAdmin, signOut } = useAuth()
+  const { user, isAdmin, signOut, debugInfo } = useAuth()
 
   return (
     <header style={{ borderBottom: '1px solid var(--border)' }}>
@@ -47,6 +47,11 @@ export default function Navbar() {
           <Link to="/login" className="btn">Masuk</Link>
         )}
       </div>
+      {debugInfo && (
+        <pre style={{ fontSize: '0.65rem', color: '#D46B5B', padding: '4px 24px', margin: 0, whiteSpace: 'pre-wrap' }}>
+          DEBUG: {JSON.stringify(debugInfo)}
+        </pre>
+      )}
     </header>
   )
 }
