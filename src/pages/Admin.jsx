@@ -10,54 +10,6 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
 }
 
-async function compressImage(blob) {
-  try {
-    const bitmap = await createImageBitmap(blob)
-    const maxWidth = 1400
-    if (bitmap.width <= maxWidth) {
-      bitmap.close?.()
-      return null
-    }
-    const scale = maxWidth / bitmap.width
-    const canvas = document.createElement('canvas')
-    canvas.width = maxWidth
-    canvas.height = Math.round(bitmap.height * scale)
-    const ctx = canvas.getContext('2d')
-    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
-    bitmap.close?.()
-    return await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82))
-  } catch {
-    return null
-  }
-}
-
-async function uploadEpubImage(zip, chapterPath, src) {
-  const dir = chapterPath.includes('/') ? chapterPath.split('/').slice(0, -1).join('/') : ''
-  const decodedSrc = decodeURIComponent(src)
-  const rawPath = dir ? `${dir}/${decodedSrc}` : decodedSrc
-
-  const normalizedPath = rawPath.split('/').reduce((acc, part) => {
-    if (part === '..') acc.pop()
-    else if (part !== '.') acc.push(part)
-    return acc
-  }, []).join('/')
-
-  const fileEntry = zip.file(normalizedPath)
-  if (!fileEntry) return { url: null, error: `file gak ketemu di epub: ${normalizedPath}` }
-
-  const rawBlob = await fileEntry.async('blob')
-  const compressedBlob = await compressImage(rawBlob)
-  const blob = compressedBlob || rawBlob
-  const ext = compressedBlob ? 'jpg' : normalizedPath.split('.').pop()
-  const fileName = `epub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-
-  const { error } = await supabase.storage.from('chapter-images').upload(fileName, blob)
-  if (error) return { url: null, error: error.message }
-
-  const { data } = supabase.storage.from('chapter-images').getPublicUrl(fileName)
-  return { url: data.publicUrl, error: null }
-}
-
 async function parseEpub(file, range) {
   const zip = await JSZip.loadAsync(file)
   const parser = new DOMParser()
@@ -82,7 +34,6 @@ async function parseEpub(file, range) {
   const targetIds = spineIds.slice(startIdx, endIdx)
 
   const chapters = []
-  const imageErrors = []
   for (const id of targetIds) {
     const href = manifest[id]
     if (!href) continue
@@ -97,34 +48,17 @@ async function parseEpub(file, range) {
     const titleEl = htmlDoc.querySelector('h1, h2, title')
     const title = titleEl ? titleEl.textContent.trim() : ''
 
-    const elements = Array.from(htmlDoc.body ? htmlDoc.body.querySelectorAll('p, img') : [])
-    const htmlParts = []
-
-    for (const el of elements) {
-      if (el.tagName.toLowerCase() === 'img') {
-        const src = el.getAttribute('src')
-        if (!src) continue
-        const result = await uploadEpubImage(zip, fullPath, src)
-        if (result.url) {
-          const alt = escapeHtml(el.getAttribute('alt') || '')
-          htmlParts.push(`<img src="${result.url}" alt="${alt}" />`)
-        } else {
-          imageErrors.push(result.error)
-        }
-      } else {
-        const text = el.textContent.trim()
-        if (text) htmlParts.push(`<p>${escapeHtml(text)}</p>`)
-      }
-    }
-
-    const content = htmlParts.length > 0
-      ? htmlParts.join('\n')
+    const paragraphs = Array.from(htmlDoc.querySelectorAll('p'))
+      .map((p) => p.textContent.trim())
+      .filter(Boolean)
+    const content = paragraphs.length > 0
+      ? paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join('\n')
       : (htmlDoc.body?.textContent.trim() ? `<p>${escapeHtml(htmlDoc.body.textContent.trim())}</p>` : '')
 
     if (content) chapters.push({ title, content })
   }
 
-  return { chapters, imageErrors, totalInEpub: spineIds.length }
+  return { chapters, totalInEpub: spineIds.length }
 }
 
 function parseBulkText(text) {
@@ -315,15 +249,10 @@ export default function Admin() {
       const range = {}
       if (epubRangeStart) range.start = Number(epubRangeStart)
       if (epubRangeEnd) range.end = Number(epubRangeEnd)
-      const { chapters, imageErrors, totalInEpub } = await parseEpub(epubFile, range)
+      const { chapters, totalInEpub } = await parseEpub(epubFile, range)
       setEpubTotal(totalInEpub)
       applyParsed(chapters)
-      let msg = `${chapters.length} chapter diproses (total item di epub ini: ${totalInEpub}). Cek & sesuaikan nomor di bawah sebelum import.`
-      if (imageErrors.length > 0) {
-        const uniqueErrors = [...new Set(imageErrors)].slice(0, 3)
-        msg += ` ⚠️ ${imageErrors.length} gambar gagal diupload — ${uniqueErrors.join(' | ')}`
-      }
-      setMessage(msg)
+      setMessage(`${chapters.length} chapter diproses (total item di epub ini: ${totalInEpub}). Cek & sesuaikan nomor di bawah sebelum import.`)
     } catch (err) {
       setMessage('Gagal baca epub: ' + err.message)
     }
@@ -467,8 +396,8 @@ export default function Admin() {
               {epubFile && (
                 <>
                   <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>
-                    Epub berat (banyak chapter/gambar) bisa bikin browser HP nge-lag kalau diproses sekaligus.
-                    Proses per beberapa chapter aja (misal 1–30, lalu 31–60, dst).
+                    Epub dengan ratusan chapter bisa berat diproses sekaligus di HP.
+                    Proses per beberapa chapter aja (misal 1–30, lalu 31–60, dst) kalau kerasa lag.
                     {epubTotal ? ` Total item di epub ini: ${epubTotal}.` : ''}
                   </p>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -514,7 +443,7 @@ export default function Admin() {
             <>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 400, overflowY: 'auto' }}>
                 {parsedChapters.map((c, i) => (
-                        <div key={i} style={{ padding: 12, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 2 }}>
+                  <div key={i} style={{ padding: 12, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 2 }}>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
                       <input type="checkbox" checked={c.checked} onChange={(e) => updateParsed(i, 'checked', e.target.checked)} />
                       <input
@@ -560,8 +489,8 @@ export default function Admin() {
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <button className="btn" onClick={toggleSelectAll} style={{ fontSize: '0.85rem', padding: '6px 12px' }}>
-                  {selectedIds.length === manageChapters.length ? 'Batal Semua' : 'Pilih Semua'}
-                </button>
+                  {selectedIds.length === manageChapters.length ? 'Batal Semua' : 'Pilih Semua'
+                       </button>
                 <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{selectedIds.length} dipilih</span>
               </div>
 
@@ -610,4 +539,4 @@ export default function Admin() {
       </div>
     </div>
   )
-      }
+}
