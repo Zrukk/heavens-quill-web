@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 
 export default function Navbar() {
-  const { user, signOut } = useAuth()
+  const { user, isAdmin, signOut } = useAuth()
 
   return (
     <header style={{ borderBottom: '1px solid var(--border)' }}>
@@ -24,6 +24,9 @@ export default function Navbar() {
 
         {user ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            {isAdmin && (
+              <Link to="/admin" style={{ color: 'var(--accent)', fontSize: '0.9rem' }}>Admin</Link>
+            )}
             <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{user.email}</span>
             <button className="btn" onClick={signOut}>Keluar</button>
           </div>
