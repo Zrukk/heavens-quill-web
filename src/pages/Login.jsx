@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Mail, Lock, LogIn, UserPlus } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 export default function Login() {
@@ -34,22 +35,31 @@ export default function Login() {
       </h1>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={6}
-        />
-        <button type="submit" className="btn btn--filled" disabled={loading}>
+        <div style={{ position: 'relative' }}>
+          <Mail size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            style={{ paddingLeft: 38 }}
+          />
+        </div>
+        <div style={{ position: 'relative' }}>
+          <Lock size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={6}
+            style={{ paddingLeft: 38 }}
+          />
+        </div>
+        <button type="submit" className="btn btn--filled" disabled={loading} style={{ justifyContent: 'center' }}>
+          {mode === 'signin' ? <LogIn size={16} /> : <UserPlus size={16} />}
           {loading ? 'Memproses...' : mode === 'signin' ? 'Masuk' : 'Daftar'}
         </button>
       </form>
@@ -58,10 +68,10 @@ export default function Login() {
 
       <button
         onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-        style={{ background: 'none', border: 'none', color: 'var(--accent)', marginTop: 20, cursor: 'pointer', padding: 0 }}
+        style={{ background: 'none', border: 'none', color: 'var(--gold)', marginTop: 20, cursor: 'pointer', padding: 0 }}
       >
         {mode === 'signin' ? 'Belum punya akun? Daftar' : 'Sudah punya akun? Masuk'}
       </button>
     </div>
   )
-      }
+}
