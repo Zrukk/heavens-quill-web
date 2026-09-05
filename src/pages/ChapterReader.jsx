@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, MessageCircle, Send } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, MessageCircle, Send, Reply } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 
@@ -20,6 +20,10 @@ export default function ChapterReader() {
   const [loadingComments, setLoadingComments] = useState(true)
   const [newComment, setNewComment] = useState('')
   const [postingComment, setPostingComment] = useState(false)
+
+  const [replyingTo, setReplyingTo] = useState(null)
+  const [replyText, setReplyText] = useState('')
+  const [postingReply, setPostingReply] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -109,7 +113,7 @@ export default function ChapterReader() {
     setLoadingComments(true)
     const { data } = await supabase
       .from('chapter_comments')
-      .select('id, content, created_at, user_id, profiles(display_name)')
+      .select('id, content, created_at, user_id, parent_id, profiles(display_name)')
       .eq('chapter_id', chapter.id)
       .order('created_at', { ascending: false })
     setComments(data ?? [])
@@ -138,11 +142,34 @@ export default function ChapterReader() {
     }
   }
 
+  async function handlePostReply(parentId) {
+    if (!user) {
+      navigate('/login')
+      return
+    }
+    if (!replyText.trim()) return
+
+    setPostingReply(true)
+    const { error } = await supabase.from('chapter_comments').insert({
+      chapter_id: chapter.id,
+      user_id: user.id,
+      content: replyText.trim(),
+      parent_id: parentId,
+    })
+    setPostingReply(false)
+
+    if (!error) {
+      setReplyText('')
+      setReplyingTo(null)
+      loadComments()
+    }
+  }
+
   async function handleDeleteComment(id) {
     if (!confirm('Hapus komentar ini?')) return
     await supabase.from('chapter_comments').delete().eq('id', id)
     loadComments()
-  }
+        }
   async function handleToggleLike() {
     if (!user) {
       navigate('/login')
@@ -166,6 +193,45 @@ export default function ChapterReader() {
   const currentIndex = nums.indexOf(Number(number))
   const prevNum = currentIndex > 0 ? nums[currentIndex - 1] : null
   const nextNum = currentIndex < nums.length - 1 ? nums[currentIndex + 1] : null
+
+  const topLevelComments = comments.filter((c) => !c.parent_id)
+  const repliesFor = (id) =>
+    comments
+      .filter((c) => c.parent_id === id)
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+
+  function renderCommentCard(c, isReply) {
+    return (
+      <div key={c.id} className="card" style={{ padding: 12, marginLeft: isReply ? 24 : 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 }}>
+          <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{c.profiles?.display_name || 'Pembaca'}</span>
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+            {new Date(c.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </span>
+        </div>
+        <p style={{ margin: 0, fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>{c.content}</p>
+        <div style={{ display: 'flex', gap: 14, marginTop: 6 }}>
+          {(user?.id === c.user_id || isAdmin) && (
+            <button
+              onClick={() => handleDeleteComment(c.id)}
+              style={{ background: 'none', border: 'none', color: '#D46B5B', fontSize: '0.75rem', padding: 0, cursor: 'pointer' }}
+            >
+              Hapus
+            </button>
+          )}
+          {!isReply && (
+            <button
+              onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)}
+              style={{ background: 'none', border: 'none', color: 'var(--gold)', fontSize: '0.75rem', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+            >
+              <Reply size={12} />
+              Balas
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container" style={{ paddingTop: 40, paddingBottom: 60, maxWidth: 700 }}>
@@ -246,24 +312,49 @@ export default function ChapterReader() {
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Belum ada komentar. Jadi yang pertama!</p>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {comments.map((c) => (
-            <div key={c.id} className="card" style={{ padding: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 }}>
-                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{c.profiles?.display_name || 'Pembaca'}</span>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
-                  {new Date(c.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                </span>
-              </div>
-              <p style={{ margin: 0, fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>{c.content}</p>
-              {(user?.id === c.user_id || isAdmin) && (
-                <button
-                  onClick={() => handleDeleteComment(c.id)}
-                  style={{ background: 'none', border: 'none', color: '#D46B5B', fontSize: '0.75rem', padding: 0, marginTop: 6, cursor: 'pointer' }}
-                >
-                  Hapus
-                </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {topLevelComments.map((c) => (
+            <div key={c.id} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {renderCommentCard(c, false)}
+
+              {replyingTo === c.id && (
+                <div style={{ marginLeft: 24, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <textarea
+                    placeholder={`Balas ke ${c.profiles?.display_name || 'Pembaca'}...`}
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    rows={2}
+                    style={{
+                      padding: 10,
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius)',
+                      fontFamily: 'inherit',
+                      width: '100%',
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      className="btn btn--filled"
+                      onClick={() => handlePostReply(c.id)}
+                      disabled={postingReply || !replyText.trim()}
+                      style={{ fontSize: '0.85rem', padding: '6px 14px' }}
+                    >
+                      <Send size={14} />
+                      {postingReply ? 'Mengirim...' : 'Kirim Balasan'}
+                    </button>
+                    <button
+                      className="btn"
+                      onClick={() => { setReplyingTo(null); setReplyText('') }}
+                      style={{ fontSize: '0.85rem', padding: '6px 14px' }}
+                    >
+                      Batal
+                    </button>
+                  </div>
+                </div>
               )}
+
+              {repliesFor(c.id).map((r) => renderCommentCard(r, true))}
             </div>
           ))}
         </div>
@@ -293,4 +384,4 @@ export default function ChapterReader() {
       </div>
     </div>
   )
-              }
+            }
