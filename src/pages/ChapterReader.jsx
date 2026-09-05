@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 
@@ -67,8 +68,12 @@ export default function ChapterReader() {
 
   return (
     <div className="container" style={{ paddingTop: 40, paddingBottom: 60, maxWidth: 700 }}>
-      <Link to={`/novel/${slug}`} style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-        ← {novel.title}
+      <Link
+        to={`/novel/${slug}`}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.9rem' }}
+      >
+        <ArrowLeft size={15} />
+        {novel.title}
       </Link>
 
       <h1 style={{ fontSize: '1.6rem', marginTop: 20, marginBottom: 32 }}>
@@ -91,10 +96,16 @@ export default function ChapterReader() {
         }}
       >
         {prevNum ? (
-          <Link to={`/novel/${slug}/chapter/${prevNum}`} className="btn">← Chapter {prevNum}</Link>
+          <Link to={`/novel/${slug}/chapter/${prevNum}`} className="btn">
+            <ChevronLeft size={16} />
+            Chapter {prevNum}
+          </Link>
         ) : <span />}
         {nextNum ? (
-          <Link to={`/novel/${slug}/chapter/${nextNum}`} className="btn btn--filled">Chapter {nextNum} →</Link>
+          <Link to={`/novel/${slug}/chapter/${nextNum}`} className="btn btn--filled">
+            Chapter {nextNum}
+            <ChevronRight size={16} />
+          </Link>
         ) : <span />}
       </div>
     </div>
