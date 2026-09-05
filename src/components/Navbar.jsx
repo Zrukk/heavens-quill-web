@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { Feather, ShieldCheck, UserCircle2, LogOut, LogIn } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 
 export default function Navbar() {
@@ -18,7 +19,7 @@ export default function Navbar() {
         }}
       >
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span className="diamond" />
+          <Feather size={22} color="var(--gold)" strokeWidth={1.75} />
           <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 600 }}>
             Heaven's Quill
           </span>
@@ -27,9 +28,15 @@ export default function Navbar() {
         {user ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             {isAdmin && (
-              <Link to="/admin" className="btn" style={{ borderColor: 'var(--accent)' }}>Admin</Link>
+              <Link to="/admin" className="btn btn--outline-gold">
+                <ShieldCheck size={16} />
+                Admin
+              </Link>
             )}
-            <Link to="/profil" className="btn">Profil</Link>
+            <Link to="/profil" className="btn">
+              <UserCircle2 size={16} />
+              Profil
+            </Link>
             <span
               style={{
                 color: 'var(--text-muted)',
@@ -42,12 +49,18 @@ export default function Navbar() {
             >
               {displayName || user.email}
             </span>
-            <button className="btn" onClick={signOut}>Keluar</button>
+            <button className="btn" onClick={signOut}>
+              <LogOut size={16} />
+              Keluar
+            </button>
           </div>
         ) : (
-          <Link to="/login" className="btn">Masuk</Link>
+          <Link to="/login" className="btn btn--filled">
+            <LogIn size={16} />
+            Masuk
+          </Link>
         )}
       </div>
     </header>
   )
-}
+            }
