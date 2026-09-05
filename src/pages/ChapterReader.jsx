@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, MessageCircle, Send } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 
 export default function ChapterReader() {
   const { slug, number } = useParams()
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const navigate = useNavigate()
   const [novel, setNovel] = useState(null)
   const [chapter, setChapter] = useState(null)
@@ -15,6 +15,11 @@ export default function ChapterReader() {
 
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(0)
+
+  const [comments, setComments] = useState([])
+  const [loadingComments, setLoadingComments] = useState(true)
+  const [newComment, setNewComment] = useState('')
+  const [postingComment, setPostingComment] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -62,7 +67,6 @@ export default function ChapterReader() {
     load()
   }, [slug, number, user])
 
-  // Hitung views sekali tiap chapter beda dimuat (gak ke-trigger ulang pas status login berubah)
   useEffect(() => {
     if (chapter?.id && novel?.id) {
       supabase.rpc('increment_chapter_views', {
@@ -72,7 +76,6 @@ export default function ChapterReader() {
     }
   }, [chapter?.id])
 
-  // Ambil jumlah like + status like user saat ini
   useEffect(() => {
     async function loadLikes() {
       if (!chapter?.id) return
@@ -98,6 +101,48 @@ export default function ChapterReader() {
     loadLikes()
   }, [chapter?.id, user])
 
+  useEffect(() => {
+    if (chapter?.id) loadComments()
+  }, [chapter?.id])
+
+  async function loadComments() {
+    setLoadingComments(true)
+    const { data } = await supabase
+      .from('chapter_comments')
+      .select('id, content, created_at, user_id, profiles(display_name)')
+      .eq('chapter_id', chapter.id)
+      .order('created_at', { ascending: false })
+    setComments(data ?? [])
+    setLoadingComments(false)
+  }
+
+  async function handlePostComment(e) {
+    e.preventDefault()
+    if (!user) {
+      navigate('/login')
+      return
+    }
+    if (!newComment.trim()) return
+
+    setPostingComment(true)
+    const { error } = await supabase.from('chapter_comments').insert({
+      chapter_id: chapter.id,
+      user_id: user.id,
+      content: newComment.trim(),
+    })
+    setPostingComment(false)
+
+    if (!error) {
+      setNewComment('')
+      loadComments()
+    }
+  }
+
+  async function handleDeleteComment(id) {
+    if (!confirm('Hapus komentar ini?')) return
+    await supabase.from('chapter_comments').delete().eq('id', id)
+    loadComments()
+  }
   async function handleToggleLike() {
     if (!user) {
       navigate('/login')
@@ -158,6 +203,72 @@ export default function ChapterReader() {
         </button>
       </div>
 
+      <div style={{ marginTop: 48, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
+        <h2 style={{ fontSize: '1.2rem', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <MessageCircle size={18} color="var(--gold)" />
+          Komentar ({comments.length})
+        </h2>
+
+        {user ? (
+          <form onSubmit={handlePostComment} style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+            <textarea
+              placeholder="Tulis komentar..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              rows={3}
+              style={{
+                padding: 10,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)',
+                fontFamily: 'inherit',
+                width: '100%',
+              }}
+            />
+            <button
+              type="submit"
+              className="btn btn--filled"
+              disabled={postingComment || !newComment.trim()}
+              style={{ alignSelf: 'flex-start' }}
+            >
+              <Send size={16} />
+              {postingComment ? 'Mengirim...' : 'Kirim'}
+            </button>
+          </form>
+        ) : (
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 24 }}>
+            <Link to="/login" style={{ color: 'var(--gold)' }}>Masuk</Link> dulu buat kasih komentar.
+          </p>
+        )}
+
+        {loadingComments && <p style={{ color: 'var(--text-muted)' }}>Memuat komentar...</p>}
+        {!loadingComments && comments.length === 0 && (
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Belum ada komentar. Jadi yang pertama!</p>
+        )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {comments.map((c) => (
+            <div key={c.id} className="card" style={{ padding: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 }}>
+                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{c.profiles?.display_name || 'Pembaca'}</span>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                  {new Date(c.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+              </div>
+              <p style={{ margin: 0, fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>{c.content}</p>
+              {(user?.id === c.user_id || isAdmin) && (
+                <button
+                  onClick={() => handleDeleteComment(c.id)}
+                  style={{ background: 'none', border: 'none', color: '#D46B5B', fontSize: '0.75rem', padding: 0, marginTop: 6, cursor: 'pointer' }}
+                >
+                  Hapus
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div
         style={{
           display: 'flex',
@@ -182,4 +293,4 @@ export default function ChapterReader() {
       </div>
     </div>
   )
-  }
+              }
