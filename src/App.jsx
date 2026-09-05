@@ -5,6 +5,7 @@ import NovelDetail from './pages/NovelDetail'
 import ChapterReader from './pages/ChapterReader'
 import Login from './pages/Login'
 import Admin from './pages/Admin'
+import Profile from './pages/Profile'
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/novel/:slug/chapter/:number" element={<ChapterReader />} />
         <Route path="/login" element={<Login />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/profil" element={<Profile />} />
       </Routes>
     </div>
   )
