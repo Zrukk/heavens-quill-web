@@ -1,0 +1,166 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useAuth } from '../lib/AuthContext'
+import { supabase } from '../lib/supabase'
+
+export default function Profile() {
+  const { user, displayName, loading, refreshProfile } = useAuth()
+  const [nameInput, setNameInput] = useState('')
+  const [nameMessage, setNameMessage] = useState(null)
+  const [savingName, setSavingName] = useState(false)
+
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordMessage, setPasswordMessage] = useState(null)
+  const [savingPassword, setSavingPassword] = useState(false)
+
+  const [bookmarks, setBookmarks] = useState([])
+  const [loadingBookmarks, setLoadingBookmarks] = useState(true)
+
+  useEffect(() => {
+    setNameInput(displayName || '')
+  }, [displayName])
+
+  useEffect(() => {
+    if (!user) {
+      setLoadingBookmarks(false)
+      return
+    }
+    loadBookmarks()
+  }, [user])
+
+  async function loadBookmarks() {
+    setLoadingBookmarks(true)
+    const { data } = await supabase
+      .from('bookmarks')
+      .select('last_chapter_read, novels(id, title, slug, cover_url)')
+      .eq('user_id', user.id)
+    setBookmarks(data ?? [])
+    setLoadingBookmarks(false)
+  }
+
+  async function handleSaveName(e) {
+    e.preventDefault()
+    setNameMessage(null)
+    setSavingName(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ display_name: nameInput.trim() || null })
+      .eq('id', user.id)
+    setSavingName(false)
+    if (error) setNameMessage('Gagal simpan: ' + error.message)
+    else {
+      setNameMessage('Nama disimpan.')
+      refreshProfile()
+    }
+  }
+
+  async function handleChangePassword(e) {
+    e.preventDefault()
+    setPasswordMessage(null)
+
+    if (newPassword.length < 6) {
+      setPasswordMessage('Password minimal 6 karakter.')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage('Konfirmasi password gak cocok.')
+      return
+    }
+
+    setSavingPassword(true)
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    setSavingPassword(false)
+
+    if (error) setPasswordMessage('Gagal ganti password: ' + error.message)
+    else {
+      setPasswordMessage('Password berhasil diganti.')
+      setNewPassword('')
+      setConfirmPassword('')
+    }
+  }
+
+  if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
+  if (!user) return <div className="container" style={{ paddingTop: 40 }}>Silakan masuk dulu.</div>
+
+  return (
+    <div className="container" style={{ paddingTop: 40, paddingBottom: 60, maxWidth: 600 }}>
+      <h1 style={{ fontSize: '1.8rem', marginBottom: 8 }}>Profil</h1>
+      <p style={{ color: 'var(--text-muted)', marginBottom: 32, fontSize: '0.9rem' }}>{user.email}</p>
+
+      <h2 style={{ fontSize: '1.1rem', marginBottom: 12 }}>Nama Tampilan</h2>
+      <form onSubmit={handleSaveName} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        <input
+          type="text"
+          placeholder="Nama kamu"
+          value={nameInput}
+          onChange={(e) => setNameInput(e.target.value)}
+          style={{ flex: 1 }}
+        />
+        <button type="submit" className="btn btn--filled" disabled={savingName}>
+          {savingName ? 'Menyimpan...' : 'Simpan'}
+        </button>
+      </form>
+      {nameMessage && <p style={{ color: 'var(--accent)', fontSize: '0.85rem', marginBottom: 24 }}>{nameMessage}</p>}
+      {!nameMessage && <div style={{ marginBottom: 24 }} />}
+
+      <h2 style={{ fontSize: '1.1rem', marginBottom: 12 }}>Ganti Password</h2>
+      <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 32 }}>
+        <input
+          type="password"
+          placeholder="Password baru"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+        />
+        <input
+          type="password"
+          placeholder="Ulangi password baru"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+        />
+        <button type="submit" className="btn btn--filled" disabled={savingPassword} style={{ alignSelf: 'flex-start' }}>
+          {savingPassword ? 'Menyimpan...' : 'Ganti Password'}
+        </button>
+        {passwordMessage && <p style={{ color: 'var(--accent)', fontSize: '0.85rem', margin: 0 }}>{passwordMessage}</p>}
+      </form>
+
+      <h2 style={{ fontSize: '1.1rem', marginBottom: 12 }}>Sedang Dibaca</h2>
+      {loadingBookmarks && <p style={{ color: 'var(--text-muted)' }}>Memuat...</p>}
+      {!loadingBookmarks && bookmarks.length === 0 && (
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Belum ada novel yang dibaca.</p>
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {bookmarks.map((b) => b.novels && (
+          <Link
+            key={b.novels.id}
+            to={`/novel/${b.novels.slug}`}
+            style={{
+              display: 'flex',
+              gap: 12,
+              padding: 12,
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 2,
+            }}
+          >
+            <div
+              style={{
+                width: 48,
+                height: 66,
+                flexShrink: 0,
+                background: b.novels.cover_url ? `url(${b.novels.cover_url}) center/cover` : 'var(--border)',
+                borderRadius: 2,
+              }}
+            />
+            <div>
+              <div style={{ marginBottom: 4 }}>{b.novels.title}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                Terakhir: Chapter {b.last_chapter_read}
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+    }
