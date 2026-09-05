@@ -1,16 +1,17 @@
 import { Link } from 'react-router-dom'
+import { PlayCircle, CheckCircle2, Languages } from 'lucide-react'
 
 export default function NovelCard({ novel }) {
+  const isOngoing = novel.status === 'ongoing'
+
   return (
     <Link
       to={`/novel/${novel.slug}`}
+      className="card"
       style={{
         display: 'flex',
         gap: 16,
         padding: 16,
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
-        borderRadius: 2,
       }}
     >
       <div
@@ -19,7 +20,7 @@ export default function NovelCard({ novel }) {
           height: 100,
           flexShrink: 0,
           background: novel.cover_url ? `url(${novel.cover_url}) center/cover` : 'var(--border)',
-          borderRadius: 2,
+          borderRadius: 'var(--radius)',
         }}
       />
       <div style={{ minWidth: 0 }}>
@@ -28,15 +29,20 @@ export default function NovelCard({ novel }) {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 8,
-            color: 'var(--text-muted)',
+            gap: 6,
+            color: isOngoing ? 'var(--gold)' : 'var(--text-muted)',
             fontSize: '0.85rem',
             marginBottom: 8,
           }}
         >
-          <span className={`diamond ${novel.status === 'ongoing' ? '' : 'diamond--muted'}`} />
-          <span>{novel.status === 'ongoing' ? 'Berjalan' : 'Tamat'}</span>
-          {novel.original_language && <span>· {novel.original_language}</span>}
+          {isOngoing ? <PlayCircle size={14} /> : <CheckCircle2 size={14} />}
+          <span>{isOngoing ? 'Berjalan' : 'Tamat'}</span>
+          {novel.original_language && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)' }}>
+              <Languages size={13} />
+              {novel.original_language}
+            </span>
+          )}
         </div>
         <p
           style={{
