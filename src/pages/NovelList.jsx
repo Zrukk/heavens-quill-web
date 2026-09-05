@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Library } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import NovelCard from '../components/NovelCard'
 
@@ -23,7 +24,10 @@ export default function NovelList() {
 
   return (
     <div className="container" style={{ paddingTop: 40, paddingBottom: 60 }}>
-      <h1 style={{ fontSize: '2rem', marginBottom: 8 }}>Daftar Novel</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+        <Library size={26} color="var(--gold)" strokeWidth={1.75} />
+        <h1 className="gradient-text" style={{ fontSize: '2rem' }}>Daftar Novel</h1>
+      </div>
       <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
         Terjemahan novel Tionghoa, Jepang, dan Korea ke Bahasa Indonesia.
       </p>
