@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { PlayCircle, CheckCircle2, Languages } from 'lucide-react'
+import { PlayCircle, CheckCircle2, Languages, Eye } from 'lucide-react'
 
 export default function NovelCard({ novel }) {
   const isOngoing = novel.status === 'ongoing'
@@ -33,6 +33,7 @@ export default function NovelCard({ novel }) {
             color: isOngoing ? 'var(--gold)' : 'var(--text-muted)',
             fontSize: '0.85rem',
             marginBottom: 8,
+            flexWrap: 'wrap',
           }}
         >
           {isOngoing ? <PlayCircle size={14} /> : <CheckCircle2 size={14} />}
@@ -43,6 +44,10 @@ export default function NovelCard({ novel }) {
               {novel.original_language}
             </span>
           )}
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)' }}>
+            <Eye size={13} />
+            {(novel.total_views ?? 0).toLocaleString('id-ID')}
+          </span>
         </div>
         <p
           style={{
