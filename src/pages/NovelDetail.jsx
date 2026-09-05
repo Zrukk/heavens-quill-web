@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { BookOpen, PlayCircle, CheckCircle2, Languages, Search, ArrowUpDown, ListOrdered } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 
@@ -52,6 +53,7 @@ export default function NovelDetail() {
   if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
   if (!novel) return <div className="container" style={{ paddingTop: 40 }}>Novel tidak ditemukan.</div>
 
+  const isOngoing = novel.status === 'ongoing'
   const nextChapter = bookmark?.last_chapter_read ? bookmark.last_chapter_read + 1 : 1
 
   const filteredChapters = chapters
@@ -75,7 +77,7 @@ export default function NovelDetail() {
             flexShrink: 0,
             background: novel.cover_url ? `url(${novel.cover_url}) center/cover` : 'var(--surface)',
             border: '1px solid var(--border)',
-            borderRadius: 2,
+            borderRadius: 'var(--radius)',
           }}
         />
         <div>
@@ -84,16 +86,25 @@ export default function NovelDetail() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
-              color: 'var(--text-muted)',
+              gap: 6,
+              color: isOngoing ? 'var(--gold)' : 'var(--text-muted)',
               fontSize: '0.9rem',
               marginBottom: 14,
+              flexWrap: 'wrap',
             }}
           >
-            <span className={`diamond ${novel.status === 'ongoing' ? '' : 'diamond--muted'}`} />
-            <span>{novel.status === 'ongoing' ? 'Berjalan' : 'Tamat'}</span>
-            {novel.original_language && <span>· {novel.original_language}</span>}
-            <span>· {chapters.length} chapter</span>
+            {isOngoing ? <PlayCircle size={15} /> : <CheckCircle2 size={15} />}
+            <span>{isOngoing ? 'Berjalan' : 'Tamat'}</span>
+            {novel.original_language && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)' }}>
+                <Languages size={14} />
+                {novel.original_language}
+              </span>
+            )}
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)' }}>
+              <ListOrdered size={14} />
+              {chapters.length} chapter
+            </span>
           </div>
           <p style={{ color: 'var(--text-muted)', maxWidth: 600 }}>{novel.synopsis}</p>
 
@@ -103,6 +114,7 @@ export default function NovelDetail() {
               className="btn btn--filled"
               style={{ marginTop: 16 }}
             >
+              <BookOpen size={16} />
               {bookmark?.last_chapter_read ? `Lanjut ke Chapter ${nextChapter}` : 'Mulai Baca'}
             </Link>
           )}
@@ -116,17 +128,21 @@ export default function NovelDetail() {
           onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
           style={{ fontSize: '0.85rem', padding: '6px 12px' }}
         >
+          <ArrowUpDown size={14} />
           {sortOrder === 'asc' ? 'Terlama dulu' : 'Terbaru dulu'}
         </button>
       </div>
 
-      <input
-        type="text"
-        placeholder="Cari nomor atau judul chapter..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        style={{ marginBottom: 16 }}
-      />
+      <div style={{ position: 'relative', marginBottom: 16 }}>
+        <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
+        <input
+          type="text"
+          placeholder="Cari nomor atau judul chapter..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{ paddingLeft: 38 }}
+        />
+      </div>
 
       {filteredChapters.length === 0 && (
         <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Gak ada chapter yang cocok.</p>
@@ -137,11 +153,9 @@ export default function NovelDetail() {
           <Link
             key={ch.id}
             to={`/novel/${slug}/chapter/${ch.chapter_number}`}
+            className="card"
             style={{
               padding: '12px 16px',
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 2,
               fontSize: '0.95rem',
             }}
           >
@@ -151,4 +165,4 @@ export default function NovelDetail() {
       </div>
     </div>
   )
-            }
+                          }
