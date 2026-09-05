@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { BookOpen, PlayCircle, CheckCircle2, Languages, Search, ArrowUpDown, ListOrdered } from 'lucide-react'
+import { BookOpen, PlayCircle, CheckCircle2, Languages, Search, ArrowUpDown, ListOrdered, Eye } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 
@@ -105,6 +105,10 @@ export default function NovelDetail() {
               <ListOrdered size={14} />
               {chapters.length} chapter
             </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)' }}>
+              <Eye size={14} />
+              {(novel.total_views ?? 0).toLocaleString('id-ID')} views
+            </span>
           </div>
           <p style={{ color: 'var(--text-muted)', maxWidth: 600 }}>{novel.synopsis}</p>
 
@@ -165,4 +169,4 @@ export default function NovelDetail() {
       </div>
     </div>
   )
-                          }
+                }
