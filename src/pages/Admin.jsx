@@ -456,7 +456,7 @@ async function handleImport() {
             <option value="">Pilih novel</option>
             {novels.map((n) => <option key={n.id} value={n.id}>{n.title}</option>)}
           </select>
-          <input type="number" placeholder="Nomor chapter" value={chapterNumber} onChange={(e) => setChapterNumber(e.target.value)} required />
+          <input type="number" step="any" placeholder="Nomor chapter" value={chapterNumber} onChange={(e) => setChapterNumber(e.target.value)} required />
           <input type="text" placeholder="Judul chapter (opsional)" value={chapterTitle} onChange={(e) => setChapterTitle(e.target.value)} />
           <textarea placeholder="Isi chapter" value={content} onChange={(e) => setContent(e.target.value)} rows={12} required style={inputStyle} />
           <button type="submit" className="btn btn--filled"><Save size={16} />Simpan Chapter</button>
