@@ -3,6 +3,7 @@ import JSZip from 'jszip'
 import { BookPlus, FilePlus2, UploadCloud, ListChecks, Trash2, Save } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import { supabase } from '../lib/supabase'
+import { fetchAllChapterRows } from '../lib/fetchAllChapterRows'
 
 function escapeHtml(str) {
   return str
