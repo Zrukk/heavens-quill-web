@@ -147,7 +147,7 @@ export default function Admin() {
   }, [importNovel])
 
   async function loadExistingNumbers(novelId) {
-    const { data } = await supabase.from('chapters').select('chapter_number').eq('novel_id', novelId)
+    const data = await fetchAllChapterRows(novelId, 'chapter_number')
     setExistingNumbers(new Set((data ?? []).map((c) => c.chapter_number)))
   }
 
