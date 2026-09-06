@@ -152,15 +152,11 @@ export default function Admin() {
   }
 
   async function loadManageChapters(novelId) {
-    const { data } = await supabase
-      .from('chapters')
-      .select('id, chapter_number, title')
-      .eq('novel_id', novelId)
-      .order('chapter_number', { ascending: true })
+    const data = await fetchAllChapterRows(novelId, 'id, chapter_number, title')
     setManageChapters(data ?? [])
     setSelectedIds([])
   }
-
+  
   function toggleSelect(id) {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
   }
