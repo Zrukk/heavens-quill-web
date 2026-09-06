@@ -29,11 +29,7 @@ export default function NovelDetail() {
       }
       setNovel(novelData)
 
-      const { data: chapterData } = await supabase
-        .from('chapters')
-        .select('id, chapter_number, title')
-        .eq('novel_id', novelData.id)
-        .order('chapter_number', { ascending: true })
+    const chapterData = await fetchAllChapterRows(novelData.id, 'id, chapter_number, title')
       setChapters(chapterData ?? [])
 
       if (user) {
