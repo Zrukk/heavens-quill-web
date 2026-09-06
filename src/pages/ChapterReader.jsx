@@ -194,7 +194,6 @@ useEffect(() => {
 
   const nums = siblings.map((s) => Number(s.chapter_number))
   const currentIndex = nums.indexOf(Number(number))
-  const currentIndex = nums.indexOf(Number(number))
   const prevNum = currentIndex > 0 ? nums[currentIndex - 1] : null
   const nextNum = currentIndex < nums.length - 1 ? nums[currentIndex + 1] : null
 
