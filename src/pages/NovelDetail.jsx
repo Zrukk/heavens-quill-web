@@ -51,7 +51,15 @@ export default function NovelDetail() {
   if (!novel) return <div className="container" style={{ paddingTop: 40 }}>Novel tidak ditemukan.</div>
 
   const isOngoing = novel.status === 'ongoing'
-  const nextChapter = bookmark?.last_chapter_read ? bookmark.last_chapter_read + 1 : 1
+
+  const chapterNumbers = chapters.map((c) => Number(c.chapter_number))
+  let resumeChapterNumber = chapterNumbers[0] ?? null
+  if (bookmark?.last_chapter_read != null) {
+    const idx = chapterNumbers.findIndex((n) => n === Number(bookmark.last_chapter_read))
+    if (idx >= 0) {
+      resumeChapterNumber = idx < chapterNumbers.length - 1 ? chapterNumbers[idx + 1] : chapterNumbers[idx]
+    }
+  }
 
   const filteredChapters = chapters
     .filter((ch) => {
