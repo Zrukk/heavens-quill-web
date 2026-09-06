@@ -346,7 +346,7 @@ export default function Admin() {
   }
 
   function extractChapterInfo(rawTitle, fallbackNumber) {
-    const match = (rawTitle || '').match(/^(chapter|bab)\s*(\d+)\s*[:\-–—.]?\s*(.*)$/i)
+    const match = (rawTitle || '').match(/^(chapter|bab)\s*(\d+(?:\.\d+)?)\s*[:\-–—.]?\s*(.*)$/i)
     if (match) {
       return { number: Number(match[2]), title: match[3].trim() }
     }
