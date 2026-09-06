@@ -49,13 +49,9 @@ export default function ChapterReader() {
         .single()
       setChapter(chapterData)
 
-      const { data: allChapters } = await supabase
-        .from('chapters')
-        .select('chapter_number')
-        .eq('novel_id', novelData.id)
-        .order('chapter_number', { ascending: true })
+      const allChapters = await fetchAllChapterRows(novelData.id, 'chapter_number')
       setSiblings(allChapters ?? [])
-
+      
       if (user && chapterData) {
         await supabase.from('bookmarks').upsert(
           {
