@@ -12,6 +12,54 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
 }
 
+async function compressImage(blob) {
+  try {
+    const bitmap = await createImageBitmap(blob)
+    const maxWidth = 1400
+    if (bitmap.width <= maxWidth) {
+      bitmap.close?.()
+      return null
+    }
+    const scale = maxWidth / bitmap.width
+    const canvas = document.createElement('canvas')
+    canvas.width = maxWidth
+    canvas.height = Math.round(bitmap.height * scale)
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+    bitmap.close?.()
+    return await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82))
+  } catch {
+    return null
+  }
+}
+
+async function uploadEpubImage(zip, chapterPath, src) {
+  const dir = chapterPath.includes('/') ? chapterPath.split('/').slice(0, -1).join('/') : ''
+  const decodedSrc = decodeURIComponent(src)
+  const rawPath = dir ? `${dir}/${decodedSrc}` : decodedSrc
+
+  const normalizedPath = rawPath.split('/').reduce((acc, part) => {
+    if (part === '..') acc.pop()
+    else if (part !== '.') acc.push(part)
+    return acc
+  }, []).join('/')
+
+  const fileEntry = zip.file(normalizedPath)
+  if (!fileEntry) return { url: null, error: `file gak ketemu di epub: ${normalizedPath}` }
+
+  const rawBlob = await fileEntry.async('blob')
+  const compressedBlob = await compressImage(rawBlob)
+  const blob = compressedBlob || rawBlob
+  const ext = compressedBlob ? 'jpg' : normalizedPath.split('.').pop()
+  const fileName = `epub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+
+  const { error } = await supabase.storage.from('chapter-images').upload(fileName, blob)
+  if (error) return { url: null, error: error.message }
+
+  const { data } = supabase.storage.from('chapter-images').getPublicUrl(fileName)
+  return { url: data.publicUrl, error: null }
+}
+
 async function parseEpub(file, range) {
   const zip = await JSZip.loadAsync(file)
   const parser = new DOMParser()
@@ -36,6 +84,7 @@ async function parseEpub(file, range) {
   const targetIds = spineIds.slice(startIdx, endIdx)
 
   const chapters = []
+  const imageErrors = []
   for (const id of targetIds) {
     const href = manifest[id]
     if (!href) continue
@@ -50,17 +99,34 @@ async function parseEpub(file, range) {
     const titleEl = htmlDoc.querySelector('h1, h2, title')
     const title = titleEl ? titleEl.textContent.trim() : ''
 
-    const paragraphs = Array.from(htmlDoc.querySelectorAll('p'))
-      .map((p) => p.textContent.trim())
-      .filter(Boolean)
-    const content = paragraphs.length > 0
-      ? paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join('\n')
+    const elements = Array.from(htmlDoc.body ? htmlDoc.body.querySelectorAll('p, img') : [])
+    const htmlParts = []
+
+    for (const el of elements) {
+      if (el.tagName.toLowerCase() === 'img') {
+        const src = el.getAttribute('src')
+        if (!src) continue
+        const result = await uploadEpubImage(zip, fullPath, src)
+        if (result.url) {
+          const alt = escapeHtml(el.getAttribute('alt') || '')
+          htmlParts.push(`<img src="${result.url}" alt="${alt}" />`)
+        } else {
+          imageErrors.push(result.error)
+        }
+      } else {
+        const text = el.textContent.trim()
+        if (text) htmlParts.push(`<p>${escapeHtml(text)}</p>`)
+      }
+    }
+
+    const content = htmlParts.length > 0
+      ? htmlParts.join('\n')
       : (htmlDoc.body?.textContent.trim() ? `<p>${escapeHtml(htmlDoc.body.textContent.trim())}</p>` : '')
 
     if (content) chapters.push({ title, content })
   }
 
-  return { chapters, totalInEpub: spineIds.length }
+  return { chapters, imageErrors, totalInEpub: spineIds.length }
 }
 
 function parseBulkText(text) {
@@ -156,7 +222,7 @@ export default function Admin() {
     setManageChapters(data ?? [])
     setSelectedIds([])
   }
-  
+
   function toggleSelect(id) {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
   }
@@ -259,10 +325,15 @@ export default function Admin() {
       const range = {}
       if (epubRangeStart) range.start = Number(epubRangeStart)
       if (epubRangeEnd) range.end = Number(epubRangeEnd)
-      const { chapters, totalInEpub } = await parseEpub(epubFile, range)
+      const { chapters, imageErrors, totalInEpub } = await parseEpub(epubFile, range)
       setEpubTotal(totalInEpub)
       applyParsed(chapters)
-      setMessage(`${chapters.length} chapter diproses (total item di epub ini: ${totalInEpub}). Cek & sesuaikan nomor di bawah sebelum import.`)
+      let msg = `${chapters.length} chapter diproses (total item di epub ini: ${totalInEpub}). Cek & sesuaikan nomor di bawah sebelum import.`
+      if (imageErrors.length > 0) {
+        const uniqueErrors = [...new Set(imageErrors)].slice(0, 3)
+        msg += ` ⚠️ ${imageErrors.length} gambar gagal diupload — ${uniqueErrors.join(' | ')}`
+      }
+      setMessage(msg)
     } catch (err) {
       setMessage('Gagal baca epub: ' + err.message)
     }
@@ -298,312 +369,4 @@ export default function Admin() {
 
   function updateParsed(index, field, value) {
     setParsedChapters((prev) => prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)))
-    }
-async function handleImport() {
-    if (!importNovel) {
-      setMessage('Pilih novel tujuan dulu.')
-      return
-    }
-    const toImport = parsedChapters.filter((c) => c.checked)
-    if (toImport.length === 0) return
-
-    setImporting(true)
-
-    const rows = toImport.map((c) => ({
-      novel_id: importNovel,
-      chapter_number: Number(c.number),
-      title: c.title || null,
-      content: c.content,
-    }))
-
-    // Kirim semua chapter dalam satu kali panggilan — jauh lebih cepat
-    // daripada satu-satu, tapi kalau ada 1 nomor chapter yang bentrok
-    // dengan yang udah ada, SEMUA baris di batch ini gagal (gak ada yang
-    // kesimpen sebagian). Kalau itu terjadi, cek pesan errornya, betulin
-    // nomor yang bentrok, lalu Import lagi.
-    const { data, error } = await supabase.from('chapters').insert(rows).select()
-
-    setImporting(false)
-
-    if (error) {
-      setMessage(`Import gagal: ${error.message}`)
-    } else {
-      setMessage(`${data.length} chapter berhasil diimport.`)
-      setParsedChapters([])
-    }
-  }
-
-  if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
-  if (!user) return <div className="container" style={{ paddingTop: 40 }}>Silakan masuk dulu.</div>
-  if (!isAdmin) return <div className="container" style={{ paddingTop: 40 }}>Akun ini bukan admin.</div>
-
-  const inputStyle = {
-    padding: 10,
-    background: 'var(--surface)',
-    border: '1px solid var(--border)',
-    borderRadius: 2,
-    fontFamily: 'inherit',
-    width: '100%',
-  }
-
-  return (
-    <div className="container" style={{ paddingTop: 40, paddingBottom: 60, maxWidth: 600 }}>
-      <h1 style={{ fontSize: '1.8rem', marginBottom: 24 }}>Admin</h1>
-
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-        <button className={tab === 'novel' ? 'btn btn--filled' : 'btn'} onClick={() => setTab('novel')}><BookPlus size={16} />Tambah Novel</button>
-        <button className={tab === 'chapter' ? 'btn btn--filled' : 'btn'} onClick={() => setTab('chapter')}><FilePlus2 size={16} />Tambah Chapter</button>
-        <button className={tab === 'import' ? 'btn btn--filled' : 'btn'} onClick={() => setTab('import')}><UploadCloud size={16} />Import Massal</button>
-        <button className={tab === 'manage' ? 'btn btn--filled' : 'btn'} onClick={() => setTab('manage')}><ListChecks size={16} />Kelola Chapter</button>
-      </div>
-
-      {message && <p style={{ color: 'var(--accent)', marginBottom: 16, fontSize: '0.9rem' }}>{message}</p>}
-
-      {tab === 'novel' && (
-        <form onSubmit={handleAddNovel} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <input type="text" placeholder="Judul novel" value={title} onChange={(e) => setTitle(e.target.value)} required />
-          <input type="text" placeholder="Slug (contoh: sword-of-coming)" value={slug} onChange={(e) => setSlug(e.target.value)} required />
-          <textarea placeholder="Sinopsis" value={synopsis} onChange={(e) => setSynopsis(e.target.value)} rows={4} style={inputStyle} />
-          <div>
-            <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 6 }}>
-              Cover (opsional, maks 5MB)
-            </label>
-            <input type="file" accept="image/*" onChange={(e) => setCoverFile(e.target.files[0])} />
-          </div>
-          <input type="text" placeholder="Bahasa asli (contoh: Chinese)" value={language} onChange={(e) => setLanguage(e.target.value)} />
-          <div>
-            <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 6 }}>
-              Status
-            </label>
-            <select value={status} onChange={(e) => setStatus(e.target.value)} style={inputStyle}>
-              <option value="ongoing">Berjalan</option>
-              <option value="completed">Tamat</option>
-            </select>
-          </div>
-          <button type="submit" className="btn btn--filled"><Save size={16} />Simpan Novel</button>
-        </form>
-      )}
-
-      {tab === 'chapter' && (
-        <form onSubmit={handleAddChapter} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <select value={selectedNovel} onChange={(e) => setSelectedNovel(e.target.value)} required style={inputStyle}>
-            <option value="">Pilih novel</option>
-            {novels.map((n) => <option key={n.id} value={n.id}>{n.title}</option>)}
-          </select>
-          <input type="number" placeholder="Nomor chapter" value={chapterNumber} onChange={(e) => setChapterNumber(e.target.value)} required />
-          <input type="text" placeholder="Judul chapter (opsional)" value={chapterTitle} onChange={(e) => setChapterTitle(e.target.value)} />
-          <textarea placeholder="Isi chapter" value={content} onChange={(e) => setContent(e.target.value)} rows={12} required style={inputStyle} />
-          <button type="submit" className="btn btn--filled"><Save size={16} />Simpan Chapter</button>
-        </form>
-      )}
-
-      {tab === 'import' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <select value={importNovel} onChange={(e) => setImportNovel(e.target.value)} style={inputStyle}>
-            <option value="">Pilih novel tujuan</option>
-            {novels.map((n) => <option key={n.id} value={n.id}>{n.title}</option>)}
-          </select>
-
-          <div>
-            <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 6 }}>
-              Sumber chapter
-            </label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button className={importSource === 'epub' ? 'btn btn--filled' : 'btn'} onClick={() => setImportSource('epub')}>Upload EPUB</button>
-              <button className={importSource === 'bulk' ? 'btn btn--filled' : 'btn'} onClick={() => setImportSource('bulk')}>Tempel Teks</button>
-            </div>
-          </div>
-
-          {importSource === 'epub' && (
-            <>
-              <input type="file" accept=".epub" onChange={handleEpubFileSelect} />
-              {epubFile && (
-                <>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>
-                    Epub dengan ratusan chapter bisa berat diproses sekaligus di HP.
-                    Proses per beberapa chapter aja (misal 1–30, lalu 31–60, dst) kalau kerasa lag.
-                    {epubTotal ? ` Total item di epub ini: ${epubTotal}.` : ''}
-                  </p>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <input
-                      type="number"
-                      placeholder="Dari #"
-                      value={epubRangeStart}
-                      onChange={(e) => setEpubRangeStart(e.target.value)}
-                      style={{ width: 90, padding: 8, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 2 }}
-                    />
-                    <span style={{ color: 'var(--text-muted)' }}>sampai</span>
-                    <input
-                      type="number"
-                      placeholder="ke #"
-                      value={epubRangeEnd}
-                      onChange={(e) => setEpubRangeEnd(e.target.value)}
-                      style={{ width: 90, padding: 8, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 2 }}
-                    />
-                  </div>
-                  <button className="btn btn--filled" onClick={handleProcessEpubRange}><UploadCloud size={16} />Proses Range Ini</button>
-                </>
-              )}
-            </>
-          )}
-
-          {importSource === 'bulk' && (
-            <>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>
-                Tempel beberapa chapter sekaligus. Tiap baris judul chapter harus diawali "Chapter" atau "Bab" diikuti angka, contoh: "Chapter 12" atau "Bab 12 - Pertarungan".
-              </p>
-              <textarea
-                placeholder="Tempel teks di sini..."
-                value={bulkText}
-                onChange={(e) => setBulkText(e.target.value)}
-                rows={10}
-                style={inputStyle}
-              />
-              <button className="btn" onClick={handleParseBulk}><FilePlus2 size={16} />Pisahkan Otomatis</button>
-            </>
-          )}
-
-          {parsedChapters.length > 0 && (
-            <>
-              {(() => {
-                const numberCounts = parsedChapters.reduce((acc, c) => {
-                  acc[c.number] = (acc[c.number] || 0) + 1
-                  return acc
-                }, {})
-                const conflictCount = parsedChapters.filter(
-                  (c) => existingNumbers.has(Number(c.number)) || numberCounts[c.number] > 1,
-                ).length
-                return conflictCount > 0 ? (
-                  <p style={{ color: '#D46B5B', fontSize: '0.85rem', margin: 0 }}>
-                    ⚠ {conflictCount} chapter nomornya bentrok (udah ada di database atau dobel di batch ini) — cek yang bergaris merah di bawah, betulin atau uncheck sebelum import.
-                  </p>
-                ) : null
-              })()}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 400, overflowY: 'auto' }}>
-                {parsedChapters.map((c, i) => {
-                  const numberCounts = parsedChapters.reduce((acc, x) => {
-                    acc[x.number] = (acc[x.number] || 0) + 1
-                    return acc
-                  }, {})
-                  const conflict = existingNumbers.has(Number(c.number)) || numberCounts[c.number] > 1
-                  return (
-                    <div
-                      key={i}
-                      style={{
-                        padding: 12,
-                        background: 'var(--surface)',
-                        border: conflict ? '1px solid #D46B5B' : '1px solid var(--border)',
-                        borderRadius: 2,
-                      }}
-                    >
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-                        <input type="checkbox" checked={c.checked} onChange={(e) => updateParsed(i, 'checked', e.target.checked)} />
-                        <input
-                          type="number"
-                          value={c.number}
-                          onChange={(e) => updateParsed(i, 'number', e.target.value)}
-                          style={{
-                            width: 60,
-                            padding: 6,
-                            background: 'var(--bg)',
-                            border: conflict ? '1px solid #D46B5B' : '1px solid var(--border)',
-                            borderRadius: 2,
-                          }}
-                        />
-                        <input
-                          type="text"
-                          value={c.title}
-                          onChange={(e) => updateParsed(i, 'title', e.target.value)}
-                          placeholder="Judul"
-                          style={{ flex: 1, padding: 6, background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 2 }}
-                        />
-                      </div>
-                      {conflict && (
-                        <p style={{ color: '#D46B5B', fontSize: '0.75rem', margin: '0 0 6px' }}>
-                          ⚠ nomor {c.number} udah ada di database atau dobel di batch ini
-                        </p>
-                      )}
-                      <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0 }}>
-                        {c.content.slice(0, 120)}{c.content.length > 120 ? '...' : ''}
-                      </p>
-                    </div>
-                  )
-                })}
-              </div>
-              <button className="btn btn--filled" onClick={handleImport} disabled={importing}>
-                <UploadCloud size={16} />
-                {importing ? 'Mengimport...' : `Import ${parsedChapters.filter((c) => c.checked).length} Chapter`}
-              </button>
-            </>
-          )}
-        </div>
-      )}
-
-      {tab === 'manage' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <select value={manageNovel} onChange={(e) => setManageNovel(e.target.value)} style={inputStyle}>
-            <option value="">Pilih novel</option>
-            {novels.map((n) => <option key={n.id} value={n.id}>{n.title}</option>)}
-          </select>
-
-          {manageNovel && manageChapters.length === 0 && (
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Novel ini belum punya chapter.</p>
-          )}
-
-          {manageChapters.length > 0 && (
-            <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <button className="btn" onClick={toggleSelectAll} style={{ fontSize: '0.85rem', padding: '6px 12px' }}>
-                  <ListChecks size={14} />
-                  {selectedIds.length === manageChapters.length ? 'Batal Semua' : 'Pilih Semua'}
-                </button>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{selectedIds.length} dipilih</span>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 400, overflowY: 'auto' }}>
-                {manageChapters.map((c) => (
-                  <label
-                    key={c.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: '10px 12px',
-                      background: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 2,
-                      fontSize: '0.9rem',
-                    }}
-                  >
-                    <input type="checkbox" checked={selectedIds.includes(c.id)} onChange={() => toggleSelect(c.id)} />
-                    <span>Chapter {c.chapter_number}{c.title ? ` — ${c.title}` : ''}</span>
-                  </label>
-                ))}
-              </div>
-
-              <button
-                className="btn"
-                onClick={handleDeleteChapters}
-                disabled={selectedIds.length === 0 || deletingChapters}
-                style={{ borderColor: '#D46B5B', color: '#D46B5B' }}
-              >
-                <Trash2 size={16} />
-                {deletingChapters ? 'Menghapus...' : `Hapus ${selectedIds.length} Chapter`}
-              </button>
-            </>
-          )}
-        </div>
-      )}
-
-      <h2 style={{ fontSize: '1.2rem', marginTop: 40, marginBottom: 16 }}>Novel Terdaftar</h2>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {novels.map((n) => (
-          <div key={n.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 2 }}>
-            <span>{n.title}</span>
-            <button className="btn" onClick={() => handleDeleteNovel(n.id)} style={{ borderColor: '#D46B5B', color: '#D46B5B' }}><Trash2 size={14} />Hapus</button>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
 }
