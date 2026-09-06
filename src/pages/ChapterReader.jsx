@@ -192,7 +192,8 @@ useEffect(() => {
   if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
   if (!chapter) return <div className="container" style={{ paddingTop: 40 }}>Chapter tidak ditemukan.</div>
 
-  const nums = siblings.map((s) => s.chapter_number)
+  const nums = siblings.map((s) => Number(s.chapter_number))
+  const currentIndex = nums.indexOf(Number(number))
   const currentIndex = nums.indexOf(Number(number))
   const prevNum = currentIndex > 0 ? nums[currentIndex - 1] : null
   const nextNum = currentIndex < nums.length - 1 ? nums[currentIndex + 1] : null
