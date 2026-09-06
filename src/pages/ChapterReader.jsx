@@ -71,12 +71,18 @@ export default function ChapterReader() {
     load()
   }, [slug, number, user])
 
-  useEffect(() => {
+useEffect(() => {
     if (chapter?.id && novel?.id) {
-      supabase.rpc('increment_chapter_views', {
-        target_chapter_id: chapter.id,
-        target_novel_id: novel.id,
-      })
+      supabase
+        .rpc('increment_chapter_views', {
+          target_chapter_id: chapter.id,
+          target_novel_id: novel.id,
+        })
+        .then(({ error }) => {
+          if (!error) {
+            setChapter((prev) => (prev ? { ...prev, views: (prev.views ?? 0) + 1 } : prev))
+          }
+        })
     }
   }, [chapter?.id])
 
