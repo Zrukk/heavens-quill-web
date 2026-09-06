@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, MessageCircle, Send, Reply } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { fetchAllChapterRows } from '../lib/fetchAllChapterRows'
 import { useAuth } from '../lib/AuthContext'
 
 export default function ChapterReader() {
