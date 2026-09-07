@@ -123,6 +123,7 @@ export default function NovelDetail() {
           style={{
             color: 'var(--text-muted)',
             margin: '0 0 6px',
+            whiteSpace: 'pre-wrap',
             ...(novel.synopsis && novel.synopsis.length > 220 && !synopsisExpanded
               ? { display: '-webkit-box', WebkitLineClamp: 6, WebkitBoxOrient: 'vertical', overflow: 'hidden' }
               : {}),
