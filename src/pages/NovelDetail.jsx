@@ -131,25 +131,27 @@ export default function NovelDetail() {
         >
           {novel.synopsis}
         </p>
-        {novel.synopsis && novel.synopsis.length > 220 && (
-          <button
-            onClick={() => setSynopsisExpanded(!synopsisExpanded)}
-            style={{ background: 'none', border: 'none', color: 'var(--gold)', fontSize: '0.85rem', padding: 0, marginBottom: 8, cursor: 'pointer' }}
-          >
-            {synopsisExpanded ? 'Sembunyikan' : 'Baca selengkapnya'}
-          </button>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginTop: 8 }}>
+          {novel.synopsis && novel.synopsis.length > 220 && (
+            <button
+              onClick={() => setSynopsisExpanded(!synopsisExpanded)}
+              style={{ background: 'none', border: 'none', color: 'var(--gold)', fontSize: '0.85rem', padding: 0, cursor: 'pointer' }}
+            >
+              {synopsisExpanded ? 'Sembunyikan' : 'Baca selengkapnya'}
+            </button>
+          )}
 
-        {chapters.length > 0 && resumeChapterNumber !== null && (
-          <Link
-            to={`/novel/${slug}/chapter/${resumeChapterNumber}`}
-            className="btn btn--filled"
-            style={{ marginTop: 16 }}
-          >
-            <BookOpen size={16} />
-            {bookmark?.last_chapter_read ? `Lanjut ke Chapter ${resumeChapterNumber}` : 'Mulai Baca'}
-          </Link>
-        )}
+          {chapters.length > 0 && resumeChapterNumber !== null && (
+            <Link
+              to={`/novel/${slug}/chapter/${resumeChapterNumber}`}
+              className="btn btn--filled"
+              style={{ marginLeft: 'auto' }}
+            >
+              <BookOpen size={16} />
+              {bookmark?.last_chapter_read ? `Lanjut ke Chapter ${resumeChapterNumber}` : 'Mulai Baca'}
+            </Link>
+          )}
+        </div>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8, flexWrap: 'wrap' }}>
