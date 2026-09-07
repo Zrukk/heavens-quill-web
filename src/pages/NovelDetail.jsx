@@ -5,6 +5,25 @@ import { supabase } from '../lib/supabase'
 import { fetchAllChapterRows } from '../lib/fetchAllChapterRows'
 import { useAuth } from '../lib/AuthContext'
 
+async function fetchAllReadIds(novelId, userId) {
+  const pageSize = 1000
+  let allRows = []
+  let from = 0
+  while (true) {
+    const { data, error } = await supabase
+      .from('chapter_reads')
+      .select('chapter_id')
+      .eq('novel_id', novelId)
+      .eq('user_id', userId)
+      .range(from, from + pageSize - 1)
+    if (error || !data) break
+    allRows = allRows.concat(data)
+    if (data.length < pageSize) break
+    from += pageSize
+  }
+  return allRows
+}
+
 export default function NovelDetail() {
   const { slug } = useParams()
   const { user } = useAuth()
@@ -15,6 +34,7 @@ export default function NovelDetail() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOrder, setSortOrder] = useState('asc')
   const [synopsisExpanded, setSynopsisExpanded] = useState(false)
+  const [readChapterIds, setReadChapterIds] = useState(new Set())
 
   useEffect(() => {
     async function load() {
@@ -41,6 +61,9 @@ export default function NovelDetail() {
           .eq('user_id', user.id)
           .maybeSingle()
         setBookmark(bookmarkData)
+
+        const readsData = await fetchAllReadIds(novelData.id, user.id)
+        setReadChapterIds(new Set(readsData.map((r) => r.chapter_id)))
       }
 
       setLoading(false)
@@ -182,19 +205,24 @@ export default function NovelDetail() {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {filteredChapters.map((ch) => (
-          <Link
-            key={ch.id}
-            to={`/novel/${slug}/chapter/${ch.chapter_number}`}
-            className="card"
-            style={{
-              padding: '12px 16px',
-              fontSize: '0.95rem',
-            }}
-          >
-            Chapter {ch.chapter_number}{ch.title ? ` — ${ch.title}` : ''}
-          </Link>
-        ))}
+        {filteredChapters.map((ch) => {
+          const isRead = readChapterIds.has(ch.id)
+          return (
+            <Link
+              key={ch.id}
+              to={`/novel/${slug}/chapter/${ch.chapter_number}`}
+              className="card"
+              style={{
+                padding: '12px 16px',
+                fontSize: '0.95rem',
+                color: isRead ? 'var(--accent)' : 'var(--text-muted)',
+                borderColor: isRead ? 'var(--accent)' : 'var(--border)',
+              }}
+            >
+              Chapter {ch.chapter_number}{ch.title ? ` — ${ch.title}` : ''}
+            </Link>
+          )
+        })}
       </div>
     </div>
   )
