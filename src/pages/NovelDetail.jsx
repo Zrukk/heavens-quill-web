@@ -30,7 +30,7 @@ export default function NovelDetail() {
       }
       setNovel(novelData)
 
-    const chapterData = await fetchAllChapterRows(novelData.id, 'id, chapter_number, title')
+      const chapterData = await fetchAllChapterRows(novelData.id, 'id, chapter_number, title')
       setChapters(chapterData ?? [])
 
       if (user) {
@@ -75,7 +75,7 @@ export default function NovelDetail() {
 
   return (
     <div className="container" style={{ paddingTop: 40, paddingBottom: 60 }}>
-      <div style={{ display: 'flex', gap: 24, marginBottom: 32 }}>
+      <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
         <div
           style={{
             width: 140,
@@ -95,7 +95,6 @@ export default function NovelDetail() {
               gap: 6,
               color: isOngoing ? 'var(--gold)' : 'var(--text-muted)',
               fontSize: '0.9rem',
-              marginBottom: 14,
               flexWrap: 'wrap',
             }}
           >
@@ -116,38 +115,40 @@ export default function NovelDetail() {
               {(novel.total_views ?? 0).toLocaleString('id-ID')} views
             </span>
           </div>
-          <p
-            style={{
-              color: 'var(--text-muted)',
-              maxWidth: 600,
-              margin: '0 0 6px',
-              ...(novel.synopsis && novel.synopsis.length > 220 && !synopsisExpanded
-                ? { display: '-webkit-box', WebkitLineClamp: 6, WebkitBoxOrient: 'vertical', overflow: 'hidden' }
-                : {}),
-            }}
-          >
-            {novel.synopsis}
-          </p>
-          {novel.synopsis && novel.synopsis.length > 220 && (
-            <button
-              onClick={() => setSynopsisExpanded(!synopsisExpanded)}
-              style={{ background: 'none', border: 'none', color: 'var(--gold)', fontSize: '0.85rem', padding: 0, marginBottom: 8, cursor: 'pointer' }}
-            >
-              {synopsisExpanded ? 'Sembunyikan' : 'Baca selengkapnya'}
-            </button>
-          )}
-
-          {chapters.length > 0 && resumeChapterNumber !== null && (
-            <Link
-              to={`/novel/${slug}/chapter/${resumeChapterNumber}`}
-              className="btn btn--filled"
-              style={{ marginTop: 16 }}
-            >
-              <BookOpen size={16} />
-              {bookmark?.last_chapter_read ? `Lanjut ke Chapter ${resumeChapterNumber}` : 'Mulai Baca'}
-            </Link>
-          )}
         </div>
+      </div>
+
+      <div style={{ marginBottom: 32 }}>
+        <p
+          style={{
+            color: 'var(--text-muted)',
+            margin: '0 0 6px',
+            ...(novel.synopsis && novel.synopsis.length > 220 && !synopsisExpanded
+              ? { display: '-webkit-box', WebkitLineClamp: 6, WebkitBoxOrient: 'vertical', overflow: 'hidden' }
+              : {}),
+          }}
+        >
+          {novel.synopsis}
+        </p>
+        {novel.synopsis && novel.synopsis.length > 220 && (
+          <button
+            onClick={() => setSynopsisExpanded(!synopsisExpanded)}
+            style={{ background: 'none', border: 'none', color: 'var(--gold)', fontSize: '0.85rem', padding: 0, marginBottom: 8, cursor: 'pointer' }}
+          >
+            {synopsisExpanded ? 'Sembunyikan' : 'Baca selengkapnya'}
+          </button>
+        )}
+
+        {chapters.length > 0 && resumeChapterNumber !== null && (
+          <Link
+            to={`/novel/${slug}/chapter/${resumeChapterNumber}`}
+            className="btn btn--filled"
+            style={{ marginTop: 16 }}
+          >
+            <BookOpen size={16} />
+            {bookmark?.last_chapter_read ? `Lanjut ke Chapter ${resumeChapterNumber}` : 'Mulai Baca'}
+          </Link>
+        )}
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8, flexWrap: 'wrap' }}>
@@ -194,4 +195,4 @@ export default function NovelDetail() {
       </div>
     </div>
   )
-                }
+}
