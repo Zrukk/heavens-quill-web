@@ -261,7 +261,7 @@ useEffect(() => {
         dangerouslySetInnerHTML={{ __html: chapter.content }}
       />
 
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>
+<div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>
         <button
           onClick={handleToggleLike}
           className={liked ? 'btn btn--gold' : 'btn'}
@@ -270,6 +270,21 @@ useEffect(() => {
           <Heart size={16} fill={liked ? 'currentColor' : 'none'} />
           {liked ? 'Disukai' : 'Suka'} · {likeCount.toLocaleString('id-ID')}
         </button>
+      </div>
+
+      <div className="card" style={{ padding: 16, marginTop: 24, textAlign: 'center' }}>
+        <p style={{ margin: '0 0 10px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+          Suka sama terjemahannya? Dukung Heaven's Quill biar bisa terus lanjut nerjemahin.
+        </p>
+        <a
+          href="https://sociabuzz.com/heavensquill/tribe"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn--gold"
+        >
+          <Coffee size={16} />
+          Traktir Penerjemah
+        </a>
       </div>
 
       <div style={{ marginTop: 48, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
