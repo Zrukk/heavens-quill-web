@@ -14,6 +14,7 @@ export default function NovelDetail() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOrder, setSortOrder] = useState('asc')
+  const [synopsisExpanded, setSynopsisExpanded] = useState(false)
 
   useEffect(() => {
     async function load() {
