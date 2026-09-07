@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Feather, ShieldCheck, UserCircle2, LogOut, LogIn } from 'lucide-react'
+import { Feather, ShieldCheck, UserCircle2, LogOut, LogIn, Coffee } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 
 export default function Navbar() {
@@ -25,42 +25,54 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {user ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            {isAdmin && (
-              <Link to="/admin" className="btn btn--outline-gold">
-                <ShieldCheck size={16} />
-                Admin
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <a
+            href="https://sociabuzz.com/heavensquill/tribe"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn--gold"
+          >
+            <Coffee size={16} />
+            Dukung
+          </a>
+
+          {user ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              {isAdmin && (
+                <Link to="/admin" className="btn btn--outline-gold">
+                  <ShieldCheck size={16} />
+                  Admin
+                </Link>
+              )}
+              <Link to="/profil" className="btn">
+                <UserCircle2 size={16} />
+                Profil
               </Link>
-            )}
-            <Link to="/profil" className="btn">
-              <UserCircle2 size={16} />
-              Profil
+              <span
+                style={{
+                  color: 'var(--text-muted)',
+                  fontSize: '0.85rem',
+                  maxWidth: 140,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {displayName || user.email}
+              </span>
+              <button className="btn" onClick={signOut}>
+                <LogOut size={16} />
+                Keluar
+              </button>
+            </div>
+          ) : (
+            <Link to="/login" className="btn btn--filled">
+              <LogIn size={16} />
+              Masuk
             </Link>
-            <span
-              style={{
-                color: 'var(--text-muted)',
-                fontSize: '0.85rem',
-                maxWidth: 140,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {displayName || user.email}
-            </span>
-            <button className="btn" onClick={signOut}>
-              <LogOut size={16} />
-              Keluar
-            </button>
-          </div>
-        ) : (
-          <Link to="/login" className="btn btn--filled">
-            <LogIn size={16} />
-            Masuk
-          </Link>
-        )}
+          )}
+        </div>
       </div>
     </header>
   )
-            }
+}
