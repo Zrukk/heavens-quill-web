@@ -117,14 +117,14 @@ export default function NovelDetail() {
           </div>
           <p style={{ color: 'var(--text-muted)', maxWidth: 600 }}>{novel.synopsis}</p>
 
-          {chapters.length > 0 && (
+          {chapters.length > 0 && resumeChapterNumber !== null && (
             <Link
-              to={`/novel/${slug}/chapter/${Math.min(nextChapter, chapters[chapters.length - 1].chapter_number)}`}
+              to={`/novel/${slug}/chapter/${resumeChapterNumber}`}
               className="btn btn--filled"
               style={{ marginTop: 16 }}
             >
               <BookOpen size={16} />
-              {bookmark?.last_chapter_read ? `Lanjut ke Chapter ${nextChapter}` : 'Mulai Baca'}
+              {bookmark?.last_chapter_read ? `Lanjut ke Chapter ${resumeChapterNumber}` : 'Mulai Baca'}
             </Link>
           )}
         </div>
