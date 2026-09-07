@@ -61,8 +61,15 @@ export default function ChapterReader() {
           },
           { onConflict: 'user_id,novel_id' },
         )
+        await supabase.from('chapter_reads').upsert(
+          {
+            chapter_id: chapterData.id,
+            novel_id: novelData.id,
+            user_id: user.id,
+          },
+          { onConflict: 'chapter_id,user_id' },
+        )
       }
-
       setLoading(false)
     }
     load()
