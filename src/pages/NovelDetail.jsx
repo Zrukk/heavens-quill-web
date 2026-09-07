@@ -116,7 +116,26 @@ export default function NovelDetail() {
               {(novel.total_views ?? 0).toLocaleString('id-ID')} views
             </span>
           </div>
-          <p style={{ color: 'var(--text-muted)', maxWidth: 600 }}>{novel.synopsis}</p>
+          <p
+            style={{
+              color: 'var(--text-muted)',
+              maxWidth: 600,
+              margin: '0 0 6px',
+              ...(novel.synopsis && novel.synopsis.length > 220 && !synopsisExpanded
+                ? { display: '-webkit-box', WebkitLineClamp: 6, WebkitBoxOrient: 'vertical', overflow: 'hidden' }
+                : {}),
+            }}
+          >
+            {novel.synopsis}
+          </p>
+          {novel.synopsis && novel.synopsis.length > 220 && (
+            <button
+              onClick={() => setSynopsisExpanded(!synopsisExpanded)}
+              style={{ background: 'none', border: 'none', color: 'var(--gold)', fontSize: '0.85rem', padding: 0, marginBottom: 8, cursor: 'pointer' }}
+            >
+              {synopsisExpanded ? 'Sembunyikan' : 'Baca selengkapnya'}
+            </button>
+          )}
 
           {chapters.length > 0 && resumeChapterNumber !== null && (
             <Link
