@@ -258,3 +258,263 @@ export default function Admin() {
         chapter_number: Number(editNumber),
         title: editTitle || null,
         content: editContent,
+})
+      .eq('id', chapterId)
+    setSavingEdit(false)
+
+    if (error) {
+      setMessage('Gagal simpan perubahan: ' + error.message)
+    } else {
+      setMessage('Chapter berhasil diupdate.')
+      setEditingChapterId(null)
+      loadManageChapters(manageNovel)
+    }
+  }
+
+  async function handleDeleteChapters() {
+    if (selectedIds.length === 0) return
+    if (!confirm(`Hapus ${selectedIds.length} chapter terpilih? Ini gak bisa dibatalin.`)) return
+
+    setDeletingChapters(true)
+    const { error } = await supabase.from('chapters').delete().in('id', selectedIds)
+    setDeletingChapters(false)
+
+    if (error) {
+      setMessage('Gagal hapus: ' + error.message)
+    } else {
+      setMessage(`${selectedIds.length} chapter berhasil dihapus.`)
+      loadManageChapters(manageNovel)
+    }
+  }
+
+  async function handleAddNovel(e) {
+    e.preventDefault()
+    setMessage(null)
+
+    if (coverFile && coverFile.size > 5 * 1024 * 1024) {
+      setMessage('Ukuran gambar maksimal 5MB.')
+      return
+    }
+
+    let coverUrl = null
+    if (coverFile) {
+      const fileExt = coverFile.name.split('.').pop()
+      const fileName = `${slug || 'cover'}-${Date.now()}.${fileExt}`
+      const { error: uploadError } = await supabase.storage.from('covers').upload(fileName, coverFile)
+      if (uploadError) {
+        setMessage('Gagal upload gambar: ' + uploadError.message)
+        return
+      }
+      const { data: urlData } = supabase.storage.from('covers').getPublicUrl(fileName)
+      coverUrl = urlData.publicUrl
+    }
+
+    const { error } = await supabase.from('novels').insert({
+      title, slug, synopsis, cover_url: coverUrl, original_language: language, status,
+    })
+    if (error) setMessage(error.message)
+    else {
+      setMessage('Novel ditambahkan.')
+      setTitle(''); setSlug(''); setSynopsis(''); setCoverFile(null); setLanguage('')
+      loadNovels()
+    }
+  }
+
+  async function handleAddChapter(e) {
+    e.preventDefault()
+    setMessage(null)
+    const htmlContent = content
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => `<p>${escapeHtml(line)}</p>`)
+      .join('\n')
+    const { error } = await supabase.from('chapters').insert({
+      novel_id: selectedNovel,
+      chapter_number: Number(chapterNumber),
+      title: chapterTitle || null,
+      content: htmlContent,
+    })
+    if (error) setMessage(error.message)
+    else {
+      setMessage('Chapter ditambahkan.')
+      setChapterNumber(''); setChapterTitle(''); setContent('')
+    }
+  }
+
+  async function handleDeleteNovel(id) {
+    if (!confirm('Hapus novel ini beserta semua chapternya?')) return
+    await supabase.from('novels').delete().eq('id', id)
+    loadNovels()
+  }
+
+  function handleEpubFileSelect(e) {
+    const file = e.target.files[0]
+    setEpubFile(file)
+    setEpubTotal(null)
+    setMessage(file ? `File dipilih: ${file.name}. Atur range chapter di bawah, lalu klik "Proses Range Ini".` : null)
+  }
+
+  async function handleProcessEpubRange() {
+    if (!epubFile) {
+      setMessage('Pilih file epub dulu.')
+      return
+    }
+    setMessage('Membaca epub...')
+    try {
+      const range = {}
+      if (epubRangeStart) range.start = Number(epubRangeStart)
+      if (epubRangeEnd) range.end = Number(epubRangeEnd)
+      const { chapters, imageErrors, totalInEpub } = await parseEpub(epubFile, range)
+      setEpubTotal(totalInEpub)
+      applyParsed(chapters)
+      let msg = `${chapters.length} chapter diproses (total item di epub ini: ${totalInEpub}). Cek & sesuaikan nomor di bawah sebelum import.`
+      if (imageErrors.length > 0) {
+        const uniqueErrors = [...new Set(imageErrors)].slice(0, 3)
+        msg += ` ⚠️ ${imageErrors.length} gambar gagal diupload — ${uniqueErrors.join(' | ')}`
+      }
+      setMessage(msg)
+    } catch (err) {
+      setMessage('Gagal baca epub: ' + err.message)
+    }
+  }
+
+  function handleParseBulk() {
+    const chapters = parseBulkText(bulkText)
+    applyParsed(chapters)
+    setMessage(`${chapters.length} chapter terdeteksi. Cek & sesuaikan nomor di bawah sebelum import.`)
+  }
+
+  function extractChapterInfo(rawTitle, fallbackNumber) {
+    const match = (rawTitle || '').match(/^(chapter|bab)\s*(\d+(?:\.\d+)?)\s*[:\-–—.]?\s*(.*)$/i)
+    if (match) {
+      return { number: Number(match[2]), title: match[3].trim() }
+    }
+    return { number: fallbackNumber, title: (rawTitle || '').trim() }
+  }
+
+  function applyParsed(chapters) {
+    setParsedChapters(
+      chapters.map((c, i) => {
+        const { number, title } = extractChapterInfo(c.title, i + 1)
+        return {
+          checked: true,
+          number,
+          title,
+          content: c.content,
+        }
+      }),
+    )
+  }
+
+  function updateParsed(index, field, value) {
+    setParsedChapters((prev) => prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)))
+  }
+
+  async function handleImport() {
+    if (!importNovel) {
+      setMessage('Pilih novel tujuan dulu.')
+      return
+    }
+    const toImport = parsedChapters.filter((c) => c.checked)
+    if (toImport.length === 0) return
+
+    setImporting(true)
+
+    const rows = toImport.map((c) => ({
+      novel_id: importNovel,
+      chapter_number: Number(c.number),
+      title: c.title || null,
+      content: c.content,
+    }))
+
+    const { data, error } = await supabase.from('chapters').insert(rows).select()
+
+    setImporting(false)
+
+    if (error) {
+      setMessage(`Import gagal: ${error.message}`)
+    } else {
+      setMessage(`${data.length} chapter berhasil diimport.`)
+      setParsedChapters([])
+    }
+  }
+
+  if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
+  if (!user) return <div className="container" style={{ paddingTop: 40 }}>Silakan masuk dulu.</div>
+  if (!isAdmin) return <div className="container" style={{ paddingTop: 40 }}>Akun ini bukan admin.</div>
+
+  const inputStyle = {
+    padding: 10,
+    background: 'var(--surface)',
+    border: '1px solid var(--border)',
+    borderRadius: 2,
+    fontFamily: 'inherit',
+    width: '100%',
+  }
+
+  return (
+    <div className="container" style={{ paddingTop: 40, paddingBottom: 60, maxWidth: 600 }}>
+      <h1 style={{ fontSize: '1.8rem', marginBottom: 24 }}>Admin</h1>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+        <button className={tab === 'novel' ? 'btn btn--filled' : 'btn'} onClick={() => setTab('novel')}><BookPlus size={16} />Tambah Novel</button>
+        <button className={tab === 'chapter' ? 'btn btn--filled' : 'btn'} onClick={() => setTab('chapter')}><FilePlus2 size={16} />Tambah Chapter</button>
+        <button className={tab === 'import' ? 'btn btn--filled' : 'btn'} onClick={() => setTab('import')}><UploadCloud size={16} />Import Massal</button>
+        <button className={tab === 'manage' ? 'btn btn--filled' : 'btn'} onClick={() => setTab('manage')}><ListChecks size={16} />Kelola Chapter</button>
+      </div>
+
+      {message && <p style={{ color: 'var(--accent)', marginBottom: 16, fontSize: '0.9rem' }}>{message}</p>}
+
+      {tab === 'novel' && (
+        <form onSubmit={handleAddNovel} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <input type="text" placeholder="Judul novel" value={title} onChange={(e) => setTitle(e.target.value)} required />
+          <input type="text" placeholder="Slug (contoh: sword-of-coming)" value={slug} onChange={(e) => setSlug(e.target.value)} required />
+          <textarea placeholder="Sinopsis" value={synopsis} onChange={(e) => setSynopsis(e.target.value)} rows={4} style={inputStyle} />
+          <div>
+            <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 6 }}>
+              Cover (opsional, maks 5MB)
+            </label>
+            <input type="file" accept="image/*" onChange={(e) => setCoverFile(e.target.files[0])} />
+          </div>
+          <input type="text" placeholder="Bahasa asli (contoh: Chinese)" value={language} onChange={(e) => setLanguage(e.target.value)} />
+          <div>
+            <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 6 }}>
+              Status
+            </label>
+            <select value={status} onChange={(e) => setStatus(e.target.value)} style={inputStyle}>
+              <option value="ongoing">Berjalan</option>
+              <option value="completed">Tamat</option>
+            </select>
+          </div>
+          <button type="submit" className="btn btn--filled"><Save size={16} />Simpan Novel</button>
+        </form>
+      )}
+
+      {tab === 'chapter' && (
+        <form onSubmit={handleAddChapter} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <select value={selectedNovel} onChange={(e) => setSelectedNovel(e.target.value)} required style={inputStyle}>
+            <option value="">Pilih novel</option>
+            {novels.map((n) => <option key={n.id} value={n.id}>{n.title}</option>)}
+          </select>
+          <input type="number" step="any" placeholder="Nomor chapter" value={chapterNumber} onChange={(e) => setChapterNumber(e.target.value)} required />
+          <input type="text" placeholder="Judul chapter (opsional)" value={chapterTitle} onChange={(e) => setChapterTitle(e.target.value)} />
+          <textarea placeholder="Isi chapter" value={content} onChange={(e) => setContent(e.target.value)} rows={12} required style={inputStyle} />
+          <button type="submit" className="btn btn--filled"><Save size={16} />Simpan Chapter</button>
+        </form>
+      )}
+
+      {tab === 'import' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <select value={importNovel} onChange={(e) => setImportNovel(e.target.value)} style={inputStyle}>
+            <option value="">Pilih novel tujuan</option>
+            {novels.map((n) => <option key={n.id} value={n.id}>{n.title}</option>)}
+          </select>
+
+          <div>
+            <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 6 }}>
+              Sumber chapter
+            </label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className={importSource === 'epub' ? 'btn btn--filled' : 'btn'} onClick={() => setImportSource('epub')}>Upload EPUB</button>
+              <button className={importSource === 'bulk' ? 'btn btn--filled' : 'btn'} onClick={() => setImportSource('bulk')}>Tempel Teks</button>
