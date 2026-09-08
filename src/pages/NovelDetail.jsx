@@ -110,7 +110,12 @@ export default function NovelDetail() {
           }}
         />
         <div>
-          <h1 style={{ fontSize: '2rem', marginBottom: 10 }}>{novel.title}</h1>
+          <h1 style={{ fontSize: '2rem', marginBottom: 4 }}>{novel.title}</h1>
+          {novel.author && (
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 10px' }}>
+              oleh {novel.author}
+            </p>
+          )}
           <div
             style={{
               display: 'flex',
