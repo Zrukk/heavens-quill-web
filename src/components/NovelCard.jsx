@@ -24,7 +24,12 @@ export default function NovelCard({ novel }) {
         }}
       />
       <div style={{ minWidth: 0 }}>
-        <h3 style={{ fontSize: '1.25rem', marginBottom: 6 }}>{novel.title}</h3>
+        <h3 style={{ fontSize: '1.25rem', marginBottom: 4 }}>{novel.title}</h3>
+        {novel.author && (
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: '0 0 6px' }}>
+            oleh {novel.author}
+          </p>
+        )}
         <div
           style={{
             display: 'flex',
