@@ -5,9 +5,37 @@ import { supabase } from '../lib/supabase'
 import { fetchAllChapterRows } from '../lib/fetchAllChapterRows'
 import { useAuth } from '../lib/AuthContext'
 
+async function notifyDiscord({ authorName, novelTitle, chapterNumber, chapterTitle, content, url, isReply }) {
+  const webhookUrl = import.meta.env.VITE_DISCORD_WEBHOOK_URL
+  if (!webhookUrl) return
+  try {
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        embeds: [
+          {
+            title: isReply ? 'Balasan baru' : 'Komentar baru',
+            description: content.length > 300 ? content.slice(0, 300) + '...' : content,
+            url,
+            color: 0xd4af5b,
+            author: { name: authorName },
+            fields: [
+              { name: 'Novel', value: novelTitle, inline: true },
+              { name: 'Chapter', value: `${chapterNumber}${chapterTitle ? ` — ${chapterTitle}` : ''}`, inline: true },
+            ],
+          },
+        ],
+      }),
+    })
+  } catch {
+    // notifikasi gagal gak boleh bikin komentar user gagal kesimpen
+  }
+}
+
 export default function ChapterReader() {
   const { slug, number } = useParams()
-  const { user, isAdmin } = useAuth()
+  const { user, isAdmin, displayName } = useAuth()
   const navigate = useNavigate()
   const [novel, setNovel] = useState(null)
   const [chapter, setChapter] = useState(null)
@@ -139,7 +167,6 @@ export default function ChapterReader() {
       return
     }
     if (!newComment.trim()) return
-
     setPostingComment(true)
     const { error } = await supabase.from('chapter_comments').insert({
       chapter_id: chapter.id,
@@ -151,9 +178,19 @@ export default function ChapterReader() {
     if (!error) {
       setNewComment('')
       loadComments()
+      notifyDiscord({
+        authorName: displayName || user.email,
+        novelTitle: novel.title,
+        chapterNumber: chapter.chapter_number,
+        chapterTitle: chapter.title,
+        content: newComment.trim(),
+        url: `${window.location.origin}/novel/${slug}/chapter/${number}`,
+        isReply: false,
+      })
     }
-        }
-async function handlePostReply(parentId) {
+  }
+
+  async function handlePostReply(parentId) {
     if (!user) {
       navigate('/login')
       return
@@ -173,6 +210,15 @@ async function handlePostReply(parentId) {
       setReplyText('')
       setReplyingTo(null)
       loadComments()
+      notifyDiscord({
+        authorName: displayName || user.email,
+        novelTitle: novel.title,
+        chapterNumber: chapter.chapter_number,
+        chapterTitle: chapter.title,
+        content: replyText.trim(),
+        url: `${window.location.origin}/novel/${slug}/chapter/${number}`,
+        isReply: true,
+      })
     }
   }
 
@@ -291,7 +337,7 @@ async function handlePostReply(parentId) {
           target="_blank"
           rel="noopener noreferrer"
           className="btn btn--gold"
-        >
+          >
           <Coffee size={16} />
           Traktir Penerjemah
         </a>
@@ -461,4 +507,4 @@ async function handlePostReply(parentId) {
       )}
     </div>
   )
-                      }
+        }
