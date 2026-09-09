@@ -507,4 +507,4 @@ export default function ChapterReader() {
       )}
     </div>
   )
-        }
+      }
