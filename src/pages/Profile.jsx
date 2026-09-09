@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { UserCircle2, KeyRound, BookMarked, Save } from 'lucide-react'
+import { UserCircle2, KeyRound, BookMarked, Save, Camera } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import { supabase } from '../lib/supabase'
 
 export default function Profile() {
-  const { user, displayName, loading, refreshProfile } = useAuth()
+  const { user, displayName, avatarUrl, loading, refreshProfile } = useAuth()
   const [nameInput, setNameInput] = useState('')
   const [nameMessage, setNameMessage] = useState(null)
   const [savingName, setSavingName] = useState(false)
+
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [avatarMessage, setAvatarMessage] = useState(null)
 
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -38,6 +41,45 @@ export default function Profile() {
       .eq('user_id', user.id)
     setBookmarks(data ?? [])
     setLoadingBookmarks(false)
+  }
+
+  async function handleAvatarChange(e) {
+    const file = e.target.files[0]
+    if (!file) return
+
+    if (file.size > 3 * 1024 * 1024) {
+      setAvatarMessage('Ukuran gambar maksimal 3MB.')
+      return
+    }
+
+    setUploadingAvatar(true)
+    setAvatarMessage(null)
+
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${user.id}/avatar-${Date.now()}.${fileExt}`
+
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, file)
+    if (uploadError) {
+      setAvatarMessage('Gagal upload: ' + uploadError.message)
+      setUploadingAvatar(false)
+      return
+    }
+
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName)
+
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ avatar_url: urlData.publicUrl })
+      .eq('id', user.id)
+
+    setUploadingAvatar(false)
+
+    if (updateError) {
+      setAvatarMessage('Gagal simpan: ' + updateError.message)
+    } else {
+      setAvatarMessage('Foto profil diperbarui.')
+      refreshProfile()
+    }
   }
 
   async function handleSaveName(e) {
@@ -97,7 +139,39 @@ export default function Profile() {
         <UserCircle2 size={26} color="var(--gold)" strokeWidth={1.75} />
         <h1 className="gradient-text" style={{ fontSize: '1.8rem' }}>Profil</h1>
       </div>
-      <p style={{ color: 'var(--text-muted)', marginBottom: 32, fontSize: '0.9rem' }}>{user.email}</p>
+      <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: '0.9rem' }}>{user.email}</p>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
+        <div
+          style={{
+            width: 72,
+            height: 72,
+            borderRadius: '50%',
+            background: avatarUrl ? `url(${avatarUrl}) center/cover` : 'var(--surface)',
+            border: '2px solid var(--gold)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          {!avatarUrl && <UserCircle2 size={40} color="var(--text-muted)" />}
+        </div>
+        <div>
+          <label className="btn btn--gold" style={{ cursor: 'pointer' }}>
+            <Camera size={16} />
+            {uploadingAvatar ? 'Mengupload...' : 'Ganti Foto'}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              disabled={uploadingAvatar}
+              style={{ display: 'none' }}
+            />
+          </label>
+          {avatarMessage && <p style={{ color: 'var(--accent)', fontSize: '0.8rem', margin: '6px 0 0' }}>{avatarMessage}</p>}
+        </div>
+      </div>
 
       {sectionHeading(UserCircle2, 'Nama Tampilan')}
       <form onSubmit={handleSaveName} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
@@ -174,4 +248,4 @@ export default function Profile() {
       </div>
     </div>
   )
-    }
+                                  }
