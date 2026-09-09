@@ -3,7 +3,7 @@ import { Feather, ShieldCheck, UserCircle2, LogOut, LogIn, Coffee } from 'lucide
 import { useAuth } from '../lib/AuthContext'
 
 export default function Navbar() {
-  const { user, isAdmin, signOut, displayName } = useAuth()
+  const { user, isAdmin, signOut, displayName, avatarUrl } = useAuth()
 
   return (
     <header style={{ borderBottom: '1px solid var(--border)' }}>
@@ -45,7 +45,15 @@ export default function Navbar() {
                 </Link>
               )}
               <Link to="/profil" className="btn">
-                <UserCircle2 size={16} />
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt=""
+                    style={{ width: 18, height: 18, borderRadius: '50%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <UserCircle2 size={16} />
+                )}
                 Profil
               </Link>
               <span
