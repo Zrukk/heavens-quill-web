@@ -7,21 +7,24 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [displayName, setDisplayName] = useState(null)
+  const [avatarUrl, setAvatarUrl] = useState(null)
   const [loading, setLoading] = useState(true)
 
   async function loadProfile(u) {
     if (!u) {
       setIsAdmin(false)
       setDisplayName(null)
+      setAvatarUrl(null)
       return
     }
     const { data } = await supabase
       .from('profiles')
-      .select('is_admin, display_name')
+      .select('is_admin, display_name, avatar_url')
       .eq('id', u.id)
       .maybeSingle()
     setIsAdmin(data?.is_admin ?? false)
     setDisplayName(data?.display_name ?? null)
+    setAvatarUrl(data?.avatar_url ?? null)
   }
 
   useEffect(() => {
@@ -43,7 +46,7 @@ export function AuthProvider({ children }) {
   const refreshProfile = () => loadProfile(user)
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, displayName, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, isAdmin, displayName, avatarUrl, loading, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   )
