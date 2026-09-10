@@ -3,6 +3,7 @@ import { PlayCircle, CheckCircle2, Languages, Eye } from 'lucide-react'
 
 export default function NovelCard({ novel }) {
   const isOngoing = novel.status === 'ongoing'
+  const genres = novel.genre ? novel.genre.split(',').map((g) => g.trim()).filter(Boolean) : []
 
   return (
     <Link
@@ -54,6 +55,24 @@ export default function NovelCard({ novel }) {
             {(novel.total_views ?? 0).toLocaleString('id-ID')}
           </span>
         </div>
+        {genres.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+            {genres.map((g) => (
+              <span
+                key={g}
+                style={{
+                  fontSize: '0.7rem',
+                  color: 'var(--text-muted)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 20,
+                  padding: '2px 8px',
+                }}
+              >
+                {g}
+              </span>
+            ))}
+          </div>
+        )}
         <p
           style={{
             color: 'var(--text-muted)',
