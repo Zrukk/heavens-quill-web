@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, UserCircle2 } from 'lucide-react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { X, UserCircle2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 export default function PublicProfile() {
   const { userId } = useParams()
+  const navigate = useNavigate()
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -21,36 +22,50 @@ export default function PublicProfile() {
     load()
   }, [userId])
 
-  if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
-  if (!profile) return <div className="container" style={{ paddingTop: 40 }}>Pengguna tidak ditemukan.</div>
-
   return (
-    <div className="container" style={{ paddingTop: 40, paddingBottom: 60, maxWidth: 500 }}>
-      <Link
-        to="/"
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 24 }}
+    <div className="container" style={{ paddingTop: 24, paddingBottom: 60, maxWidth: 500 }}>
+      <button
+        onClick={() => navigate(-1)}
+        style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: '50%',
+          width: 36,
+          height: 36,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          color: 'var(--text)',
+          marginBottom: 24,
+        }}
       >
-        <ArrowLeft size={15} />
-        Kembali
-      </Link>
+        <X size={18} />
+      </button>
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
-        <div
-          style={{
-            width: 96,
-            height: 96,
-            borderRadius: '50%',
-            background: profile.avatar_url ? `url(${profile.avatar_url}) center/cover` : 'var(--surface)',
-            border: '2px solid var(--gold)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          {!profile.avatar_url && <UserCircle2 size={52} color="var(--text-muted)" />}
+      {loading && <p style={{ color: 'var(--text-muted)' }}>Memuat...</p>}
+      {!loading && !profile && (
+        <p style={{ color: 'var(--text-muted)' }}>Pengguna tidak ditemukan.</p>
+      )}
+      {!loading && profile && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
+          <div
+            style={{
+              width: 96,
+              height: 96,
+              borderRadius: '50%',
+              background: profile.avatar_url ? `url(${profile.avatar_url}) center/cover` : 'var(--bg)',
+              border: '2px solid var(--gold)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {!profile.avatar_url && <UserCircle2 size={52} color="var(--text-muted)" />}
+          </div>
+          <h1 style={{ fontSize: '1.6rem' }}>{profile.display_name || 'Pembaca'}</h1>
         </div>
-        <h1 style={{ fontSize: '1.6rem' }}>{profile.display_name || 'Pembaca'}</h1>
-      </div>
+      )}
     </div>
   )
-  }
+}
