@@ -153,7 +153,7 @@ export default function ChapterReader() {
     setLoadingComments(true)
     const { data } = await supabase
       .from('chapter_comments')
-      .select('id, content, created_at, user_id, parent_id, profiles(display_name)')
+.select('id, content, created_at, user_id, parent_id, profiles(display_name, avatar_url)')
       .eq('chapter_id', chapter.id)
       .order('created_at', { ascending: false })
     setComments(data ?? [])
