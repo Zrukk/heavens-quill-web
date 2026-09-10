@@ -262,7 +262,18 @@ export default function ChapterReader() {
     return (
       <div key={c.id} className="card" style={{ padding: 12, marginLeft: isReply ? 24 : 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 }}>
-          <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{c.profiles?.display_name || 'Pembaca'}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                flexShrink: 0,
+                background: c.profiles?.avatar_url ? `url(${c.profiles.avatar_url}) center/cover` : 'var(--border)',
+              }}
+            />
+            <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{c.profiles?.display_name || 'Pembaca'}</span>
+          </div>
           <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
             {new Date(c.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
           </span>
