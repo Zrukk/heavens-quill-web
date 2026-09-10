@@ -6,6 +6,7 @@ import ChapterReader from './pages/ChapterReader'
 import Login from './pages/Login'
 import Admin from './pages/Admin'
 import Profile from './pages/Profile'
+import PublicProfile from './pages/PublicProfile'
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/profil" element={<Profile />} />
+        <Route path="/pembaca/:userId" element={<PublicProfile />} />
       </Routes>
     </div>
   )
