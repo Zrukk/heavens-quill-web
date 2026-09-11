@@ -77,6 +77,11 @@ export default function NovelDetail() {
 
   const isOngoing = novel.status === 'ongoing'
 
+  useDocumentMeta(
+    `${novel.title} - Heaven's Quill`,
+    novel.synopsis ? novel.synopsis.slice(0, 160) : `Baca ${novel.title} terjemahan Indonesia di Heaven's Quill.`,
+  )
+
   const chapterNumbers = chapters.map((c) => Number(c.chapter_number))
   let resumeChapterNumber = chapterNumbers[0] ?? null
   if (bookmark?.last_chapter_read != null) {
