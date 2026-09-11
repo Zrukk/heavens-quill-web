@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Library, Search } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { useDocumentMeta } from '../lib/useDocumentMeta'
 import NovelCard from '../components/NovelCard'
 
 export default function NovelList() {
@@ -11,6 +12,11 @@ export default function NovelList() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [languageFilter, setLanguageFilter] = useState('all')
   const [genreFilter, setGenreFilter] = useState('all')
+
+  useDocumentMeta(
+    'Heaven\'s Quill — Daftar Novel',
+    'Terjemahan novel Tionghoa, Jepang, dan Korea ke Bahasa Indonesia. Baca gratis di Heaven\'s Quill.',
+  )
 
   useEffect(() => {
     async function loadNovels() {
