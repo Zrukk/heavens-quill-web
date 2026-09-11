@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { BookOpen, PlayCircle, CheckCircle2, Languages, Search, ArrowUpDown, ListOrdered, Eye } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { fetchAllChapterRows } from '../lib/fetchAllChapterRows'
+import { useDocumentMeta } from '../lib/useDocumentMeta'
 import { useAuth } from '../lib/AuthContext'
 
 async function fetchAllReadIds(novelId, userId) {
