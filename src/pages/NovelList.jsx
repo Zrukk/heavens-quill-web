@@ -10,6 +10,7 @@ export default function NovelList() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [languageFilter, setLanguageFilter] = useState('all')
+  const [genreFilter, setGenreFilter] = useState('all')
 
   useEffect(() => {
     async function loadNovels() {
@@ -27,9 +28,19 @@ export default function NovelList() {
 
   const languages = [...new Set(novels.map((n) => n.original_language).filter(Boolean))]
 
+  const genres = [
+    ...new Set(
+      novels.flatMap((n) => (n.genre ? n.genre.split(',').map((g) => g.trim()).filter(Boolean) : [])),
+    ),
+  ].sort()
+
   const filteredNovels = novels.filter((n) => {
     if (statusFilter !== 'all' && n.status !== statusFilter) return false
     if (languageFilter !== 'all' && n.original_language !== languageFilter) return false
+    if (genreFilter !== 'all') {
+      const novelGenres = n.genre ? n.genre.split(',').map((g) => g.trim()) : []
+      if (!novelGenres.includes(genreFilter)) return false
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase()
       const matchesTitle = n.title?.toLowerCase().includes(q)
@@ -46,6 +57,7 @@ export default function NovelList() {
     borderRadius: 'var(--radius)',
     fontFamily: 'inherit',
     flex: 1,
+    minWidth: 130,
   }
 
   return (
@@ -81,6 +93,12 @@ export default function NovelList() {
             <option key={lang} value={lang}>{lang}</option>
           ))}
         </select>
+        <select value={genreFilter} onChange={(e) => setGenreFilter(e.target.value)} style={selectStyle}>
+          <option value="all">Semua Genre</option>
+          {genres.map((g) => (
+            <option key={g} value={g}>{g}</option>
+          ))}
+        </select>
       </div>
 
       {loading && <p style={{ color: 'var(--text-muted)' }}>Memuat...</p>}
@@ -99,4 +117,4 @@ export default function NovelList() {
       </div>
     </div>
   )
-          }
+      }
