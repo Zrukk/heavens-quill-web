@@ -143,6 +143,24 @@ export default function NovelDetail() {
               {(novel.total_views ?? 0).toLocaleString('id-ID')} views
             </span>
           </div>
+          {novel.genre && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+              {novel.genre.split(',').map((g) => g.trim()).filter(Boolean).map((g) => (
+                <span
+                  key={g}
+                  style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--text-muted)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 20,
+                    padding: '2px 10px',
+                  }}
+                >
+                  {g}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
