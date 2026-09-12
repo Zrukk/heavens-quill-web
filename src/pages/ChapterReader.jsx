@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, MessageCircle, Send, Reply, Coffee, UserCircle2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { fetchAllChapterRows } from '../lib/fetchAllChapterRows'
+import { useDocumentMeta, stripHtml } from '../lib/useDocumentMeta'
 import { useAuth } from '../lib/AuthContext'
 
 async function notifyDiscord({ authorName, novelTitle, chapterNumber, chapterTitle, content, url, isReply }) {
@@ -149,11 +150,18 @@ export default function ChapterReader() {
     if (chapter?.id) loadComments()
   }, [chapter?.id])
 
+  useDocumentMeta(
+    chapter && novel
+      ? `Chapter ${chapter.chapter_number}${chapter.title ? ` — ${chapter.title}` : ''} - ${novel.title}`
+      : undefined,
+    chapter ? stripHtml(chapter.content).slice(0, 160) : undefined,
+  )
+
   async function loadComments() {
     setLoadingComments(true)
     const { data } = await supabase
       .from('chapter_comments')
-.select('id, content, created_at, user_id, parent_id, profiles(display_name, avatar_url)')
+      .select('id, content, created_at, user_id, parent_id, profiles(display_name, avatar_url)')
       .eq('chapter_id', chapter.id)
       .order('created_at', { ascending: false })
     setComments(data ?? [])
@@ -165,8 +173,9 @@ export default function ChapterReader() {
     if (!user) {
       navigate('/login')
       return
-    }
+      }
     if (!newComment.trim()) return
+
     setPostingComment(true)
     const { error } = await supabase.from('chapter_comments').insert({
       chapter_id: chapter.id,
@@ -348,7 +357,7 @@ export default function ChapterReader() {
           target="_blank"
           rel="noopener noreferrer"
           className="btn btn--gold"
-          >
+        >
           <Coffee size={16} />
           Traktir Penerjemah
         </a>
@@ -518,4 +527,4 @@ export default function ChapterReader() {
       )}
     </div>
   )
-      }
+              }
