@@ -96,9 +96,11 @@ async function parseEpub(file, range) {
     const html = await fileEntry.async('text')
     const htmlDoc = parser.parseFromString(html, 'text/html')
 
-    const titleEl = htmlDoc.querySelector('h1, h2, title')
-    const title = titleEl ? titleEl.textContent.trim() : ''
-
+    const h1El = htmlDoc.querySelector('h1')
+    const h2El = htmlDoc.querySelector('h2')
+    const titleTagEl = htmlDoc.querySelector('title')
+    let title = (h1El?.textContent || h2El?.textContent || titleTagEl?.textContent || '').trim()
+    if (/^(unknown|untitled|no title)$/i.test(title)) title = ''
     const elements = Array.from(htmlDoc.body ? htmlDoc.body.querySelectorAll('p, img') : [])
     const htmlParts = []
 
