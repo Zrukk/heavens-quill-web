@@ -6,6 +6,7 @@ import { fetchAllChapterRows } from '../lib/fetchAllChapterRows'
 import { useDocumentMeta, stripHtml } from '../lib/useDocumentMeta'
 import { useAuth } from '../lib/AuthContext'
 import ShareButton from '../components/ShareButton'
+import BackToTop from '../components/BackToTop'
 
 async function notifyDiscord({ authorName, novelTitle, chapterNumber, chapterTitle, content, url, isReply }) {
   const webhookUrl = import.meta.env.VITE_DISCORD_WEBHOOK_URL
@@ -584,6 +585,7 @@ export default function ChapterReader() {
           </button>
         </div>
       )}
+           <BackToTop />
     </div>
   )
 }
