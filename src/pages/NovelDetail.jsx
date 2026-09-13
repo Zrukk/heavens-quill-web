@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { fetchAllChapterRows } from '../lib/fetchAllChapterRows'
 import { useDocumentMeta } from '../lib/useDocumentMeta'
 import { useAuth } from '../lib/AuthContext'
+import FavoriteButton from '../components/FavoriteButton'
 
 async function fetchAllReadIds(novelId, userId) {
   const pageSize = 1000
@@ -193,16 +194,18 @@ export default function NovelDetail() {
             </button>
           )}
 
-          {chapters.length > 0 && resumeChapterNumber !== null && (
-            <Link
-              to={`/novel/${slug}/chapter/${resumeChapterNumber}`}
-              className="btn btn--filled"
-              style={{ marginLeft: 'auto' }}
-            >
-              <BookOpen size={16} />
-              {bookmark?.last_chapter_read ? `Lanjut ke Chapter ${resumeChapterNumber}` : 'Mulai Baca'}
-            </Link>
-          )}
+          <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap', alignItems: 'center' }}>
+            {chapters.length > 0 && resumeChapterNumber !== null && (
+              <Link
+                to={`/novel/${slug}/chapter/${resumeChapterNumber}`}
+                className="btn btn--filled"
+              >
+                <BookOpen size={16} />
+                {bookmark?.last_chapter_read ? `Lanjut ke Chapter ${resumeChapterNumber}` : 'Mulai Baca'}
+              </Link>
+            )}
+            <FavoriteButton novelId={novel.id} novelTitle={novel.title} />
+          </div>
         </div>
       </div>
 
@@ -255,4 +258,4 @@ export default function NovelDetail() {
       </div>
     </div>
   )
-}
+  }
