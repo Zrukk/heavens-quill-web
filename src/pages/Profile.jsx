@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { UserCircle2, KeyRound, BookMarked, Save, Camera } from 'lucide-react'
+import { UserCircle2, KeyRound, BookMarked, Save, Camera, Heart } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import { supabase } from '../lib/supabase'
 
@@ -21,6 +21,9 @@ export default function Profile() {
   const [bookmarks, setBookmarks] = useState([])
   const [loadingBookmarks, setLoadingBookmarks] = useState(true)
 
+  const [favorites, setFavorites] = useState([])
+  const [loadingFavorites, setLoadingFavorites] = useState(true)
+
   useEffect(() => {
     setNameInput(displayName || '')
   }, [displayName])
@@ -28,9 +31,11 @@ export default function Profile() {
   useEffect(() => {
     if (!user) {
       setLoadingBookmarks(false)
+      setLoadingFavorites(false)
       return
     }
     loadBookmarks()
+    loadFavorites()
   }, [user])
 
   async function loadBookmarks() {
@@ -41,6 +46,17 @@ export default function Profile() {
       .eq('user_id', user.id)
     setBookmarks(data ?? [])
     setLoadingBookmarks(false)
+  }
+
+  async function loadFavorites() {
+    setLoadingFavorites(true)
+    const { data } = await supabase
+      .from('favorites')
+      .select('created_at, novels(id, title, slug, cover_url, author)')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+    setFavorites(data ?? [])
+    setLoadingFavorites(false)
   }
 
   async function handleAvatarChange(e) {
@@ -211,6 +227,46 @@ export default function Profile() {
         {passwordMessage && <p style={{ color: 'var(--accent)', fontSize: '0.85rem', margin: 0 }}>{passwordMessage}</p>}
       </form>
 
+      {/* ===== NOVEL FAVORIT ===== */}
+      {sectionHeading(Heart, `Novel Favorit (${favorites.length})`)}
+      {loadingFavorites && <p style={{ color: 'var(--text-muted)' }}>Memuat...</p>}
+      {!loadingFavorites && favorites.length === 0 && (
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 32 }}>
+          Belum ada novel favorit. Klik ❤️ di halaman novel buat nambahin.
+        </p>
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 32 }}>
+        {favorites.map((f) => f.novels && (
+          <Link
+            key={f.novels.id}
+            to={`/novel/${f.novels.slug}`}
+            className="card"
+            style={{
+              display: 'flex',
+              gap: 12,
+              padding: 12,
+            }}
+          >
+            <div
+              style={{
+                width: 48,
+                height: 66,
+                flexShrink: 0,
+                background: f.novels.cover_url ? `url(${f.novels.cover_url}) center/cover` : 'var(--border)',
+                borderRadius: 'var(--radius)',
+              }}
+            />
+            <div>
+              <div style={{ marginBottom: 4 }}>{f.novels.title}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                {f.novels.author || 'Tanpa author'}
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* ===== SEDANG DIBACA ===== */}
       {sectionHeading(BookMarked, 'Sedang Dibaca')}
       {loadingBookmarks && <p style={{ color: 'var(--text-muted)' }}>Memuat...</p>}
       {!loadingBookmarks && bookmarks.length === 0 && (
@@ -248,4 +304,4 @@ export default function Profile() {
       </div>
     </div>
   )
-                                  }
+}
