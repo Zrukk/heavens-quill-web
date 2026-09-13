@@ -1,8 +1,10 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const PopularNovelCard = ({ novel }) => {
   return (
-    <div
+    <Link
+      to={`/novel/${novel.slug}`}
       style={{
         minWidth: 140,
         width: 140,
@@ -12,10 +14,18 @@ const PopularNovelCard = ({ novel }) => {
         borderRadius: 'var(--radius)',
         overflow: 'hidden',
         cursor: 'pointer',
-        transition: 'border-color 0.2s',
+        transition: 'border-color 0.2s, transform 0.2s',
+        textDecoration: 'none',
+        display: 'block',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--gold)')}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = 'var(--gold)';
+        e.currentTarget.style.transform = 'translateY(-2px)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = 'var(--border)';
+        e.currentTarget.style.transform = 'translateY(0)';
+      }}
     >
       <img
         src={novel.cover_url || 'https://via.placeholder.com/150'}
@@ -60,12 +70,11 @@ const PopularNovelCard = ({ novel }) => {
           <span>👁️ {novel.total_views || 0}</span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
 
 export default function NovelPopulerSection({ dataNovel }) {
-  // Ambil 5 novel dengan total_views terbanyak
   const top5Novel = [...(dataNovel || [])]
     .sort((a, b) => (b.total_views || 0) - (a.total_views || 0))
     .slice(0, 5);
@@ -94,4 +103,4 @@ export default function NovelPopulerSection({ dataNovel }) {
       </div>
     </div>
   );
-          }
+            }
