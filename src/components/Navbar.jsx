@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Feather, ShieldCheck, UserCircle2, LogOut, LogIn, Coffee } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
+import GlobalSearch from './GlobalSearch'
 
 export default function Navbar() {
   const { user, isAdmin, signOut, displayName, avatarUrl } = useAuth()
@@ -18,12 +19,14 @@ export default function Navbar() {
           padding: '14px 24px',
         }}
       >
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           <Feather size={22} color="var(--gold)" strokeWidth={1.75} />
           <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 600 }}>
             Heaven's Quill
           </span>
         </Link>
+
+        <GlobalSearch />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <a
