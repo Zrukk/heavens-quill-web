@@ -3,6 +3,7 @@ import { Library, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useDocumentMeta } from '../lib/useDocumentMeta'
 import NovelCard from '../components/NovelCard'
+import NovelPopulerSection from '../components/NovelPopulerSection'
 
 const NOVELS_PER_PAGE = 10
 
@@ -129,6 +130,12 @@ export default function NovelList() {
         <p style={{ color: 'var(--text-muted)' }}>Gak ada novel yang cocok sama pencarian/filter ini.</p>
       )}
 
+      {/* --- BAGIAN NOVEL POPULER --- */}
+      {!loading && !error && novels.length > 0 && (
+        <NovelPopulerSection dataNovel={novels} />
+      )}
+      {/* --------------------------- */}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {paginatedNovels.map((novel) => (
           <NovelCard key={novel.id} novel={novel} />
@@ -162,4 +169,4 @@ export default function NovelList() {
       )}
     </div>
   )
-          }
+      }
