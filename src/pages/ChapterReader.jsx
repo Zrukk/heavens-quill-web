@@ -173,7 +173,7 @@ export default function ChapterReader() {
     if (!user) {
       navigate('/login')
       return
-      }
+    }
     if (!newComment.trim()) return
 
     setPostingComment(true)
@@ -261,52 +261,148 @@ export default function ChapterReader() {
   const prevNum = currentIndex > 0 ? nums[currentIndex - 1] : null
   const nextNum = currentIndex < nums.length - 1 ? nums[currentIndex + 1] : null
 
-  const topLevelComments = comments.filter((c) => !c.parent_id)
-  const repliesFor = (id) =>
-    comments
-      .filter((c) => c.parent_id === id)
-      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+  // ====== KOMENTAR: NESTED REPLY ======
+  const topLevelComments = comments
+    .filter((c) => !c.parent_id)
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 
-  function renderCommentCard(c, isReply) {
+  function getReplies(parentId) {
+    return comments
+      .filter((c) => c.parent_id === parentId)
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+  }
+
+  function renderCommentTree(comment, depth = 0) {
+    const replies = getReplies(comment.id)
+    const maxDepth = 5 // batas indentasi biar gak terlalu menjorok di mobile
+    const indent = Math.min(depth, maxDepth) * 20
+
     return (
-      <div key={c.id} className="card" style={{ padding: 12, marginLeft: isReply ? 24 : 0 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 }}>
-          <Link to={`/pembaca/${c.user_id}`} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div
+      <div key={comment.id} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div
+          className="card"
+          style={{
+            padding: 12,
+            marginLeft: indent,
+            borderLeft: depth > 0 ? '2px solid var(--border)' : undefined,
+          }}
+        >
+          {/* Header: avatar + nama + tanggal */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 }}>
+            <Link to={`/pembaca/${comment.user_id}`} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: '50%',
+                  flexShrink: 0,
+                  background: comment.profiles?.avatar_url
+                    ? `url(${comment.profiles.avatar_url}) center/cover`
+                    : 'var(--border)',
+                }}
+              />
+              <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>
+                {comment.profiles?.display_name || 'Pembaca'}
+              </span>
+            </Link>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+              {new Date(comment.created_at).toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+              })}
+            </span>
+          </div>
+
+          {/* Isi komentar */}
+          <p style={{ margin: 0, fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>{comment.content}</p>
+
+          {/* Tombol aksi */}
+          <div style={{ display: 'flex', gap: 14, marginTop: 6 }}>
+            {(user?.id === comment.user_id || isAdmin) && (
+              <button
+                onClick={() => handleDeleteComment(comment.id)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#D46B5B',
+                  fontSize: '0.75rem',
+                  padding: 0,
+                  cursor: 'pointer',
+                }}
+              >
+                Hapus
+              </button>
+            )}
+            {depth < maxDepth && (
+              <button
+                onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--gold)',
+                  fontSize: '0.75rem',
+                  padding: 0,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <Reply size={12} />
+                Balas
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Form reply */}
+        {replyingTo === comment.id && (
+          <div style={{ marginLeft: indent + 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <textarea
+              placeholder={`Balas ke ${comment.profiles?.display_name || 'Pembaca'}...`}
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              rows={2}
               style={{
-                width: 24,
-                height: 24,
-                borderRadius: '50%',
-                flexShrink: 0,
-                background: c.profiles?.avatar_url ? `url(${c.profiles.avatar_url}) center/cover` : 'var(--border)',
+                padding: 10,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)',
+                fontFamily: 'inherit',
+                width: '100%',
               }}
             />
-            <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{c.profiles?.display_name || 'Pembaca'}</span>
-          </Link>
-          <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
-            {new Date(c.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-          </span>
-        </div>
-        <p style={{ margin: 0, fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>{c.content}</p>
-        <div style={{ display: 'flex', gap: 14, marginTop: 6 }}>
-          {(user?.id === c.user_id || isAdmin) && (
-            <button
-              onClick={() => handleDeleteComment(c.id)}
-              style={{ background: 'none', border: 'none', color: '#D46B5B', fontSize: '0.75rem', padding: 0, cursor: 'pointer' }}
-            >
-              Hapus
-            </button>
-          )}
-          {!isReply && (
-            <button
-              onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)}
-              style={{ background: 'none', border: 'none', color: 'var(--gold)', fontSize: '0.75rem', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
-            >
-              <Reply size={12} />
-              Balas
-            </button>
-          )}
-        </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                className="btn btn--filled"
+                onClick={() => handlePostReply(comment.id)}
+                disabled={postingReply || !replyText.trim()}
+                style={{ fontSize: '0.85rem', padding: '6px 14px' }}
+              >
+                <Send size={14} />
+                {postingReply ? 'Mengirim...' : 'Kirim Balasan'}
+              </button>
+              <button
+                className="btn"
+                onClick={() => {
+                  setReplyingTo(null)
+                  setReplyText('')
+                }}
+                style={{ fontSize: '0.85rem', padding: '6px 14px' }}
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Render reply secara rekursif */}
+        {replies.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {replies.map((reply) => renderCommentTree(reply, depth + 1))}
+          </div>
+        )}
       </div>
     )
   }
@@ -407,50 +503,7 @@ export default function ChapterReader() {
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {topLevelComments.map((c) => (
-            <div key={c.id} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {renderCommentCard(c, false)}
-
-              {replyingTo === c.id && (
-                <div style={{ marginLeft: 24, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <textarea
-                    placeholder={`Balas ke ${c.profiles?.display_name || 'Pembaca'}...`}
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    rows={2}
-                    style={{
-                      padding: 10,
-                      background: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius)',
-                      fontFamily: 'inherit',
-                      width: '100%',
-                    }}
-                  />
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      className="btn btn--filled"
-                      onClick={() => handlePostReply(c.id)}
-                      disabled={postingReply || !replyText.trim()}
-                      style={{ fontSize: '0.85rem', padding: '6px 14px' }}
-                    >
-                      <Send size={14} />
-                      {postingReply ? 'Mengirim...' : 'Kirim Balasan'}
-                    </button>
-                    <button
-                      className="btn"
-                      onClick={() => { setReplyingTo(null); setReplyText('') }}
-                      style={{ fontSize: '0.85rem', padding: '6px 14px' }}
-                    >
-                      Batal
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {repliesFor(c.id).map((r) => renderCommentCard(r, true))}
-            </div>
-          ))}
+          {topLevelComments.map((c) => renderCommentTree(c, 0))}
         </div>
       </div>
 
@@ -521,10 +574,10 @@ export default function ChapterReader() {
             style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
           >
             <UserCircle2 size={20} />
-            <span style={{ fontSize: '0.65rem' }}>Profil</span>
+               <span style={{ fontSize: '0.65rem' }}>Profil</span>
           </button>
         </div>
       )}
     </div>
   )
-              }
+}
