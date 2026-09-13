@@ -422,11 +422,16 @@ export default function ChapterReader() {
         Chapter {chapter.chapter_number}{chapter.title ? ` — ${chapter.title}` : ''}
       </h1>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 32 }}>
-        <Eye size={14} />
-        {(chapter.views ?? 0).toLocaleString('id-ID')} views
-      </div>
-
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32, flexWrap: 'wrap' }}>
+  <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+    <Eye size={14} />
+    {(chapter.views ?? 0).toLocaleString('id-ID')} views
+  </div>
+  <ShareButton
+    url={`${window.location.origin}/novel/${slug}/chapter/${number}`}
+    title={`${novel.title} — Chapter ${chapter.chapter_number}${chapter.title ? `: ${chapter.title}` : ''}`}
+  />
+</div>
       <div
         className="chapter-content"
         style={{ fontSize: '1.05rem', cursor: 'pointer' }}
