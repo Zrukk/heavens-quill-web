@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Library, Search } from 'lucide-react'
+import { Library, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useDocumentMeta } from '../lib/useDocumentMeta'
 import NovelCard from '../components/NovelCard'
+
+const NOVELS_PER_PAGE = 10
 
 export default function NovelList() {
   const [novels, setNovels] = useState([])
@@ -12,6 +14,7 @@ export default function NovelList() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [languageFilter, setLanguageFilter] = useState('all')
   const [genreFilter, setGenreFilter] = useState('all')
+  const [currentPage, setCurrentPage] = useState(1)
 
   useDocumentMeta(
     'Heaven\'s Quill — Daftar Novel',
@@ -31,6 +34,10 @@ export default function NovelList() {
     }
     loadNovels()
   }, [])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, statusFilter, languageFilter, genreFilter])
 
   const languages = [...new Set(novels.map((n) => n.original_language).filter(Boolean))]
 
@@ -55,6 +62,12 @@ export default function NovelList() {
     }
     return true
   })
+
+  const totalPages = Math.max(1, Math.ceil(filteredNovels.length / NOVELS_PER_PAGE))
+  const paginatedNovels = filteredNovels.slice(
+    (currentPage - 1) * NOVELS_PER_PAGE,
+    currentPage * NOVELS_PER_PAGE,
+  )
 
   const selectStyle = {
     padding: 10,
@@ -117,10 +130,36 @@ export default function NovelList() {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {filteredNovels.map((novel) => (
+        {paginatedNovels.map((novel) => (
           <NovelCard key={novel.id} novel={novel} />
         ))}
       </div>
+
+      {filteredNovels.length > NOVELS_PER_PAGE && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, marginTop: 32 }}>
+          <button
+            className="btn"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            style={{ opacity: currentPage === 1 ? 0.4 : 1 }}
+          >
+            <ChevronLeft size={16} />
+            Sebelumnya
+          </button>
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            Halaman {currentPage} dari {totalPages}
+          </span>
+          <button
+            className="btn"
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            style={{ opacity: currentPage === totalPages ? 0.4 : 1 }}
+          >
+            Berikutnya
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
     </div>
   )
-      }
+          }
