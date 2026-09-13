@@ -21,7 +21,6 @@ export default function App() {
         <Route path="/profil" element={<Profile />} />
         <Route path="/pembaca/:userId" element={<PublicProfile />} />
       </Routes>
-           <BackToTop />
-    </div>
+   </div>
   )
 }
