@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Feather, ShieldCheck, UserCircle2, LogOut, LogIn, Coffee } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import GlobalSearch from './GlobalSearch'
+import NotificationBell from './NotificationBell'
 
 export default function Navbar() {
   const { user, isAdmin, signOut, displayName, avatarUrl } = useAuth()
@@ -47,6 +48,9 @@ export default function Navbar() {
                   Admin
                 </Link>
               )}
+
+              <NotificationBell />
+
               <Link to="/profil" className="btn">
                 {avatarUrl ? (
                   <img
@@ -86,4 +90,4 @@ export default function Navbar() {
       </div>
     </header>
   )
-}
+              }
