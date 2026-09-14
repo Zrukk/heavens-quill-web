@@ -17,7 +17,6 @@ export default function NotificationBell() {
     if (!user) return
     loadNotifications()
 
-    // Subscribe realtime biar notif muncul tanpa refresh
     const channel = supabase
       .channel('notifications-realtime')
       .on(
@@ -65,7 +64,6 @@ export default function NotificationBell() {
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
   }
 
-  // Tutup dropdown kalau klik di luar
   useEffect(() => {
     function handleClickOutside(e) {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
@@ -79,7 +77,6 @@ export default function NotificationBell() {
   function handleToggle() {
     setOpen((v) => !v)
     if (!open) {
-      // Delay sedikit biar user lihat badge hilang
       setTimeout(() => markAllAsRead(), 800)
     }
   }
@@ -87,7 +84,7 @@ export default function NotificationBell() {
   if (!user) return null
 
   return (
-    <div ref={wrapperRef} style={{ position: 'relative' }}>
+    <div ref={wrapperRef} style={{ position: 'relative', zIndex: 200 }}>
       <button
         onClick={handleToggle}
         className="btn"
@@ -122,17 +119,20 @@ export default function NotificationBell() {
       {open && (
         <div
           style={{
-            position: 'absolute',
-            top: 'calc(100% + 8px)',
-            right: 0,
-            width: 320,
-            maxHeight: 400,
+            position: 'fixed',
+            top: 'auto',
+            right: 16,
+            left: 16,
+            marginTop: 8,
+            maxWidth: 360,
+            marginLeft: 'auto',
+            maxHeight: '60vh',
             overflowY: 'auto',
             background: 'var(--surface)',
             border: '1px solid var(--border)',
             borderRadius: 'var(--radius)',
             boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-            zIndex: 100,
+            zIndex: 999,
           }}
         >
           <div
@@ -144,6 +144,7 @@ export default function NotificationBell() {
               position: 'sticky',
               top: 0,
               background: 'var(--surface)',
+              zIndex: 1,
             }}
           >
             Notifikasi
@@ -233,4 +234,4 @@ export default function NotificationBell() {
       )}
     </div>
   )
-}
+              }
