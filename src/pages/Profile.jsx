@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { UserCircle2, KeyRound, BookMarked, Save, Camera, Heart } from 'lucide-react'
+import { UserCircle2, KeyRound, BookMarked, Save, Camera, Heart, BarChart3, BookOpen, MessageCircle, Star } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import { supabase } from '../lib/supabase'
 
@@ -24,6 +24,14 @@ export default function Profile() {
   const [favorites, setFavorites] = useState([])
   const [loadingFavorites, setLoadingFavorites] = useState(true)
 
+  const [stats, setStats] = useState({
+    chaptersRead: 0,
+    favorites: 0,
+    comments: 0,
+    ratings: 0,
+  })
+  const [loadingStats, setLoadingStats] = useState(true)
+
   useEffect(() => {
     setNameInput(displayName || '')
   }, [displayName])
@@ -32,10 +40,12 @@ export default function Profile() {
     if (!user) {
       setLoadingBookmarks(false)
       setLoadingFavorites(false)
+      setLoadingStats(false)
       return
     }
     loadBookmarks()
     loadFavorites()
+    loadStats()
   }, [user])
 
   async function loadBookmarks() {
@@ -57,6 +67,42 @@ export default function Profile() {
       .order('created_at', { ascending: false })
     setFavorites(data ?? [])
     setLoadingFavorites(false)
+  }
+
+  async function loadStats() {
+    setLoadingStats(true)
+
+    // Hitung jumlah chapter yang dibaca
+    const { count: chaptersCount } = await supabase
+      .from('chapter_reads')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+
+    // Hitung jumlah favorit
+    const { count: favoritesCount } = await supabase
+      .from('favorites')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+
+    // Hitung jumlah komentar
+    const { count: commentsCount } = await supabase
+      .from('chapter_comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+
+    // Hitung jumlah rating yang diberikan
+    const { count: ratingsCount } = await supabase
+      .from('ratings')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+
+    setStats({
+      chaptersRead: chaptersCount ?? 0,
+      favorites: favoritesCount ?? 0,
+      comments: commentsCount ?? 0,
+      ratings: ratingsCount ?? 0,
+    })
+    setLoadingStats(false)
   }
 
   async function handleAvatarChange(e) {
@@ -149,6 +195,28 @@ export default function Profile() {
     </h2>
   )
 
+  const StatCard = ({ icon, value, label }) => (
+    <div
+      className="card"
+      style={{
+        padding: 16,
+        flex: '1 1 140px',
+        minWidth: 140,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 4,
+        textAlign: 'center',
+      }}
+    >
+      <div style={{ color: 'var(--gold)', marginBottom: 4 }}>{icon}</div>
+      <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)' }}>
+        {value.toLocaleString('id-ID')}
+      </div>
+      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{label}</div>
+    </div>
+  )
+
   return (
     <div className="container" style={{ paddingTop: 40, paddingBottom: 60, maxWidth: 600 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
@@ -156,6 +224,19 @@ export default function Profile() {
         <h1 className="gradient-text" style={{ fontSize: '1.8rem' }}>Profil</h1>
       </div>
       <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: '0.9rem' }}>{user.email}</p>
+
+      {/* ===== STATISTIK ===== */}
+      {sectionHeading(BarChart3, 'Statistik Kamu')}
+      {loadingStats ? (
+        <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>Memuat...</p>
+      ) : (
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 32 }}>
+          <StatCard icon={<BookOpen size={20} />} value={stats.chaptersRead} label="Chapter Dibaca" />
+          <StatCard icon={<Heart size={20} />} value={stats.favorites} label="Novel Favorit" />
+          <StatCard icon={<MessageCircle size={20} />} value={stats.comments} label="Komentar" />
+          <StatCard icon={<Star size={20} />} value={stats.ratings} label="Novel Diberi Rating" />
+        </div>
+      )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
         <div
@@ -304,4 +385,4 @@ export default function Profile() {
       </div>
     </div>
   )
-}
+      }
