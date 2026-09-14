@@ -189,3 +189,42 @@ input:focus {
   margin: 1.5em auto;
   border-radius: var(--radius);
 }
+/* ===== LIGHT THEME ===== */
+[data-theme="light"] {
+  --bg: #FAFAF7;
+  --surface: #FFFFFF;
+  --surface-hover: #F5F5F0;
+  --border: #E5E5DD;
+  --text: #1A1A1A;
+  --text-muted: #6B6B63;
+
+  --accent: #2B7BB8;
+  --accent-hover: #1F6499;
+  --gold: #A17C1F;
+  --gold-hover: #8A6A15;
+}
+
+[data-theme="light"] .btn--gold {
+  color: #FFFFFF;
+}
+
+[data-theme="light"] .btn--outline-gold:hover {
+  color: #FFFFFF;
+}
+
+[data-theme="light"] .card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* ===== FONT SIZE (halaman baca) ===== */
+[data-font-size="small"] .chapter-content { font-size: 0.95rem; }
+[data-font-size="medium"] .chapter-content { font-size: 1.05rem; }
+[data-font-size="large"] .chapter-content { font-size: 1.25rem; }
+
+/* ===== FONT FAMILY (halaman baca) ===== */
+[data-font-family="default"] .chapter-content { font-family: var(--font-body); }
+[data-font-family="serif"] .chapter-content { font-family: Georgia, 'Times New Roman', serif; }
+[data-font-family="sans"] .chapter-content { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+/* ===== CONTENT WIDTH (halaman baca) ===== */
+[data-content-width="wide"] .chapter-content { max-width: none; }
