@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bell, MessageCircle } from 'lucide-react'
+import { Bell, MessageCircle, BookOpen } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
@@ -27,8 +27,9 @@ export default function NotificationBell() {
           table: 'notifications',
           filter: `user_id=eq.${user.id}`,
         },
-        (payload) => {
-          setNotifications((prev) => [payload.new, ...prev])
+        () => {
+          // Reload biar dapet data lengkap (join dengan actor & chapter)
+          loadNotifications()
         }
       )
       .subscribe()
@@ -163,6 +164,7 @@ export default function NotificationBell() {
           )}
 
           {!loading && notifications.map((n) => {
+            const isChapterUpdate = n.type === 'new_chapter'
             const actorName = n.actor?.display_name || 'Seseorang'
             const novelTitle = n.chapter?.novel?.title
             const novelSlug = n.chapter?.novel?.slug
@@ -192,20 +194,28 @@ export default function NotificationBell() {
                     height: 32,
                     flexShrink: 0,
                     borderRadius: '50%',
-                    background: 'var(--gold)',
+                    background: isChapterUpdate ? 'var(--accent)' : 'var(--gold)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#1a1a1a',
+                    color: isChapterUpdate ? '#fff' : '#1a1a1a',
                   }}
                 >
-                  <MessageCircle size={16} />
+                  {isChapterUpdate ? <BookOpen size={16} /> : <MessageCircle size={16} />}
                 </div>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontSize: '0.85rem', marginBottom: 2 }}>
-                    <strong>{actorName}</strong> membalas komentarmu
+                    {isChapterUpdate ? (
+                      <>
+                        <strong>{novelTitle || 'Novel'}</strong> — Chapter {chapterNumber} baru!
+                      </>
+                    ) : (
+                      <>
+                        <strong>{actorName}</strong> membalas komentarmu
+                      </>
+                    )}
                   </div>
-                  {novelTitle && (
+                  {!isChapterUpdate && novelTitle && (
                     <div
                       style={{
                         fontSize: '0.75rem',
@@ -234,4 +244,4 @@ export default function NotificationBell() {
       )}
     </div>
   )
-              }
+      }
