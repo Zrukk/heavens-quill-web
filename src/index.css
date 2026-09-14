@@ -233,3 +233,13 @@ input:focus {
 
 /* ===== CONTENT WIDTH (halaman baca) ===== */
 [data-content-width="wide"] .chapter-content { max-width: none; }
+
+/* ===== SPINNER (loading animation) ===== */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
