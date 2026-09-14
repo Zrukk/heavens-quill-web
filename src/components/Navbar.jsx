@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Feather, ShieldCheck, UserCircle2, LogOut, LogIn, Coffee, Menu, X } from 'lucide-react'
+import { Feather, ShieldCheck, UserCircle2, LogOut, LogIn, Coffee, Menu, X, Settings } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import GlobalSearch from './GlobalSearch'
 import NotificationBell from './NotificationBell'
@@ -10,7 +10,6 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
-  // Tutup menu kalau klik di luar
   useEffect(() => {
     function handleClickOutside(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -93,7 +92,6 @@ export default function Navbar() {
                     zIndex: 999,
                   }}
                 >
-                  {/* Header: avatar + nama */}
                   <div
                     style={{
                       padding: '12px 16px',
@@ -138,7 +136,6 @@ export default function Navbar() {
                     </div>
                   </div>
 
-                  {/* Dukung */}
                   <a
                     href="https://sociabuzz.com/heavensquill/tribe"
                     target="_blank"
@@ -150,7 +147,6 @@ export default function Navbar() {
                     Dukung
                   </a>
 
-                  {/* Admin (kalau admin) */}
                   {isAdmin && (
                     <Link to="/admin" style={menuItemStyle} onClick={() => setMenuOpen(false)}>
                       <ShieldCheck size={16} color="var(--gold)" />
@@ -158,13 +154,16 @@ export default function Navbar() {
                     </Link>
                   )}
 
-                  {/* Profil */}
                   <Link to="/profil" style={menuItemStyle} onClick={() => setMenuOpen(false)}>
                     <UserCircle2 size={16} color="var(--gold)" />
                     Profil
                   </Link>
 
-                  {/* Keluar */}
+                  <Link to="/pengaturan" style={menuItemStyle} onClick={() => setMenuOpen(false)}>
+                    <Settings size={16} color="var(--gold)" />
+                    Pengaturan
+                  </Link>
+
                   <button
                     onClick={handleSignOut}
                     style={{ ...menuItemStyle, borderBottom: 'none', color: '#D46B5B' }}
