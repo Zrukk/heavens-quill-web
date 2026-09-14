@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Feather, ShieldCheck, UserCircle2, LogOut, LogIn, Coffee, Menu, X } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import GlobalSearch from './GlobalSearch'
@@ -7,7 +7,6 @@ import NotificationBell from './NotificationBell'
 
 export default function Navbar() {
   const { user, isAdmin, signOut, displayName, avatarUrl } = useAuth()
-  const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
@@ -21,11 +20,6 @@ export default function Navbar() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-
-  // Tutup menu kalau pindah halaman
-  useEffect(() => {
-    setMenuOpen(false)
-  }, [navigate])
 
   async function handleSignOut() {
     setMenuOpen(false)
@@ -49,7 +43,7 @@ export default function Navbar() {
   }
 
   return (
-    <header style={{ borderBottom: '1px solid var(--border)' }}>
+    <header style={{ borderBottom: '1px solid var(--border)', position: 'relative', zIndex: 100 }}>
       <div
         className="container"
         style={{
@@ -74,7 +68,7 @@ export default function Navbar() {
           {user && <NotificationBell />}
 
           {user ? (
-            <div ref={menuRef} style={{ position: 'relative', zIndex: 200 }}>
+            <div ref={menuRef} style={{ position: 'relative' }}>
               <button
                 onClick={() => setMenuOpen((v) => !v)}
                 className="btn"
@@ -87,10 +81,10 @@ export default function Navbar() {
               {menuOpen && (
                 <div
                   style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 8px)',
-                    right: 0,
-                    width: 240,
+                    position: 'fixed',
+                    top: 70,
+                    right: 16,
+                    width: 'min(240px, calc(100vw - 32px))',
                     background: 'var(--surface)',
                     border: '1px solid var(--border)',
                     borderRadius: 'var(--radius)',
@@ -158,14 +152,14 @@ export default function Navbar() {
 
                   {/* Admin (kalau admin) */}
                   {isAdmin && (
-                    <Link to="/admin" style={menuItemStyle}>
+                    <Link to="/admin" style={menuItemStyle} onClick={() => setMenuOpen(false)}>
                       <ShieldCheck size={16} color="var(--gold)" />
                       Admin
                     </Link>
                   )}
 
                   {/* Profil */}
-                  <Link to="/profil" style={menuItemStyle}>
+                  <Link to="/profil" style={menuItemStyle} onClick={() => setMenuOpen(false)}>
                     <UserCircle2 size={16} color="var(--gold)" />
                     Profil
                   </Link>
@@ -191,4 +185,4 @@ export default function Navbar() {
       </div>
     </header>
   )
-                  }
+                    }
