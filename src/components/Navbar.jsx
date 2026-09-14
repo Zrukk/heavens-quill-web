@@ -1,11 +1,52 @@
-import { Link } from 'react-router-dom'
-import { Feather, ShieldCheck, UserCircle2, LogOut, LogIn, Coffee } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Feather, ShieldCheck, UserCircle2, LogOut, LogIn, Coffee, Menu, X } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import GlobalSearch from './GlobalSearch'
 import NotificationBell from './NotificationBell'
 
 export default function Navbar() {
   const { user, isAdmin, signOut, displayName, avatarUrl } = useAuth()
+  const navigate = useNavigate()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef(null)
+
+  // Tutup menu kalau klik di luar
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Tutup menu kalau pindah halaman
+  useEffect(() => {
+    setMenuOpen(false)
+  }, [navigate])
+
+  async function handleSignOut() {
+    setMenuOpen(false)
+    await signOut()
+  }
+
+  const menuItemStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: '12px 16px',
+    width: '100%',
+    background: 'none',
+    border: 'none',
+    borderBottom: '1px solid var(--border)',
+    color: 'var(--text)',
+    fontSize: '0.9rem',
+    textDecoration: 'none',
+    cursor: 'pointer',
+    textAlign: 'left',
+  }
 
   return (
     <header style={{ borderBottom: '1px solid var(--border)' }}>
@@ -29,56 +70,116 @@ export default function Navbar() {
 
         <GlobalSearch />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <a
-            href="https://sociabuzz.com/heavensquill/tribe"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn--gold"
-          >
-            <Coffee size={16} />
-            Dukung
-          </a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {user && <NotificationBell />}
 
           {user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-              {isAdmin && (
-                <Link to="/admin" className="btn btn--outline-gold">
-                  <ShieldCheck size={16} />
-                  Admin
-                </Link>
-              )}
-
-              <NotificationBell />
-
-              <Link to="/profil" className="btn">
-                {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt=""
-                    style={{ width: 18, height: 18, borderRadius: '50%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <UserCircle2 size={16} />
-                )}
-                Profil
-              </Link>
-              <span
-                style={{
-                  color: 'var(--text-muted)',
-                  fontSize: '0.85rem',
-                  maxWidth: 140,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
+            <div ref={menuRef} style={{ position: 'relative', zIndex: 200 }}>
+              <button
+                onClick={() => setMenuOpen((v) => !v)}
+                className="btn"
+                style={{ padding: '8px 10px' }}
+                title="Menu"
               >
-                {displayName || user.email}
-              </span>
-              <button className="btn" onClick={signOut}>
-                <LogOut size={16} />
-                Keluar
+                {menuOpen ? <X size={18} /> : <Menu size={18} />}
               </button>
+
+              {menuOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 8px)',
+                    right: 0,
+                    width: 240,
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                    overflow: 'hidden',
+                    zIndex: 999,
+                  }}
+                >
+                  {/* Header: avatar + nama */}
+                  <div
+                    style={{
+                      padding: '12px 16px',
+                      borderBottom: '1px solid var(--border)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                    }}
+                  >
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt=""
+                        style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <UserCircle2 size={32} color="var(--text-muted)" />
+                    )}
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div
+                        style={{
+                          fontSize: '0.85rem',
+                          fontWeight: 600,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {displayName || 'Pembaca'}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '0.75rem',
+                          color: 'var(--text-muted)',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {user.email}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dukung */}
+                  <a
+                    href="https://sociabuzz.com/heavensquill/tribe"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={menuItemStyle}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <Coffee size={16} color="var(--gold)" />
+                    Dukung
+                  </a>
+
+                  {/* Admin (kalau admin) */}
+                  {isAdmin && (
+                    <Link to="/admin" style={menuItemStyle}>
+                      <ShieldCheck size={16} color="var(--gold)" />
+                      Admin
+                    </Link>
+                  )}
+
+                  {/* Profil */}
+                  <Link to="/profil" style={menuItemStyle}>
+                    <UserCircle2 size={16} color="var(--gold)" />
+                    Profil
+                  </Link>
+
+                  {/* Keluar */}
+                  <button
+                    onClick={handleSignOut}
+                    style={{ ...menuItemStyle, borderBottom: 'none', color: '#D46B5B' }}
+                  >
+                    <LogOut size={16} />
+                    Keluar
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <Link to="/login" className="btn btn--filled">
@@ -90,4 +191,4 @@ export default function Navbar() {
       </div>
     </header>
   )
-              }
+                  }
