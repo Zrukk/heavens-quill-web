@@ -189,6 +189,11 @@ input:focus {
   margin: 1.5em auto;
   border-radius: var(--radius);
 }
+
+/* ============================================ */
+/* ===== TAMBAHAN: SETTINGS / PENGATURAN ===== */
+/* ============================================ */
+
 /* ===== LIGHT THEME ===== */
 [data-theme="light"] {
   --bg: #FAFAF7;
