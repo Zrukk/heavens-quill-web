@@ -7,6 +7,7 @@ import Login from './pages/Login'
 import Admin from './pages/Admin'
 import Profile from './pages/Profile'
 import PublicProfile from './pages/PublicProfile'
+import Settings from './pages/Settings'
 import BackToTop from './components/BackToTop'
 
 export default function App() {
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/admin" element={<Admin />} />
         <Route path="/profil" element={<Profile />} />
         <Route path="/pembaca/:userId" element={<PublicProfile />} />
+        <Route path="/pengaturan" element={<Settings />} />
       </Routes>
       <BackToTop />
     </div>
