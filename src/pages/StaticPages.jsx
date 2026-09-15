@@ -280,4 +280,4 @@ export function Privacy() {
       </p>
     </PageWrapper>
   )
-                  }
+        }
