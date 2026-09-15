@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Info, Mail, Shield, ArrowLeft } from 'lucide-react'
+import { Info, Mail, Shield, ArrowLeft, Instagram, MessageCircle } from 'lucide-react'
 
 function PageWrapper({ icon, title, children }) {
   return (
@@ -63,6 +63,24 @@ export function About() {
         menjaga situs ini tetap hidup dan terus berkembang.
       </p>
 
+      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>Komunitas</h2>
+      <p>
+        Bergabunglah dengan komunitas kami di Discord untuk diskusi, info update terbaru, dan
+        ngobrol santai sesama pembaca novel:
+      </p>
+      <p>
+        <a
+          href="https://discord.gg/EA7Tew7rut"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 4 }}
+        >
+          <MessageCircle size={16} />
+          Gabung Discord
+        </a>
+      </p>
+
       <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>Kontak</h2>
       <p>
         Punya pertanyaan, masukan, atau kerja sama? Silakan hubungi kami di halaman{' '}
@@ -87,16 +105,58 @@ export function Contact() {
           href="mailto:heavensquill1@gmail.com"
           style={{ color: 'var(--gold)', fontWeight: 600 }}
         >
-          heavensquill.id@gmail.com
+          heavensquill1@gmail.com
         </a>
       </p>
 
       <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>Media Sosial</h2>
-      <p>
-        Kamu juga bisa menghubungi kami lewat Discord untuk diskusi komunitas, atau lewat
-        media sosial resmi kami (jika ada). Untuk laporan yang bersifat pribadi, mohon gunakan
-        email agar lebih mudah kami tangani.
-      </p>
+      <p>Kamu juga bisa menghubungi kami lewat:</p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
+        <a
+          href="https://instagram.com/heavensquill1"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="card"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '12px 16px',
+            color: 'var(--text)',
+          }}
+        >
+          <Instagram size={20} color="var(--gold)" />
+          <div>
+            <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Instagram</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+              @heavensquill1
+            </div>
+          </div>
+        </a>
+
+        <a
+          href="https://discord.gg/EA7Tew7rut"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="card"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '12px 16px',
+            color: 'var(--text)',
+          }}
+        >
+          <MessageCircle size={20} color="var(--gold)" />
+          <div>
+            <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Discord</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+              Gabung komunitas Heaven's Quill
+            </div>
+          </div>
+        </a>
+      </div>
 
       <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>Waktu Respon</h2>
       <p>
@@ -214,10 +274,10 @@ export function Privacy() {
         Jika ada pertanyaan tentang Kebijakan Privasi ini, silakan hubungi kami melalui
         halaman <Link to="/kontak" style={{ color: 'var(--gold)' }}>Kontak</Link> atau email
         ke{' '}
-        <a href="mailto:heavensquill.id@gmail.com" style={{ color: 'var(--gold)' }}>
-          heavensquill.id@gmail.com
+        <a href="mailto:heavensquill1@gmail.com" style={{ color: 'var(--gold)' }}>
+          heavensquill1@gmail.com
         </a>.
       </p>
     </PageWrapper>
   )
-      }
+                  }
