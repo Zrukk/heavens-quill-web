@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Info, Mail, Shield, ArrowLeft, Instagram, MessageCircle } from 'lucide-react'
+import { Info, Mail, Shield, ArrowLeft, MessageCircle } from 'lucide-react'
 
 function PageWrapper({ icon, title, children }) {
   return (
@@ -126,7 +126,7 @@ export function Contact() {
             color: 'var(--text)',
           }}
         >
-          <Instagram size={20} color="var(--gold)" />
+          <span style={{ fontSize: 20 }}>📷</span>
           <div>
             <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Instagram</div>
             <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
@@ -280,4 +280,4 @@ export function Privacy() {
       </p>
     </PageWrapper>
   )
-        }
+      }
