@@ -57,7 +57,6 @@ button, input, textarea, select {
   color: inherit;
 }
 
-/* gradient headline text — blue-to-gold, for a distinctive modern touch */
 .gradient-text {
   background: var(--gradient-brand);
   -webkit-background-clip: text;
@@ -65,7 +64,6 @@ button, input, textarea, select {
   color: transparent;
 }
 
-/* geometric diamond motif — small status/divider mark */
 .diamond {
   display: inline-block;
   width: 6px;
@@ -203,8 +201,6 @@ input:focus {
   --text: #1A1A1A;
   --text-muted: #6B6B63;
 
-  --accent: #2B7BB8;
-  --accent-hover: #1F6499;
   --gold: #A17C1F;
   --gold-hover: #8A6A15;
 }
@@ -234,7 +230,7 @@ input:focus {
 /* ===== CONTENT WIDTH (halaman baca) ===== */
 [data-content-width="wide"] .chapter-content { max-width: none; }
 
-/* ===== SPINNER (loading animation) ===== */
+/* ===== SPINNER ===== */
 .spin {
   animation: spin 1s linear infinite;
 }
@@ -243,3 +239,55 @@ input:focus {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* ===== ACCENT COLOR — DARK THEME ===== */
+[data-accent="blue"] {
+  --accent: #5BA8D4;
+  --accent-hover: #78BBE0;
+}
+
+[data-accent="gold"] {
+  --accent: #D4AF5B;
+  --accent-hover: #E3C480;
+}
+
+[data-accent="green"] {
+  --accent: #5BBF8A;
+  --accent-hover: #78D4A4;
+}
+
+[data-accent="purple"] {
+  --accent: #A67BD4;
+  --accent-hover: #BC94E0;
+}
+
+[data-accent="red"] {
+  --accent: #D46B7B;
+  --accent-hover: #E08594;
+}
+
+/* ===== ACCENT COLOR — LIGHT THEME ===== */
+[data-theme="light"][data-accent="blue"] {
+  --accent: #2B7BB8;
+  --accent-hover: #1F6499;
+}
+
+[data-theme="light"][data-accent="gold"] {
+  --accent: #A17C1F;
+  --accent-hover: #8A6A15;
+}
+
+[data-theme="light"][data-accent="green"] {
+  --accent: #2B9B6B;
+  --accent-hover: #1F7B54;
+}
+
+[data-theme="light"][data-accent="purple"] {
+  --accent: #7B4FA8;
+  --accent-hover: #653F8A;
+}
+
+[data-theme="light"][data-accent="red"] {
+  --accent: #B84B5B;
+  --accent-hover: #9A3B4A;
+  }
