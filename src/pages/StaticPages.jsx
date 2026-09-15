@@ -84,7 +84,7 @@ export function Contact() {
       <p>
         Untuk urusan resmi, kirim email ke:{' '}
         <a
-          href="mailto:heavensquill.id@gmail.com"
+          href="mailto:heavensquill1@gmail.com"
           style={{ color: 'var(--gold)', fontWeight: 600 }}
         >
           heavensquill.id@gmail.com
