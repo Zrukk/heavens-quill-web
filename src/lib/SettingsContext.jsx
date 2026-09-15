@@ -7,6 +7,7 @@ const DEFAULT_SETTINGS = {
   fontSize: 'medium',
   fontFamily: 'default',
   contentWidth: 'normal',
+  accentColor: 'blue',
 }
 
 export function SettingsProvider({ children }) {
@@ -28,7 +29,8 @@ export function SettingsProvider({ children }) {
     document.documentElement.setAttribute('data-font-size', settings.fontSize)
     document.documentElement.setAttribute('data-font-family', settings.fontFamily)
     document.documentElement.setAttribute('data-content-width', settings.contentWidth)
-  }, [settings.theme, settings.fontSize, settings.fontFamily, settings.contentWidth])
+    document.documentElement.setAttribute('data-accent', settings.accentColor)
+  }, [settings.theme, settings.fontSize, settings.fontFamily, settings.contentWidth, settings.accentColor])
 
   function updateSetting(key, value) {
     setSettings((prev) => ({ ...prev, [key]: value }))
@@ -49,4 +51,4 @@ export function useSettings() {
   const ctx = useContext(SettingsContext)
   if (!ctx) throw new Error('useSettings must be used within SettingsProvider')
   return ctx
-    }
+}
