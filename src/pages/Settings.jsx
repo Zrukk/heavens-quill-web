@@ -17,7 +17,6 @@ export default function Settings() {
   const [resetting, setResetting] = useState(false)
   const [resetMessage, setResetMessage] = useState(null)
 
-  // Load preferensi notif dari profil
   useEffect(() => {
     if (!user) return
     async function loadNotifPrefs() {
@@ -166,6 +165,43 @@ export default function Settings() {
         </OptionButton>
       </div>
 
+      {sectionHeading(Palette, 'Warna Aksen')}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {[
+          { id: 'blue', name: 'Biru', color: '#5BA8D4' },
+          { id: 'gold', name: 'Emas', color: '#D4AF5B' },
+          { id: 'green', name: 'Hijau', color: '#5BBF8A' },
+          { id: 'purple', name: 'Ungu', color: '#A67BD4' },
+          { id: 'red', name: 'Merah', color: '#D46B7B' },
+        ].map((c) => (
+          <button
+            key={c.id}
+            onClick={() => updateSetting('accentColor', c.id)}
+            className={settings.accentColor === c.id ? 'btn btn--gold' : 'btn'}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              justifyContent: 'flex-start',
+              flex: '1 1 100px',
+              padding: '10px 14px',
+            }}
+          >
+            <span
+              style={{
+                width: 14,
+                height: 14,
+                borderRadius: '50%',
+                background: c.color,
+                flexShrink: 0,
+                border: '2px solid rgba(255,255,255,0.2)',
+              }}
+            />
+            {c.name}
+          </button>
+        ))}
+      </div>
+
       {sectionHeading(Type, 'Ukuran Font (Halaman Baca)')}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <OptionButton active={settings.fontSize === 'small'} onClick={() => updateSetting('fontSize', 'small')}>
@@ -202,7 +238,6 @@ export default function Settings() {
         </OptionButton>
       </div>
 
-      {/* ===== PREFERENSI NOTIFIKASI ===== */}
       {user && (
         <>
           {sectionHeading(Bell, 'Preferensi Notifikasi')}
@@ -263,7 +298,6 @@ export default function Settings() {
         </>
       )}
 
-      {/* ===== RESET PROGRESS ===== */}
       {user && (
         <>
           {sectionHeading(Trash2, 'Reset Progress Bacaan')}
@@ -297,4 +331,4 @@ export default function Settings() {
       </div>
     </div>
   )
-          }
+                   }
