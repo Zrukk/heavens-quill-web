@@ -63,7 +63,19 @@ export default function Navbar() {
 
         <GlobalSearch />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Icon Admin — langsung muncul kalau user admin */}
+          {user && isAdmin && (
+            <Link
+              to="/admin"
+              className="btn btn--outline-gold"
+              style={{ padding: '8px 10px' }}
+              title="Admin Panel"
+            >
+              <ShieldCheck size={18} />
+            </Link>
+          )}
+
           {user && <NotificationBell />}
 
           {user ? (
@@ -147,6 +159,7 @@ export default function Navbar() {
                     Dukung
                   </a>
 
+                  {/* Admin tetap ada di menu juga, opsional */}
                   {isAdmin && (
                     <Link to="/admin" style={menuItemStyle} onClick={() => setMenuOpen(false)}>
                       <ShieldCheck size={16} color="var(--gold)" />
@@ -184,4 +197,4 @@ export default function Navbar() {
       </div>
     </header>
   )
-                    }
+                        }
