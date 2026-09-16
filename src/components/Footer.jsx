@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { Feather } from 'lucide-react'
 
 export default function Footer() {
   return (
@@ -21,7 +20,16 @@ export default function Footer() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Feather size={18} color="var(--gold)" strokeWidth={1.75} />
+          <img
+            src="/heavens_quill_icon_dark.png"
+            alt="Heaven's Quill"
+            style={{
+              width: 24,
+              height: 24,
+              objectFit: 'contain',
+              borderRadius: 4,
+            }}
+          />
           <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 600 }}>
             Heaven's Quill
           </span>
