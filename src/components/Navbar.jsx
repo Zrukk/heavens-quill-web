@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Feather, ShieldCheck, UserCircle2, LogOut, LogIn, Coffee, Menu, X, Settings } from 'lucide-react'
+import { ShieldCheck, UserCircle2, LogOut, LogIn, Coffee, Menu, X, Settings } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import GlobalSearch from './GlobalSearch'
 import NotificationBell from './NotificationBell'
@@ -55,7 +55,11 @@ export default function Navbar() {
         }}
       >
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          <Feather size={22} color="var(--gold)" strokeWidth={1.75} />
+          <img
+            src="/heavens_quill_icon_dark.png"
+            alt="Heaven's Quill"
+            style={{ width: 28, height: 28, objectFit: 'contain' }}
+          />
           <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 600 }}>
             Heaven's Quill
           </span>
@@ -64,7 +68,6 @@ export default function Navbar() {
         <GlobalSearch />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* Icon Admin — langsung muncul kalau user admin */}
           {user && isAdmin && (
             <Link
               to="/admin"
@@ -159,7 +162,6 @@ export default function Navbar() {
                     Dukung
                   </a>
 
-                  {/* Admin tetap ada di menu juga, opsional */}
                   {isAdmin && (
                     <Link to="/admin" style={menuItemStyle} onClick={() => setMenuOpen(false)}>
                       <ShieldCheck size={16} color="var(--gold)" />
@@ -197,4 +199,4 @@ export default function Navbar() {
       </div>
     </header>
   )
-                        }
+                }
