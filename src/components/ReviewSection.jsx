@@ -480,14 +480,14 @@ function ReviewCard({
     const indent = Math.min(depth, 5) * 20
     const children = repliesFor(reply.id)
     return (
-      <div key={reply.id} style={{ marginLeft: indent, marginTop: 8 }}>
-        <div
-          className="card"
-          style={{
-            padding: 10,
-            borderLeft: depth > 0 ? '2px solid var(--border)' : undefined,
-          }}
-        >
+      <div key={reply.id} id={`review-reply-${reply.id}`} style={{ marginLeft: indent, marginTop: 8 }}>
+  <div
+    className="card"
+    style={{
+      padding: 10,
+      borderLeft: depth > 0 ? '2px solid var(--border)' : undefined,
+    }}
+  >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 }}>
             <Link to={`/pembaca/${reply.user_id}`} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div
