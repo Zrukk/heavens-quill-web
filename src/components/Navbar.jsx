@@ -58,7 +58,12 @@ export default function Navbar() {
           <img
             src="/heavens_quill_icon_dark.png"
             alt="Heaven's Quill"
-            style={{ width: 28, height: 28, objectFit: 'contain' }}
+            style={{
+              width: 32,
+              height: 32,
+              objectFit: 'contain',
+              borderRadius: 6,
+            }}
           />
           <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 600 }}>
             Heaven's Quill
@@ -199,4 +204,4 @@ export default function Navbar() {
       </div>
     </header>
   )
-                }
+              }
