@@ -35,19 +35,23 @@ export default function ReviewSection({ novelId, onCountChange, hideTitle = fals
   }, [novelId])
 
   async function loadReviews() {
-    setLoading(true)
-    const { data } = await supabase
-      .from('novel_reviews')
-      .select(`
-        id, rating, content, has_spoiler, created_at, updated_at, user_id,
-        profiles(display_name, avatar_url)
-      `)
-      .eq('novel_id', novelId)
-      .order('created_at', { ascending: false })
+  setLoading(true)
+  console.log('[ReviewSection] Loading reviews for novelId:', novelId)
 
-    setReviews(data ?? [])
-    if (onCountChange) onCountChange((data ?? []).length)
+  const { data, error } = await supabase
+    .from('novel_reviews')
+    .select(`
+      id, rating, content, has_spoiler, created_at, updated_at, user_id,
+      profiles(display_name, avatar_url)
+    `)
+    .eq('novel_id', novelId)
+    .order('created_at', { ascending: false })
 
+  console.log('[ReviewSection] Data:', data)
+  console.log('[ReviewSection] Error:', error)
+
+  setReviews(data ?? [])
+  if (onCountChange) onCountChange((data ?? []).length)
     if (data && data.length > 0) {
       const reviewIds = data.map((r) => r.id)
 
