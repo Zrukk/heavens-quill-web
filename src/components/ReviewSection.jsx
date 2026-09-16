@@ -216,12 +216,32 @@ export default function ReviewSection({ novelId, onCountChange, hideTitle = fals
   }
 
   async function loadRepliesForReview(reviewId) {
-    const { data } = await supabase
-      .from('review_replies')
-      .select('id, content, created_at, user_id, parent_id, profiles(display_name, avatar_url)')
-      .eq('review_id', reviewId)
-      .order('created_at', { ascending: true })
-    return data ?? []
+  // Step 1: fetch replies
+  const { data: repliesData, error: repliesError } = await supabase
+    .from('review_replies')
+    .select('id, content, created_at, user_id, parent_id')
+    .eq('review_id', reviewId)
+    .order('created_at', { ascending: true })
+
+  if (repliesError || !repliesData || repliesData.length === 0) return []
+
+  // Step 2: fetch profil user yang reply
+  const userIds = [...new Set(repliesData.map((r) => r.user_id))]
+  const { data: profilesData } = await supabase
+    .from('profiles')
+    .select('id, display_name, avatar_url')
+    .in('id', userIds)
+
+  const profilesMap = {}
+  ;(profilesData ?? []).forEach((p) => {
+    profilesMap[p.id] = p
+  })
+
+  // Step 3: gabungin
+  return repliesData.map((r) => ({
+    ...r,
+    profiles: profilesMap[r.user_id] || { display_name: 'Pembaca', avatar_url: null },
+  }))
   }
 
   async function handlePostReply(reviewId) {
