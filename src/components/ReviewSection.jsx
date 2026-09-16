@@ -5,13 +5,12 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 
 export default function ReviewSection({ novelId, onCountChange, hideTitle = false }) {
-  const { user, isAdmin, displayName, avatarUrl } = useAuth()
+  const { user, isAdmin } = useAuth()
   const navigate = useNavigate()
 
   const [reviews, setReviews] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Form tulis/edit review
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [formRating, setFormRating] = useState(0)
@@ -20,19 +19,14 @@ export default function ReviewSection({ novelId, onCountChange, hideTitle = fals
   const [submitting, setSubmitting] = useState(false)
   const [formMessage, setFormMessage] = useState(null)
 
-  // Spoiler terbuka
   const [revealedSpoilers, setRevealedSpoilers] = useState({})
+  const [likes, setLikes] = useState({})
 
-  // Like cache
-  const [likes, setLikes] = useState({}) // { reviewId: { count, liked } }
-
-  // Reply form
-  const [replyingTo, setReplyingTo] = useState(null) // reviewId
+  const [replyingTo, setReplyingTo] = useState(null)
   const [replyText, setReplyText] = useState('')
   const [postingReply, setPostingReply] = useState(false)
 
-  // Nested reply form
-  const [replyingToReply, setReplyingToReply] = useState(null) // replyId
+  const [replyingToReply, setReplyingToReply] = useState(null)
   const [nestedReplyText, setNestedReplyText] = useState('')
   const [postingNestedReply, setPostingNestedReply] = useState(false)
 
@@ -52,13 +46,11 @@ export default function ReviewSection({ novelId, onCountChange, hideTitle = fals
       .order('created_at', { ascending: false })
 
     setReviews(data ?? [])
-if (onCountChange) onCountChange((data ?? []).length)
+    if (onCountChange) onCountChange((data ?? []).length)
 
-    // Load like count & status
     if (data && data.length > 0) {
       const reviewIds = data.map((r) => r.id)
 
-      // Count likes per review
       const { data: allLikes } = await supabase
         .from('review_likes')
         .select('review_id, user_id')
@@ -126,7 +118,6 @@ if (onCountChange) onCountChange((data ?? []).length)
     setSubmitting(true)
 
     if (editingId) {
-      // Update
       const { error } = await supabase
         .from('novel_reviews')
         .update({
@@ -147,7 +138,6 @@ if (onCountChange) onCountChange((data ?? []).length)
         loadReviews()
       }
     } else {
-      // Insert
       const { error } = await supabase
         .from('novel_reviews')
         .insert({
@@ -200,7 +190,6 @@ if (onCountChange) onCountChange((data ?? []).length)
     setRevealedSpoilers((prev) => ({ ...prev, [reviewId]: !prev[reviewId] }))
   }
 
-  // Reply logic
   async function loadRepliesForReview(reviewId) {
     const { data } = await supabase
       .from('review_replies')
@@ -228,7 +217,6 @@ if (onCountChange) onCountChange((data ?? []).length)
     if (!error) {
       setReplyText('')
       setReplyingTo(null)
-      // Trigger re-render dengan reload reviews
       loadReviews()
     }
   }
@@ -263,23 +251,24 @@ if (onCountChange) onCountChange((data ?? []).length)
   }
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
-  {!hideTitle && (
-    <h2 style={{ fontSize: '1.3rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-      <Star size={20} color="var(--gold)" />
-      Review Pembaca ({reviews.length})
-    </h2>
-  )}
-  {hideTitle && <div />}
-  {!showForm && (
-    <button onClick={startNewReview} className="btn btn--gold" style={{ fontSize: '0.85rem', padding: '8px 14px' }}>
-      <Pencil size={14} />
-      Tulis Review
-    </button>
-  )}
-</div>
-    
-      {/* Form tulis/edit review */}
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+        {hideTitle ? (
+          <div />
+        ) : (
+          <h2 style={{ fontSize: '1.3rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Star size={20} color="var(--gold)" />
+            Review Pembaca ({reviews.length})
+          </h2>
+        )}
+        {!showForm && (
+          <button onClick={startNewReview} className="btn btn--gold" style={{ fontSize: '0.85rem', padding: '8px 14px' }}>
+            <Pencil size={14} />
+            Tulis Review
+          </button>
+        )}
+      </div>
+
       {showForm && (
         <form
           onSubmit={handleSubmitReview}
@@ -295,7 +284,6 @@ if (onCountChange) onCountChange((data ?? []).length)
             </button>
           </div>
 
-          {/* Rating bintang */}
           <div>
             <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
               Rating bintang
@@ -318,7 +306,6 @@ if (onCountChange) onCountChange((data ?? []).length)
             </div>
           </div>
 
-          {/* Isi review */}
           <textarea
             placeholder="Tulis review kamu... (min 20 karakter)"
             value={formContent}
@@ -334,7 +321,6 @@ if (onCountChange) onCountChange((data ?? []).length)
             }}
           />
 
-          {/* Toggle spoiler */}
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', cursor: 'pointer' }}>
             <input
               type="checkbox"
@@ -358,7 +344,6 @@ if (onCountChange) onCountChange((data ?? []).length)
         </form>
       )}
 
-      {/* List review */}
       {loading && <p style={{ color: 'var(--text-muted)' }}>Memuat review...</p>}
       {!loading && reviews.length === 0 && (
         <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
@@ -400,7 +385,6 @@ if (onCountChange) onCountChange((data ?? []).length)
   )
 }
 
-/* ====== Review Card + Nested Replies ====== */
 function ReviewCard({
   review,
   user,
@@ -447,7 +431,6 @@ function ReviewCard({
   const isSpoilerRevealed = revealedSpoilers[review.id]
   const showSpoilerOverlay = review.has_spoiler && !isSpoilerRevealed
 
-  // Susun replies jadi nested
   const topLevelReplies = replies.filter((r) => !r.parent_id)
   const repliesFor = (parentId) => replies.filter((r) => r.parent_id === parentId)
 
@@ -488,14 +471,14 @@ function ReviewCard({
           <p style={{ margin: 0, fontSize: '0.85rem', whiteSpace: 'pre-wrap' }}>{reply.content}</p>
 
           <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
-            {(isOwner && user?.id === reply.user_id) || isAdmin ? (
+            {(user?.id === reply.user_id || isAdmin) && (
               <button
                 onClick={() => handleDeleteReply(reply.id)}
                 style={{ background: 'none', border: 'none', color: '#D46B5B', fontSize: '0.7rem', cursor: 'pointer', padding: 0 }}
               >
                 Hapus
               </button>
-            ) : null}
+            )}
             <button
               onClick={() => setReplyingToReply(replyingToReply === reply.id ? null : reply.id)}
               style={{ background: 'none', border: 'none', color: 'var(--gold)', fontSize: '0.7rem', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}
@@ -550,7 +533,6 @@ function ReviewCard({
 
   return (
     <div className="card" style={{ padding: 16 }}>
-      {/* Header review */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, gap: 8 }}>
         <Link to={`/pembaca/${review.user_id}`} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div
@@ -592,7 +574,6 @@ function ReviewCard({
         </div>
       </div>
 
-      {/* Isi review + spoiler overlay */}
       <div style={{ position: 'relative' }}>
         <p
           style={{
@@ -639,7 +620,6 @@ function ReviewCard({
         </button>
       )}
 
-      {/* Action bar */}
       <div style={{ display: 'flex', gap: 14, marginTop: 10, alignItems: 'center', flexWrap: 'wrap' }}>
         <button
           onClick={onToggleLike}
@@ -707,7 +687,6 @@ function ReviewCard({
         )}
       </div>
 
-      {/* Form balas review */}
       {replyingTo === review.id && (
         <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
           <textarea
@@ -746,8 +725,6 @@ function ReviewCard({
         </div>
       )}
 
-      {/* Nested replies */}
-      {loadingReplies && replies.length === 0 && null}
       {topLevelReplies.length > 0 && (
         <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
           {topLevelReplies.map((r) => renderReply(r, 0))}
@@ -755,4 +732,5 @@ function ReviewCard({
       )}
     </div>
   )
-            }
+              }
+   
