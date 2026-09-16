@@ -4,7 +4,7 @@ import { Star, Heart, MessageCircle, Reply, Send, Trash2, Pencil, Eye, EyeOff, X
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 
-export default function ReviewSection({ novelId }) {
+export default function ReviewSection({ novelId, onCountChange, hideTitle = false }) {
   const { user, isAdmin, displayName, avatarUrl } = useAuth()
   const navigate = useNavigate()
 
