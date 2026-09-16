@@ -35,23 +35,44 @@ export default function ReviewSection({ novelId, onCountChange, hideTitle = fals
   }, [novelId])
 
   async function loadReviews() {
+  async function loadReviews() {
   setLoading(true)
-  console.log('[ReviewSection] Loading reviews for novelId:', novelId)
 
-  const { data, error } = await supabase
+  // Step 1: fetch review dulu (tanpa join)
+  const { data: reviewsData, error: reviewError } = await supabase
     .from('novel_reviews')
-    .select(`
-      id, rating, content, has_spoiler, created_at, updated_at, user_id,
-      profiles(display_name, avatar_url)
-    `)
+    .select('id, rating, content, has_spoiler, created_at, updated_at, user_id')
     .eq('novel_id', novelId)
     .order('created_at', { ascending: false })
 
-  console.log('[ReviewSection] Data:', data)
-  console.log('[ReviewSection] Error:', error)
+  if (reviewError) {
+    console.error('Error load reviews:', reviewError)
+    setReviews([])
+    setLoading(false)
+    return
+  }
 
-  setReviews(data ?? [])
-  if (onCountChange) onCountChange((data ?? []).length)
+  // Step 2: fetch profil user yang review, terpisah
+  const userIds = [...new Set((reviewsData ?? []).map((r) => r.user_id))]
+  let profilesMap = {}
+  if (userIds.length > 0) {
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('id, display_name, avatar_url')
+      .in('id', userIds)
+    ;(profilesData ?? []).forEach((p) => {
+      profilesMap[p.id] = p
+    })
+  }
+
+  // Step 3: gabungin
+  const merged = (reviewsData ?? []).map((r) => ({
+    ...r,
+    profiles: profilesMap[r.user_id] || { display_name: 'Pembaca', avatar_url: null },
+  }))
+
+  setReviews(merged)
+  if (onCountChange) onCountChange(merged.length)
     if (data && data.length > 0) {
       const reviewIds = data.map((r) => r.id)
 
