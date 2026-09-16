@@ -35,50 +35,47 @@ export default function ReviewSection({ novelId, onCountChange, hideTitle = fals
   }, [novelId])
 
   async function loadReviews() {
-  async function loadReviews() {
-  setLoading(true)
+    setLoading(true)
 
-  // Step 1: fetch review tanpa join
-  const { data: reviewsData, error: reviewError } = await supabase
-    .from('novel_reviews')
-    .select('id, rating, content, has_spoiler, created_at, updated_at, user_id')
-    .eq('novel_id', novelId)
-    .order('created_at', { ascending: false })
+    // Step 1: fetch review tanpa join
+    const { data: reviewsData, error: reviewError } = await supabase
+      .from('novel_reviews')
+      .select('id, rating, content, has_spoiler, created_at, updated_at, user_id')
+      .eq('novel_id', novelId)
+      .order('created_at', { ascending: false })
 
-  if (reviewError) {
-    console.error('Error load reviews:', reviewError)
-    setReviews([])
-    setLoading(false)
-    return
-  }
+    if (reviewError) {
+      console.error('Error load reviews:', reviewError)
+      setReviews([])
+      setLoading(false)
+      return
+    }
 
-  // Step 2: fetch profil user terpisah
-  const userIds = [...new Set((reviewsData ?? []).map((r) => r.user_id))]
-  let profilesMap = {}
-  if (userIds.length > 0) {
-    const { data: profilesData } = await supabase
-      .from('profiles')
-      .select('id, display_name, avatar_url')
-      .in('id', userIds)
-    ;(profilesData ?? []).forEach((p) => {
-      profilesMap[p.id] = p
-    })
-  }
+    // Step 2: fetch profil user terpisah
+    const userIds = [...new Set((reviewsData ?? []).map((r) => r.user_id))]
+    let profilesMap = {}
+    if (userIds.length > 0) {
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, display_name, avatar_url')
+        .in('id', userIds)
+      ;(profilesData ?? []).forEach((p) => {
+        profilesMap[p.id] = p
+      })
+    }
 
-  // Step 3: merge
-  const merged = (reviewsData ?? []).map((r) => ({
-    ...r,
-    profiles: profilesMap[r.user_id] || { display_name: 'Pembaca', avatar_url: null },
-  }))
+    // Step 3: merge
+    const merged = (reviewsData ?? []).map((r) => ({
+      ...r,
+      profiles: profilesMap[r.user_id] || { display_name: 'Pembaca', avatar_url: null },
+    }))
 
-  setReviews(merged)
-  if (onCountChange) onCountChange(merged.length)
-  }
-  setReviews(merged)
-  if (onCountChange) onCountChange(merged.length)
-    if (data && data.length > 0) {
-      const reviewIds = data.map((r) => r.id)
+    setReviews(merged)
+    if (onCountChange) onCountChange(merged.length)
 
+    // Load likes
+    if (merged.length > 0) {
+      const reviewIds = merged.map((r) => r.id)
       const { data: allLikes } = await supabase
         .from('review_likes')
         .select('review_id, user_id')
@@ -219,29 +216,29 @@ export default function ReviewSection({ novelId, onCountChange, hideTitle = fals
   }
 
   async function loadRepliesForReview(reviewId) {
-  const { data: repliesData, error: repliesError } = await supabase
-    .from('review_replies')
-    .select('id, content, created_at, user_id, parent_id')
-    .eq('review_id', reviewId)
-    .order('created_at', { ascending: true })
+    const { data: repliesData, error: repliesError } = await supabase
+      .from('review_replies')
+      .select('id, content, created_at, user_id, parent_id')
+      .eq('review_id', reviewId)
+      .order('created_at', { ascending: true })
 
-  if (repliesError || !repliesData || repliesData.length === 0) return []
+    if (repliesError || !repliesData || repliesData.length === 0) return []
 
-  const userIds = [...new Set(repliesData.map((r) => r.user_id))]
-  const { data: profilesData } = await supabase
-    .from('profiles')
-    .select('id, display_name, avatar_url')
-    .in('id', userIds)
+    const userIds = [...new Set(repliesData.map((r) => r.user_id))]
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('id, display_name, avatar_url')
+      .in('id', userIds)
 
-  const profilesMap = {}
-  ;(profilesData ?? []).forEach((p) => {
-    profilesMap[p.id] = p
-  })
+    const profilesMap = {}
+    ;(profilesData ?? []).forEach((p) => {
+      profilesMap[p.id] = p
+    })
 
-  return repliesData.map((r) => ({
-    ...r,
-    profiles: profilesMap[r.user_id] || { display_name: 'Pembaca', avatar_url: null },
-  }))
+    return repliesData.map((r) => ({
+      ...r,
+      profiles: profilesMap[r.user_id] || { display_name: 'Pembaca', avatar_url: null },
+    }))
   }
 
   async function handlePostReply(reviewId) {
@@ -777,5 +774,4 @@ function ReviewCard({
       )}
     </div>
   )
-              }
-   
+          }
