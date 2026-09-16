@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bell, MessageCircle, BookOpen } from 'lucide-react'
+import { Bell, MessageCircle, Star } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
@@ -28,7 +28,6 @@ export default function NotificationBell() {
           filter: `user_id=eq.${user.id}`,
         },
         () => {
-          // Reload biar dapet data lengkap (join dengan actor & chapter)
           loadNotifications()
         }
       )
@@ -45,13 +44,52 @@ export default function NotificationBell() {
       .from('notifications')
       .select(`
         id, type, is_read, created_at, message,
-        actor:profiles!notifications_actor_id_fkey(display_name, avatar_url),
+        actor_id, chapter_id, novel_id, comment_id, review_id, review_reply_id,
         chapter:chapters(chapter_number, novel:novels(title, slug))
       `)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(20)
-    setNotifications(data ?? [])
+
+    if (!data) {
+      setNotifications([])
+      setLoading(false)
+      return
+    }
+
+    // Fetch profil actor terpisah
+    const actorIds = [...new Set(data.map((n) => n.actor_id).filter(Boolean))]
+    let profilesMap = {}
+    if (actorIds.length > 0) {
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, display_name, avatar_url')
+        .in('id', actorIds)
+      ;(profilesData ?? []).forEach((p) => {
+        profilesMap[p.id] = p
+      })
+    }
+
+    // Fetch novel info untuk review notif
+    const novelIds = [...new Set(data.filter((n) => n.review_id || n.review_reply_id).map((n) => n.novel_id).filter(Boolean))]
+    let novelsMap = {}
+    if (novelIds.length > 0) {
+      const { data: novelsData } = await supabase
+        .from('novels')
+        .select('id, title, slug')
+        .in('id', novelIds)
+      ;(novelsData ?? []).forEach((n) => {
+        novelsMap[n.id] = n
+      })
+    }
+
+    const merged = data.map((n) => ({
+      ...n,
+      actor: profilesMap[n.actor_id] || null,
+      novelInfo: novelsMap[n.novel_id] || null,
+    }))
+
+    setNotifications(merged)
     setLoading(false)
   }
 
@@ -79,6 +117,74 @@ export default function NotificationBell() {
     setOpen((v) => !v)
     if (!open) {
       setTimeout(() => markAllAsRead(), 800)
+    }
+  }
+
+  function getNotifContent(n) {
+    const actorName = n.actor?.display_name || 'Seseorang'
+
+    if (n.type === 'comment_reply') {
+      const novelTitle = n.chapter?.novel?.title
+      const chapterNumber = n.chapter?.chapter_number
+      return {
+        icon: <MessageCircle size={16} />,
+        color: 'var(--gold)',
+        colorText: '#1a1a1a',
+        text: (
+          <>
+            <strong>{actorName}</strong> membalas komentarmu
+          </>
+        ),
+        subtext: novelTitle ? `${novelTitle} · Chapter ${chapterNumber}` : null,
+        url: novelTitle && n.chapter?.novel?.slug && chapterNumber
+          ? `/novel/${n.chapter.novel.slug}/chapter/${chapterNumber}`
+          : '#',
+      }
+    }
+
+    if (n.type === 'review_reply') {
+      const novelTitle = n.novelInfo?.title
+      const novelSlug = n.novelInfo?.slug
+      return {
+        icon: <Star size={16} />,
+        color: 'var(--accent)',
+        colorText: '#fff',
+        text: (
+          <>
+            <strong>{actorName}</strong> membalas review/balasanmu
+          </>
+        ),
+        subtext: novelTitle ? `di "${novelTitle}"` : null,
+        url: novelSlug ? `/novel/${novelSlug}` : '#',
+      }
+    }
+
+    if (n.type === 'new_chapter') {
+      const novelTitle = n.chapter?.novel?.title
+      const chapterNumber = n.chapter?.chapter_number
+      return {
+        icon: <Star size={16} />,
+        color: 'var(--accent)',
+        colorText: '#fff',
+        text: (
+          <>
+            <strong>{novelTitle || 'Novel'}</strong> — Chapter {chapterNumber} baru!
+          </>
+        ),
+        subtext: null,
+        url: novelTitle && n.chapter?.novel?.slug && chapterNumber
+          ? `/novel/${n.chapter.novel.slug}/chapter/${chapterNumber}`
+          : '#',
+      }
+    }
+
+    return {
+      icon: <Bell size={16} />,
+      color: 'var(--border)',
+      colorText: 'var(--text)',
+      text: n.message || 'Notifikasi',
+      subtext: null,
+      url: '#',
     }
   }
 
@@ -164,19 +270,11 @@ export default function NotificationBell() {
           )}
 
           {!loading && notifications.map((n) => {
-            const isChapterUpdate = n.type === 'new_chapter'
-            const actorName = n.actor?.display_name || 'Seseorang'
-            const novelTitle = n.chapter?.novel?.title
-            const novelSlug = n.chapter?.novel?.slug
-            const chapterNumber = n.chapter?.chapter_number
-            const url = novelSlug && chapterNumber
-              ? `/novel/${novelSlug}/chapter/${chapterNumber}`
-              : '#'
-
+            const c = getNotifContent(n)
             return (
               <Link
                 key={n.id}
-                to={url}
+                to={c.url}
                 onClick={() => setOpen(false)}
                 style={{
                   display: 'flex',
@@ -194,28 +292,20 @@ export default function NotificationBell() {
                     height: 32,
                     flexShrink: 0,
                     borderRadius: '50%',
-                    background: isChapterUpdate ? 'var(--accent)' : 'var(--gold)',
+                    background: c.color,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: isChapterUpdate ? '#fff' : '#1a1a1a',
+                    color: c.colorText,
                   }}
                 >
-                  {isChapterUpdate ? <BookOpen size={16} /> : <MessageCircle size={16} />}
+                  {c.icon}
                 </div>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontSize: '0.85rem', marginBottom: 2 }}>
-                    {isChapterUpdate ? (
-                      <>
-                        <strong>{novelTitle || 'Novel'}</strong> — Chapter {chapterNumber} baru!
-                      </>
-                    ) : (
-                      <>
-                        <strong>{actorName}</strong> membalas komentarmu
-                      </>
-                    )}
+                    {c.text}
                   </div>
-                  {!isChapterUpdate && novelTitle && (
+                  {c.subtext && (
                     <div
                       style={{
                         fontSize: '0.75rem',
@@ -225,7 +315,7 @@ export default function NotificationBell() {
                         textOverflow: 'ellipsis',
                       }}
                     >
-                      {novelTitle} · Chapter {chapterNumber}
+                      {c.subtext}
                     </div>
                   )}
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>
@@ -244,4 +334,4 @@ export default function NotificationBell() {
       )}
     </div>
   )
-      }
+    }
