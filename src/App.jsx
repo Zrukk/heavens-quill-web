@@ -11,8 +11,11 @@ import PublicProfile from './pages/PublicProfile'
 import Settings from './pages/Settings'
 import { About, Contact, Privacy } from './pages/StaticPages'
 import BackToTop from './components/BackToTop'
+import { useScrollToAnchor } from './lib/useScrollToAnchor'
 
 export default function App() {
+  useScrollToAnchor()
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
