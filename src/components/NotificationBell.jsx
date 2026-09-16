@@ -123,23 +123,24 @@ export default function NotificationBell() {
   function getNotifContent(n) {
     const actorName = n.actor?.display_name || 'Seseorang'
 
-    if (n.type === 'comment_reply') {
-      const novelTitle = n.chapter?.novel?.title
-      const chapterNumber = n.chapter?.chapter_number
-      return {
-        icon: <MessageCircle size={16} />,
-        color: 'var(--gold)',
-        colorText: '#1a1a1a',
-        text: (
-          <>
-            <strong>{actorName}</strong> membalas komentarmu
-          </>
-        ),
-        subtext: novelTitle ? `${novelTitle} · Chapter ${chapterNumber}` : null,
-        url: novelTitle && n.chapter?.novel?.slug && chapterNumber
-          ? `/novel/${n.chapter.novel.slug}/chapter/${chapterNumber}`
-          : '#',
-      }
+    if (n.type === 'review_reply') {
+  const novelTitle = n.novelInfo?.title
+  const novelSlug = n.novelInfo?.slug
+  // Anchor: kalau reply punya review_id, ke review-nya. 
+  // Kalau nested, tetap ke review (karena reply-nya ke-load bareng)
+  const anchor = n.review_id ? `#review-${n.review_id}` : ''
+  return {
+    icon: <Star size={16} />,
+    color: 'var(--accent)',
+    colorText: '#fff',
+    text: (
+      <>
+        <strong>{actorName}</strong> membalas review/balasanmu
+      </>
+    ),
+    subtext: novelTitle ? `di "${novelTitle}"` : null,
+    url: novelSlug ? `/novel/${novelSlug}${anchor}` : '#',
+  }
     }
 
     if (n.type === 'review_reply') {
