@@ -71,7 +71,14 @@ export default function NotificationBell() {
     }
 
     // Fetch novel info untuk review notif
-    const novelIds = [...new Set(data.filter((n) => n.review_id || n.review_reply_id).map((n) => n.novel_id).filter(Boolean))]
+    const novelIds = [
+      ...new Set(
+        data
+          .filter((n) => n.review_id || n.review_reply_id)
+          .map((n) => n.novel_id)
+          .filter(Boolean)
+      ),
+    ]
     let novelsMap = {}
     if (novelIds.length > 0) {
       const { data: novelsData } = await supabase
@@ -123,29 +130,31 @@ export default function NotificationBell() {
   function getNotifContent(n) {
     const actorName = n.actor?.display_name || 'Seseorang'
 
-    if (n.type === 'review_reply') {
-  const novelTitle = n.novelInfo?.title
-  const novelSlug = n.novelInfo?.slug
-  // Anchor: kalau reply punya review_id, ke review-nya. 
-  // Kalau nested, tetap ke review (karena reply-nya ke-load bareng)
-  const anchor = n.review_id ? `#review-${n.review_id}` : ''
-  return {
-    icon: <Star size={16} />,
-    color: 'var(--accent)',
-    colorText: '#fff',
-    text: (
-      <>
-        <strong>{actorName}</strong> membalas review/balasanmu
-      </>
-    ),
-    subtext: novelTitle ? `di "${novelTitle}"` : null,
-    url: novelSlug ? `/novel/${novelSlug}${anchor}` : '#',
-  }
+    if (n.type === 'comment_reply') {
+      const novelTitle = n.chapter?.novel?.title
+      const chapterNumber = n.chapter?.chapter_number
+      const commentAnchor = n.comment_id ? `#comment-${n.comment_id}` : ''
+      return {
+        icon: <MessageCircle size={16} />,
+        color: 'var(--gold)',
+        colorText: '#1a1a1a',
+        text: (
+          <>
+            <strong>{actorName}</strong> membalas komentarmu
+          </>
+        ),
+        subtext: novelTitle ? `${novelTitle} · Chapter ${chapterNumber}` : null,
+        url:
+          novelTitle && n.chapter?.novel?.slug && chapterNumber
+            ? `/novel/${n.chapter.novel.slug}/chapter/${chapterNumber}${commentAnchor}`
+            : '#',
+      }
     }
 
     if (n.type === 'review_reply') {
       const novelTitle = n.novelInfo?.title
       const novelSlug = n.novelInfo?.slug
+      const anchor = n.review_id ? `#review-${n.review_id}` : ''
       return {
         icon: <Star size={16} />,
         color: 'var(--accent)',
@@ -156,7 +165,7 @@ export default function NotificationBell() {
           </>
         ),
         subtext: novelTitle ? `di "${novelTitle}"` : null,
-        url: novelSlug ? `/novel/${novelSlug}` : '#',
+        url: novelSlug ? `/novel/${novelSlug}${anchor}` : '#',
       }
     }
 
@@ -173,9 +182,10 @@ export default function NotificationBell() {
           </>
         ),
         subtext: null,
-        url: novelTitle && n.chapter?.novel?.slug && chapterNumber
-          ? `/novel/${n.chapter.novel.slug}/chapter/${chapterNumber}`
-          : '#',
+        url:
+          novelTitle && n.chapter?.novel?.slug && chapterNumber
+            ? `/novel/${n.chapter.novel.slug}/chapter/${chapterNumber}`
+            : '#',
       }
     }
 
@@ -270,69 +280,68 @@ export default function NotificationBell() {
             </p>
           )}
 
-          {!loading && notifications.map((n) => {
-            const c = getNotifContent(n)
-            return (
-              <Link
-                key={n.id}
-                to={c.url}
-                onClick={() => setOpen(false)}
-                style={{
-                  display: 'flex',
-                  gap: 10,
-                  padding: '12px 14px',
-                  borderBottom: '1px solid var(--border)',
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  background: n.is_read ? 'transparent' : 'rgba(212, 175, 91, 0.06)',
-                }}
-              >
-                <div
+          {!loading &&
+            notifications.map((n) => {
+              const c = getNotifContent(n)
+              return (
+                <Link
+                  key={n.id}
+                  to={c.url}
+                  onClick={() => setOpen(false)}
                   style={{
-                    width: 32,
-                    height: 32,
-                    flexShrink: 0,
-                    borderRadius: '50%',
-                    background: c.color,
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: c.colorText,
+                    gap: 10,
+                    padding: '12px 14px',
+                    borderBottom: '1px solid var(--border)',
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    background: n.is_read ? 'transparent' : 'rgba(212, 175, 91, 0.06)',
                   }}
                 >
-                  {c.icon}
-                </div>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: '0.85rem', marginBottom: 2 }}>
-                    {c.text}
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      flexShrink: 0,
+                      borderRadius: '50%',
+                      background: c.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: c.colorText,
+                    }}
+                  >
+                    {c.icon}
                   </div>
-                  {c.subtext && (
-                    <div
-                      style={{
-                        fontSize: '0.75rem',
-                        color: 'var(--text-muted)',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {c.subtext}
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: '0.85rem', marginBottom: 2 }}>{c.text}</div>
+                    {c.subtext && (
+                      <div
+                        style={{
+                          fontSize: '0.75rem',
+                          color: 'var(--text-muted)',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {c.subtext}
+                      </div>
+                    )}
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                      {new Date(n.created_at).toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
                     </div>
-                  )}
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                    {new Date(n.created_at).toLocaleDateString('id-ID', {
-                      day: 'numeric',
-                      month: 'short',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
                   </div>
-                </div>
-              </Link>
-            )
-          })}
+                </Link>
+              )
+            })}
         </div>
       )}
     </div>
   )
-    }
+        }
