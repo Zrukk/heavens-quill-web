@@ -262,20 +262,22 @@ export default function ReviewSection({ novelId, onCountChange, hideTitle = fals
   }
 
   return (
-    <div style={{ marginTop: 48, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
-        <h2 style={{ fontSize: '1.3rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Star size={20} color="var(--gold)" />
-          Review Pembaca ({reviews.length})
-        </h2>
-        {!showForm && (
-          <button onClick={startNewReview} className="btn btn--gold" style={{ fontSize: '0.85rem', padding: '8px 14px' }}>
-            <Pencil size={14} />
-            Tulis Review
-          </button>
-        )}
-      </div>
-
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+  {!hideTitle && (
+    <h2 style={{ fontSize: '1.3rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+      <Star size={20} color="var(--gold)" />
+      Review Pembaca ({reviews.length})
+    </h2>
+  )}
+  {hideTitle && <div />}
+  {!showForm && (
+    <button onClick={startNewReview} className="btn btn--gold" style={{ fontSize: '0.85rem', padding: '8px 14px' }}>
+      <Pencil size={14} />
+      Tulis Review
+    </button>
+  )}
+</div>
+    
       {/* Form tulis/edit review */}
       {showForm && (
         <form
