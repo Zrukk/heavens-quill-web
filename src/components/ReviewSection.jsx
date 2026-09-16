@@ -219,7 +219,6 @@ export default function ReviewSection({ novelId, onCountChange, hideTitle = fals
   }
 
   async function loadRepliesForReview(reviewId) {
-  // Step 1: fetch replies
   const { data: repliesData, error: repliesError } = await supabase
     .from('review_replies')
     .select('id, content, created_at, user_id, parent_id')
@@ -228,7 +227,6 @@ export default function ReviewSection({ novelId, onCountChange, hideTitle = fals
 
   if (repliesError || !repliesData || repliesData.length === 0) return []
 
-  // Step 2: fetch profil user yang reply
   const userIds = [...new Set(repliesData.map((r) => r.user_id))]
   const { data: profilesData } = await supabase
     .from('profiles')
@@ -240,7 +238,6 @@ export default function ReviewSection({ novelId, onCountChange, hideTitle = fals
     profilesMap[p.id] = p
   })
 
-  // Step 3: gabungin
   return repliesData.map((r) => ({
     ...r,
     profiles: profilesMap[r.user_id] || { display_name: 'Pembaca', avatar_url: null },
