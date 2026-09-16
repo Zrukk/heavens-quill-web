@@ -35,9 +35,10 @@ export default function ReviewSection({ novelId, onCountChange, hideTitle = fals
   }, [novelId])
 
   async function loadReviews() {
+  async function loadReviews() {
   setLoading(true)
 
-  // Step 1: fetch review dulu (tanpa join)
+  // Step 1: fetch review tanpa join
   const { data: reviewsData, error: reviewError } = await supabase
     .from('novel_reviews')
     .select('id, rating, content, has_spoiler, created_at, updated_at, user_id')
@@ -51,7 +52,7 @@ export default function ReviewSection({ novelId, onCountChange, hideTitle = fals
     return
   }
 
-  // Step 2: fetch profil user yang review, terpisah
+  // Step 2: fetch profil user terpisah
   const userIds = [...new Set((reviewsData ?? []).map((r) => r.user_id))]
   let profilesMap = {}
   if (userIds.length > 0) {
@@ -64,12 +65,15 @@ export default function ReviewSection({ novelId, onCountChange, hideTitle = fals
     })
   }
 
-  // Step 3: gabungin
+  // Step 3: merge
   const merged = (reviewsData ?? []).map((r) => ({
     ...r,
     profiles: profilesMap[r.user_id] || { display_name: 'Pembaca', avatar_url: null },
   }))
 
+  setReviews(merged)
+  if (onCountChange) onCountChange(merged.length)
+  }
   setReviews(merged)
   if (onCountChange) onCountChange(merged.length)
     if (data && data.length > 0) {
