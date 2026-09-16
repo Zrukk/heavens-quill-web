@@ -52,6 +52,7 @@ export default function ReviewSection({ novelId, onCountChange, hideTitle = fals
       .order('created_at', { ascending: false })
 
     setReviews(data ?? [])
+if (onCountChange) onCountChange((data ?? []).length)
 
     // Load like count & status
     if (data && data.length > 0) {
