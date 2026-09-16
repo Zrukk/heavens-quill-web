@@ -280,15 +280,15 @@ export default function ChapterReader() {
     const indent = Math.min(depth, maxDepth) * 20
 
     return (
-      <div key={comment.id} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div
-          className="card"
-          style={{
-            padding: 12,
-            marginLeft: indent,
-            borderLeft: depth > 0 ? '2px solid var(--border)' : undefined,
-          }}
-        >
+  <div key={comment.id} id={`comment-${comment.id}`} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div
+      className="card"
+      style={{
+        padding: 12,
+        marginLeft: indent,
+        borderLeft: depth > 0 ? '2px solid var(--border)' : undefined,
+      }}
+    >
           {/* Header: avatar + nama + tanggal */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 }}>
             <Link to={`/pembaca/${comment.user_id}`} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
