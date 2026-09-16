@@ -186,7 +186,7 @@ export function Privacy() {
   return (
     <PageWrapper icon={<Shield size={26} />} title="Kebijakan Privasi">
       <p style={{ fontStyle: 'italic' }}>
-        Terakhir diperbarui: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+        Terakhir diperbarui: 15 September 2026
       </p>
 
       <p>
@@ -280,4 +280,4 @@ export function Privacy() {
       </p>
     </PageWrapper>
   )
-      }
+            }
