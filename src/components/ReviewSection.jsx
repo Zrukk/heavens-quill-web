@@ -35,7 +35,6 @@ export default function ReviewSection({ novelId, onCountChange, hideTitle = fals
   }, [novelId])
 
   async function loadReviews() {
-  async function loadReviews() {
   setLoading(true)
 
   // Step 1: fetch review dulu (tanpa join)
