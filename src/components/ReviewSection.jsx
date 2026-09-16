@@ -574,7 +574,7 @@ function ReviewCard({
   }
 
   return (
-    <div className="card" style={{ padding: 16 }}>
+  <div className="card" id={`review-${review.id}`} style={{ padding: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, gap: 8 }}>
         <Link to={`/pembaca/${review.user_id}`} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div
