@@ -6,7 +6,7 @@ import { fetchAllChapterRows } from '../lib/fetchAllChapterRows'
 import { useDocumentMeta } from '../lib/useDocumentMeta'
 import { useAuth } from '../lib/AuthContext'
 import FavoriteButton from '../components/FavoriteButton'
-import RatingStars from '../components/RatingStars'
+import ReviewSection from '../components/ReviewSection'
 
 async function fetchAllReadIds(novelId, userId) {
   const pageSize = 1000
@@ -196,19 +196,17 @@ export default function NovelDetail() {
           )}
 
           <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap', alignItems: 'center' }}>
-  {chapters.length > 0 && resumeChapterNumber !== null && (
-    <Link to={`/novel/${slug}/chapter/${resumeChapterNumber}`} className="btn btn--filled">
-      <BookOpen size={16} />
-      {bookmark?.last_chapter_read ? `Lanjut ke Chapter ${resumeChapterNumber}` : 'Mulai Baca'}
-    </Link>
-  )}
-  <FavoriteButton novelId={novel.id} novelTitle={novel.title} />
-</div>
-
-{/* Rating */}
-<div style={{ marginTop: 16 }}>
-  <RatingStars novelId={novel.id} />
-</div>
+            {chapters.length > 0 && resumeChapterNumber !== null && (
+              <Link
+                to={`/novel/${slug}/chapter/${resumeChapterNumber}`}
+                className="btn btn--filled"
+              >
+                <BookOpen size={16} />
+                {bookmark?.last_chapter_read ? `Lanjut ke Chapter ${resumeChapterNumber}` : 'Mulai Baca'}
+              </Link>
+            )}
+            <FavoriteButton novelId={novel.id} novelTitle={novel.title} />
+          </div>
         </div>
       </div>
 
@@ -259,6 +257,8 @@ export default function NovelDetail() {
           )
         })}
       </div>
+
+      <ReviewSection novelId={novel.id} />
     </div>
   )
-  }
+        }
