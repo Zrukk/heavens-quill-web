@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { BookOpen, PlayCircle, CheckCircle2, Languages, Search, ArrowUpDown, ListOrdered, Eye } from 'lucide-react'
+import { BookOpen, PlayCircle, CheckCircle2, Languages, Search, ArrowUpDown, ListOrdered, Eye, Star, ChevronDown, ChevronUp } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { fetchAllChapterRows } from '../lib/fetchAllChapterRows'
 import { useDocumentMeta } from '../lib/useDocumentMeta'
@@ -38,6 +38,8 @@ export default function NovelDetail() {
   const [sortOrder, setSortOrder] = useState('asc')
   const [synopsisExpanded, setSynopsisExpanded] = useState(false)
   const [readChapterIds, setReadChapterIds] = useState(new Set())
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const [reviewCount, setReviewCount] = useState(0)
 
   useEffect(() => {
     async function load() {
@@ -55,6 +57,13 @@ export default function NovelDetail() {
 
       const chapterData = await fetchAllChapterRows(novelData.id, 'id, chapter_number, title')
       setChapters(chapterData ?? [])
+
+      // Count review
+      const { count } = await supabase
+        .from('novel_reviews')
+        .select('*', { count: 'exact', head: true })
+        .eq('novel_id', novelData.id)
+      setReviewCount(count ?? 0)
 
       if (user) {
         const { data: bookmarkData } = await supabase
@@ -172,7 +181,7 @@ export default function NovelDetail() {
         </div>
       </div>
 
-      <div style={{ marginBottom: 32 }}>
+      <div style={{ marginBottom: 24 }}>
         <p
           style={{
             color: 'var(--text-muted)',
@@ -208,6 +217,44 @@ export default function NovelDetail() {
             <FavoriteButton novelId={novel.id} novelTitle={novel.title} />
           </div>
         </div>
+      </div>
+
+      {/* ===== REVIEW SECTION (collapsible) ===== */}
+      <div style={{ marginBottom: 32 }}>
+        <button
+          onClick={() => setReviewOpen(!reviewOpen)}
+          className="card"
+          style={{
+            width: '100%',
+            padding: '14px 16px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            cursor: 'pointer',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            color: 'var(--text)',
+            fontFamily: 'inherit',
+            textAlign: 'left',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Star size={20} color="var(--gold)" />
+            <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>
+              Review Pembaca ({reviewCount})
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)' }}>
+            <span style={{ fontSize: '0.85rem' }}>{reviewOpen ? 'Tutup' : 'Buka'}</span>
+            {reviewOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </div>
+        </button>
+
+        {reviewOpen && (
+          <div style={{ marginTop: 16 }}>
+            <ReviewSection novelId={novel.id} onCountChange={setReviewCount} hideTitle />
+          </div>
+        )}
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8, flexWrap: 'wrap' }}>
@@ -257,8 +304,6 @@ export default function NovelDetail() {
           )
         })}
       </div>
-
-      <ReviewSection novelId={novel.id} />
     </div>
   )
-        }
+  }
