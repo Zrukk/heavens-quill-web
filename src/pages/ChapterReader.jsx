@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, MessageCircle, Send, Reply, Coffee, UserCircle2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -7,6 +7,8 @@ import { useDocumentMeta, stripHtml } from '../lib/useDocumentMeta'
 import { useAuth } from '../lib/AuthContext'
 import ShareButton from '../components/ShareButton'
 import BackToTop from '../components/BackToTop'
+import ParagraphComments from '../components/ParagraphComments'
+import { tagParagraphs, getParagraphPreview } from '../lib/paragraphUtils'
 
 async function notifyDiscord({ authorName, novelTitle, chapterNumber, chapterTitle, content, url, isReply }) {
   const webhookUrl = import.meta.env.VITE_DISCORD_WEBHOOK_URL
@@ -58,6 +60,12 @@ export default function ChapterReader() {
   const [replyText, setReplyText] = useState('')
   const [postingReply, setPostingReply] = useState(false)
 
+  // State komentar per paragraf
+  const [taggedContent, setTaggedContent] = useState('')
+  const [paragraphCounts, setParagraphCounts] = useState({}) // { [index]: count }
+  const [openParagraph, setOpenParagraph] = useState(null) // index paragraf yang panel-nya kebuka
+  const contentRef = useRef(null)
+
   useEffect(() => {
     async function load() {
       setLoading(true)
@@ -80,6 +88,12 @@ export default function ChapterReader() {
         .eq('chapter_number', number)
         .single()
       setChapter(chapterData)
+
+      // Tag paragraf
+      if (chapterData?.content) {
+        const { htmlWithIds } = tagParagraphs(chapterData.content)
+        setTaggedContent(htmlWithIds)
+      }
 
       const allChapters = await fetchAllChapterRows(novelData.id, 'chapter_number')
       setSiblings(allChapters ?? [])
@@ -107,6 +121,24 @@ export default function ChapterReader() {
     }
     load()
   }, [slug, number, user])
+
+  // Fetch jumlah komentar per paragraf
+  useEffect(() => {
+    if (!chapter?.id) return
+    async function loadParagraphCounts() {
+      const { data } = await supabase
+        .from('paragraph_comments')
+        .select('paragraph_index')
+        .eq('chapter_id', chapter.id)
+
+      const counts = {}
+      ;(data ?? []).forEach((c) => {
+        counts[c.paragraph_index] = (counts[c.paragraph_index] || 0) + 1
+      })
+      setParagraphCounts(counts)
+    }
+    loadParagraphCounts()
+  }, [chapter?.id])
 
   useEffect(() => {
     if (chapter?.id && novel?.id) {
@@ -158,6 +190,29 @@ export default function ChapterReader() {
       : undefined,
     chapter ? stripHtml(chapter.content).slice(0, 160) : undefined,
   )
+
+  // Event listener klik paragraf
+  useEffect(() => {
+    if (!contentRef.current) return
+
+    function handleClick(e) {
+      // Cari <p> terdekat
+      let target = e.target
+      while (target && target !== contentRef.current) {
+        if (target.tagName === 'P' && target.hasAttribute('data-paragraph')) {
+          const idx = Number(target.getAttribute('data-paragraph'))
+          e.stopPropagation() // biar gak trigger onClick chapter-content
+          setOpenParagraph(idx)
+          return
+        }
+        target = target.parentElement
+      }
+    }
+
+    const el = contentRef.current
+    el.addEventListener('click', handleClick)
+    return () => el.removeEventListener('click', handleClick)
+  }, [taggedContent])
 
   async function loadComments() {
     setLoadingComments(true)
@@ -255,6 +310,14 @@ export default function ChapterReader() {
     }
   }
 
+  // Callback setelah kirim komentar paragraf → refresh count
+  function handleParagraphCommentAdded(paragraphIndex) {
+    setParagraphCounts((prev) => ({
+      ...prev,
+      [paragraphIndex]: (prev[paragraphIndex] || 0) + 1,
+    }))
+  }
+
   if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
   if (!chapter) return <div className="container" style={{ paddingTop: 40 }}>Chapter tidak ditemukan.</div>
 
@@ -263,7 +326,7 @@ export default function ChapterReader() {
   const prevNum = currentIndex > 0 ? nums[currentIndex - 1] : null
   const nextNum = currentIndex < nums.length - 1 ? nums[currentIndex + 1] : null
 
-  // ====== KOMENTAR: NESTED REPLY ======
+  // ====== KOMENTAR CHAPTER: NESTED REPLY ======
   const topLevelComments = comments
     .filter((c) => !c.parent_id)
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
@@ -276,20 +339,19 @@ export default function ChapterReader() {
 
   function renderCommentTree(comment, depth = 0) {
     const replies = getReplies(comment.id)
-    const maxDepth = 5 // batas indentasi biar gak terlalu menjorok di mobile
+    const maxDepth = 5
     const indent = Math.min(depth, maxDepth) * 20
 
     return (
-  <div key={comment.id} id={`comment-${comment.id}`} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-    <div
-      className="card"
-      style={{
-        padding: 12,
-        marginLeft: indent,
-        borderLeft: depth > 0 ? '2px solid var(--border)' : undefined,
-      }}
-    >
-          {/* Header: avatar + nama + tanggal */}
+      <div key={comment.id} id={`comment-${comment.id}`} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div
+          className="card"
+          style={{
+            padding: 12,
+            marginLeft: indent,
+            borderLeft: depth > 0 ? '2px solid var(--border)' : undefined,
+          }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 }}>
             <Link to={`/pembaca/${comment.user_id}`} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div
@@ -316,10 +378,8 @@ export default function ChapterReader() {
             </span>
           </div>
 
-          {/* Isi komentar */}
           <p style={{ margin: 0, fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>{comment.content}</p>
 
-          {/* Tombol aksi */}
           <div style={{ display: 'flex', gap: 14, marginTop: 6 }}>
             {(user?.id === comment.user_id || isAdmin) && (
               <button
@@ -358,7 +418,6 @@ export default function ChapterReader() {
           </div>
         </div>
 
-        {/* Form reply */}
         {replyingTo === comment.id && (
           <div style={{ marginLeft: indent + 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
             <textarea
@@ -399,7 +458,6 @@ export default function ChapterReader() {
           </div>
         )}
 
-        {/* Render reply secara rekursif */}
         {replies.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {replies.map((reply) => renderCommentTree(reply, depth + 1))}
@@ -424,20 +482,67 @@ export default function ChapterReader() {
       </h1>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32, flexWrap: 'wrap' }}>
-  <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-    <Eye size={14} />
-    {(chapter.views ?? 0).toLocaleString('id-ID')} views
-  </div>
-  <ShareButton
-    url={`${window.location.origin}/novel/${slug}/chapter/${number}`}
-    title={`${novel.title} — Chapter ${chapter.chapter_number}${chapter.title ? `: ${chapter.title}` : ''}`}
-  />
-</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+          <Eye size={14} />
+          {(chapter.views ?? 0).toLocaleString('id-ID')} views
+        </div>
+        <ShareButton
+          url={`${window.location.origin}/novel/${slug}/chapter/${number}`}
+          title={`${novel.title} — Chapter ${chapter.chapter_number}${chapter.title ? `: ${chapter.title}` : ''}`}
+        />
+      </div>
+
+      {/* ====== CHAPTER CONTENT DENGAN PARAGRAF YANG BISA DIKLIK ====== */}
       <div
+        ref={contentRef}
         className="chapter-content"
         style={{ fontSize: '1.05rem', cursor: 'pointer' }}
         onClick={() => setShowToolbar((v) => !v)}
-        dangerouslySetInnerHTML={{ __html: chapter.content }}
+        dangerouslySetInnerHTML={{ __html: taggedContent }}
+      />
+
+      {/* Inject CSS untuk highlight paragraf */}
+      <style>{`
+        .chapter-content p {
+          position: relative;
+          transition: background 0.2s;
+          border-radius: 4px;
+          padding: 2px 6px;
+          margin-left: -6px;
+          margin-right: -6px;
+        }
+        .chapter-content p[data-has-comment="true"] {
+          background: rgba(212, 175, 91, 0.08);
+        }
+        .chapter-content p[data-has-comment="true"]:hover {
+          background: rgba(212, 175, 91, 0.16);
+        }
+        .chapter-content p[data-has-comment="true"]::after {
+          content: attr(data-comment-count) ' 💬';
+          position: absolute;
+          right: -6px;
+          top: -2px;
+          font-size: 0.65rem;
+          color: var(--gold);
+          font-family: sans-serif;
+          pointer-events: none;
+        }
+      `}</style>
+
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+            // Script kecil buat nandain paragraf yang ada komentarnya
+            // (dipanggil setiap kali paragraphCounts berubah via React)
+          `,
+        }}
+      />
+
+      {/* Marker paragraf dengan komentar — pakai efek React */}
+      <ParagraphMarkerEffect
+        contentRef={contentRef}
+        paragraphCounts={paragraphCounts}
+        taggedContent={taggedContent}
       />
 
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>
@@ -581,11 +686,51 @@ export default function ChapterReader() {
             style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
           >
             <UserCircle2 size={20} />
-               <span style={{ fontSize: '0.65rem' }}>Profil</span>
+            <span style={{ fontSize: '0.65rem' }}>Profil</span>
           </button>
         </div>
       )}
-           <BackToTop />
+
+      {/* Panel komentar per paragraf */}
+      {openParagraph != null && (
+        <ParagraphComments
+          chapterId={chapter.id}
+          paragraphIndex={openParagraph}
+          paragraphPreview={getParagraphPreview(chapter.content, openParagraph)}
+          onClose={() => setOpenParagraph(null)}
+          onCommentAdded={() => handleParagraphCommentAdded(openParagraph)}
+        />
+      )}
+
+      <BackToTop />
     </div>
   )
 }
+
+/* ===== Komponen kecil untuk mark paragraf yang punya komentar ===== */
+function ParagraphMarkerEffect({ contentRef, paragraphCounts, taggedContent }) {
+  useEffect(() => {
+    if (!contentRef.current) return
+
+    // Reset dulu semua
+    const paragraphs = contentRef.current.querySelectorAll('p[data-paragraph]')
+    paragraphs.forEach((p) => {
+      p.removeAttribute('data-has-comment')
+      p.removeAttribute('data-comment-count')
+    })
+
+    // Mark yang ada komentarnya
+    Object.entries(paragraphCounts).forEach(([idx, count]) => {
+      if (count > 0) {
+        const p = contentRef.current.querySelector(`p[data-paragraph="${idx}"]`)
+        if (p) {
+          p.setAttribute('data-has-comment', 'true')
+          p.setAttribute('data-comment-count', String(count))
+        }
+      }
+    })
+  }, [paragraphCounts, taggedContent])
+
+  return null
+}
+          
