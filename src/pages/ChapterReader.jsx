@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, MessageCircle, Send, Reply, Coffee, UserCircle2 } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, MessageCircle, Send, Reply, Coffee, UserCircle2, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { fetchAllChapterRows } from '../lib/fetchAllChapterRows'
 import { useDocumentMeta, stripHtml } from '../lib/useDocumentMeta'
@@ -63,6 +63,9 @@ export default function ChapterReader() {
   const [taggedContent, setTaggedContent] = useState('')
   const [paragraphCounts, setParagraphCounts] = useState({})
   const [openParagraph, setOpenParagraph] = useState(null)
+
+  // Toolbar toggle
+  const [showToolbar, setShowToolbar] = useState(true)
 
   // Long press
   const longPressTimer = useRef(null)
@@ -193,17 +196,16 @@ export default function ChapterReader() {
 
   // ===== LONG PRESS UNTUK PARAGRAF =====
   function findParagraph(e) {
-  // Cari elemen <p> terdekat dari target (naik ke atas)
-  let target = e.target
-  while (target && target !== e.currentTarget) {
-    if (target.tagName === 'P' && target.hasAttribute('data-paragraph')) {
-      return target
+    let target = e.target
+    while (target && target !== e.currentTarget) {
+      if (target.tagName === 'P' && target.hasAttribute('data-paragraph')) {
+        return target
+      }
+      target = target.parentElement
     }
-    target = target.parentElement
+    return null
   }
-  return null
-  }
-  
+
   function handlePressStart(e) {
     const p = findParagraph(e)
     if (!p) return
@@ -239,6 +241,18 @@ export default function ChapterReader() {
     }
   }
   // ===== END LONG PRESS =====
+
+  // Toggle toolbar saat klik area kosong (bukan paragraf)
+  function handleContentClick(e) {
+    let target = e.target
+    while (target && target !== e.currentTarget) {
+      if (target.tagName === 'P' && target.hasAttribute('data-paragraph')) {
+        return
+      }
+      target = target.parentElement
+    }
+    setShowToolbar((v) => !v)
+  }
 
   async function loadComments() {
     setLoadingComments(true)
@@ -524,10 +538,11 @@ export default function ChapterReader() {
         💡 Tekan lama paragraf manapun buat kasih komentar
       </p>
 
-      {/* CHAPTER CONTENT — pakai long press */}
+      {/* CHAPTER CONTENT */}
       <div
         className="chapter-content"
         style={{ fontSize: '1.05rem', userSelect: 'none', WebkitUserSelect: 'none' }}
+        onClick={handleContentClick}
         onMouseDown={handlePressStart}
         onMouseUp={handlePressEnd}
         onMouseLeave={handlePressEnd}
@@ -538,7 +553,6 @@ export default function ChapterReader() {
         dangerouslySetInnerHTML={{ __html: taggedContent }}
       />
 
-      {/* CSS buat marker paragraf berkomentar */}
       <style>{`
         .chapter-content p {
           position: relative;
@@ -680,65 +694,81 @@ export default function ChapterReader() {
         ) : <span />}
       </div>
 
-      {/* TOOLBAR NGAMBANG — SELALU MUNCUL, SEMBUNYI KALAU PANEL KOMENTAR BUKA */}
-<div
-  style={{
-    position: 'fixed',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    background: 'rgba(18, 23, 29, 0.85)',
-    backdropFilter: 'blur(8px)',
-    WebkitBackdropFilter: 'blur(8px)',
-    borderTop: '1px solid var(--border)',
-    padding: '8px 16px',
-    display: openParagraph != null ? 'none' : 'flex',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    zIndex: 50,
-    opacity: 0.7,
-    transition: 'opacity 0.2s',
-  }}
-  onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-  onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
-  onTouchStart={(e) => (e.currentTarget.style.opacity = '1')}
-  onTouchEnd={(e) =>
-    setTimeout(() => {
-      e.currentTarget.style.opacity = '0.7'
-    }, 1500)
-  }
->
-        <button
-          onClick={() => navigate(`/novel/${slug}`)}
-          style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
+      {/* TOOLBAR NGAMBANG — cuma muncul kalau showToolbar true & panel komentar gak buka */}
+      {showToolbar && openParagraph == null && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            background: 'rgba(18, 23, 29, 0.92)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            borderTop: '1px solid var(--border)',
+            padding: '8px 16px',
+            display: 'flex',
+            justifyContent: 'space-around',
+            alignItems: 'center',
+            zIndex: 50,
+          }}
         >
-          <ArrowLeft size={18} />
-          <span style={{ fontSize: '0.6rem' }}>Novel</span>
-        </button>
-        <button
-          onClick={() => prevNum && navigate(`/novel/${slug}/chapter/${prevNum}`)}
-          disabled={!prevNum}
-          style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: prevNum ? 'pointer' : 'default', opacity: prevNum ? 1 : 0.3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
-        >
-          <ChevronLeft size={18} />
-          <span style={{ fontSize: '0.6rem' }}>Sebelumnya</span>
-        </button>
-        <button
-          onClick={() => nextNum && navigate(`/novel/${slug}/chapter/${nextNum}`)}
-          disabled={!nextNum}
-          style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: nextNum ? 'pointer' : 'default', opacity: nextNum ? 1 : 0.3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
-        >
-          <ChevronRight size={18} />
-          <span style={{ fontSize: '0.6rem' }}>Berikutnya</span>
-        </button>
-        <button
-          onClick={() => navigate('/profil')}
-          style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
-        >
-          <UserCircle2 size={18} />
-          <span style={{ fontSize: '0.6rem' }}>Profil</span>
-        </button>
-      </div>
+          <button
+            onClick={() => navigate(`/novel/${slug}`)}
+            style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
+          >
+            <ArrowLeft size={18} />
+            <span style={{ fontSize: '0.6rem' }}>Novel</span>
+          </button>
+          <button
+            onClick={() => prevNum && navigate(`/novel/${slug}/chapter/${prevNum}`)}
+            disabled={!prevNum}
+            style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: prevNum ? 'pointer' : 'default', opacity: prevNum ? 1 : 0.3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
+          >
+            <ChevronLeft size={18} />
+            <span style={{ fontSize: '0.6rem' }}>Sebelumnya</span>
+          </button>
+          <button
+            onClick={() => nextNum && navigate(`/novel/${slug}/chapter/${nextNum}`)}
+            disabled={!nextNum}
+            style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: nextNum ? 'pointer' : 'default', opacity: nextNum ? 1 : 0.3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
+          >
+            <ChevronRight size={18} />
+            <span style={{ fontSize: '0.6rem' }}>Berikutnya</span>
+          </button>
+          <button
+            onClick={() => navigate('/profil')}
+            style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
+          >
+            <UserCircle2 size={18} />
+            <span style={{ fontSize: '0.6rem' }}>Profil</span>
+          </button>
+
+          {/* Tombol close toolbar */}
+          <button
+            onClick={() => setShowToolbar(false)}
+            title="Sembunyikan toolbar"
+            style={{
+              position: 'absolute',
+              top: -12,
+              right: 12,
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: '50%',
+              width: 24,
+              height: 24,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'var(--text-muted)',
+              padding: 0,
+            }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Panel komentar paragraf */}
       {openParagraph != null && (
@@ -780,4 +810,5 @@ function ParagraphHighlighter({ paragraphCounts }) {
   }, [paragraphCounts])
 
   return null
-                                      }
+      }
+          
