@@ -62,8 +62,8 @@ export default function ChapterReader() {
 
   // State komentar per paragraf
   const [taggedContent, setTaggedContent] = useState('')
-  const [paragraphCounts, setParagraphCounts] = useState({}) // { [index]: count }
-  const [openParagraph, setOpenParagraph] = useState(null) // index paragraf yang panel-nya kebuka
+  const [paragraphCounts, setParagraphCounts] = useState({})
+  const [openParagraph, setOpenParagraph] = useState(null)
   const contentRef = useRef(null)
 
   useEffect(() => {
@@ -196,12 +196,11 @@ export default function ChapterReader() {
     if (!contentRef.current) return
 
     function handleClick(e) {
-      // Cari <p> terdekat
       let target = e.target
       while (target && target !== contentRef.current) {
         if (target.tagName === 'P' && target.hasAttribute('data-paragraph')) {
           const idx = Number(target.getAttribute('data-paragraph'))
-          e.stopPropagation() // biar gak trigger onClick chapter-content
+          e.stopPropagation()
           setOpenParagraph(idx)
           return
         }
@@ -213,6 +212,27 @@ export default function ChapterReader() {
     el.addEventListener('click', handleClick)
     return () => el.removeEventListener('click', handleClick)
   }, [taggedContent])
+
+  // Mark paragraf yang punya komentar
+  useEffect(() => {
+    if (!contentRef.current) return
+
+    const paragraphs = contentRef.current.querySelectorAll('p[data-paragraph]')
+    paragraphs.forEach((p) => {
+      p.removeAttribute('data-has-comment')
+      p.removeAttribute('data-comment-count')
+    })
+
+    Object.entries(paragraphCounts).forEach(([idx, count]) => {
+      if (count > 0) {
+        const p = contentRef.current.querySelector(`p[data-paragraph="${idx}"]`)
+        if (p) {
+          p.setAttribute('data-has-comment', 'true')
+          p.setAttribute('data-comment-count', String(count))
+        }
+      }
+    })
+  }, [paragraphCounts, taggedContent])
 
   async function loadComments() {
     setLoadingComments(true)
@@ -310,7 +330,6 @@ export default function ChapterReader() {
     }
   }
 
-  // Callback setelah kirim komentar paragraf → refresh count
   function handleParagraphCommentAdded(paragraphIndex) {
     setParagraphCounts((prev) => ({
       ...prev,
@@ -326,7 +345,6 @@ export default function ChapterReader() {
   const prevNum = currentIndex > 0 ? nums[currentIndex - 1] : null
   const nextNum = currentIndex < nums.length - 1 ? nums[currentIndex + 1] : null
 
-  // ====== KOMENTAR CHAPTER: NESTED REPLY ======
   const topLevelComments = comments
     .filter((c) => !c.parent_id)
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
@@ -492,58 +510,49 @@ export default function ChapterReader() {
         />
       </div>
 
-      {/* ====== CHAPTER CONTENT DENGAN PARAGRAF YANG BISA DIKLIK ====== */}
+      {/* CHAPTER CONTENT */}
       <div
         ref={contentRef}
         className="chapter-content"
-        style={{ fontSize: '1.05rem', cursor: 'pointer' }}
-        onClick={() => setShowToolbar((v) => !v)}
+        style={{ fontSize: '1.05rem' }}
         dangerouslySetInnerHTML={{ __html: taggedContent }}
       />
 
-      {/* Inject CSS untuk highlight paragraf */}
+      {/* CSS untuk highlight paragraf */}
       <style>{`
         .chapter-content p {
           position: relative;
           transition: background 0.2s;
           border-radius: 4px;
-          padding: 2px 6px;
-          margin-left: -6px;
-          margin-right: -6px;
+          padding: 4px 8px;
+          margin-left: -8px;
+          margin-right: -8px;
+          cursor: pointer;
+        }
+        .chapter-content p:hover {
+          background: rgba(255, 255, 255, 0.03);
         }
         .chapter-content p[data-has-comment="true"] {
-          background: rgba(212, 175, 91, 0.08);
+          background: rgba(212, 175, 91, 0.1);
         }
         .chapter-content p[data-has-comment="true"]:hover {
-          background: rgba(212, 175, 91, 0.16);
+          background: rgba(212, 175, 91, 0.18);
         }
         .chapter-content p[data-has-comment="true"]::after {
-          content: attr(data-comment-count) ' 💬';
+          content: '💬 ' attr(data-comment-count);
           position: absolute;
-          right: -6px;
-          top: -2px;
+          right: -8px;
+          top: -4px;
           font-size: 0.65rem;
           color: var(--gold);
           font-family: sans-serif;
           pointer-events: none;
+          background: var(--bg);
+          padding: 1px 6px;
+          border-radius: 10px;
+          border: 1px solid var(--gold);
         }
       `}</style>
-
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            // Script kecil buat nandain paragraf yang ada komentarnya
-            // (dipanggil setiap kali paragraphCounts berubah via React)
-          `,
-        }}
-      />
-
-      {/* Marker paragraf dengan komentar — pakai efek React */}
-      <ParagraphMarkerEffect
-        contentRef={contentRef}
-        paragraphCounts={paragraphCounts}
-        taggedContent={taggedContent}
-      />
 
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>
         <button
@@ -705,32 +714,5 @@ export default function ChapterReader() {
       <BackToTop />
     </div>
   )
-}
-
-/* ===== Komponen kecil untuk mark paragraf yang punya komentar ===== */
-function ParagraphMarkerEffect({ contentRef, paragraphCounts, taggedContent }) {
-  useEffect(() => {
-    if (!contentRef.current) return
-
-    // Reset dulu semua
-    const paragraphs = contentRef.current.querySelectorAll('p[data-paragraph]')
-    paragraphs.forEach((p) => {
-      p.removeAttribute('data-has-comment')
-      p.removeAttribute('data-comment-count')
-    })
-
-    // Mark yang ada komentarnya
-    Object.entries(paragraphCounts).forEach(([idx, count]) => {
-      if (count > 0) {
-        const p = contentRef.current.querySelector(`p[data-paragraph="${idx}"]`)
-        if (p) {
-          p.setAttribute('data-has-comment', 'true')
-          p.setAttribute('data-comment-count', String(count))
-        }
-      }
-    })
-  }, [paragraphCounts, taggedContent])
-
-  return null
-}
-          
+            }
+       
