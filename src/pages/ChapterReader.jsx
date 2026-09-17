@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, MessageCircle, Send, Reply, Coffee, UserCircle2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -64,7 +64,6 @@ export default function ChapterReader() {
   const [taggedContent, setTaggedContent] = useState('')
   const [paragraphCounts, setParagraphCounts] = useState({})
   const [openParagraph, setOpenParagraph] = useState(null)
-  const contentRef = useRef(null)
 
   useEffect(() => {
     async function load() {
@@ -89,7 +88,6 @@ export default function ChapterReader() {
         .single()
       setChapter(chapterData)
 
-      // Tag paragraf
       if (chapterData?.content) {
         const { htmlWithIds } = tagParagraphs(chapterData.content)
         setTaggedContent(htmlWithIds)
@@ -122,7 +120,6 @@ export default function ChapterReader() {
     load()
   }, [slug, number, user])
 
-  // Fetch jumlah komentar per paragraf
   useEffect(() => {
     if (!chapter?.id) return
     async function loadParagraphCounts() {
@@ -191,48 +188,19 @@ export default function ChapterReader() {
     chapter ? stripHtml(chapter.content).slice(0, 160) : undefined,
   )
 
-  // Event listener klik paragraf
-  useEffect(() => {
-    if (!contentRef.current) return
-
-    function handleClick(e) {
-      let target = e.target
-      while (target && target !== contentRef.current) {
-        if (target.tagName === 'P' && target.hasAttribute('data-paragraph')) {
-          const idx = Number(target.getAttribute('data-paragraph'))
-          e.stopPropagation()
-          setOpenParagraph(idx)
-          return
-        }
-        target = target.parentElement
+  // Fungsi handle klik di konten chapter
+  function handleContentClick(e) {
+    // Cek apakah yang diklik adalah <p> dengan data-paragraph
+    let target = e.target
+    while (target && target !== e.currentTarget) {
+      if (target.tagName === 'P' && target.hasAttribute('data-paragraph')) {
+        const idx = Number(target.getAttribute('data-paragraph'))
+        setOpenParagraph(idx)
+        return
       }
+      target = target.parentElement
     }
-
-    const el = contentRef.current
-    el.addEventListener('click', handleClick)
-    return () => el.removeEventListener('click', handleClick)
-  }, [taggedContent])
-
-  // Mark paragraf yang punya komentar
-  useEffect(() => {
-    if (!contentRef.current) return
-
-    const paragraphs = contentRef.current.querySelectorAll('p[data-paragraph]')
-    paragraphs.forEach((p) => {
-      p.removeAttribute('data-has-comment')
-      p.removeAttribute('data-comment-count')
-    })
-
-    Object.entries(paragraphCounts).forEach(([idx, count]) => {
-      if (count > 0) {
-        const p = contentRef.current.querySelector(`p[data-paragraph="${idx}"]`)
-        if (p) {
-          p.setAttribute('data-has-comment', 'true')
-          p.setAttribute('data-comment-count', String(count))
-        }
-      }
-    })
-  }, [paragraphCounts, taggedContent])
+  }
 
   async function loadComments() {
     setLoadingComments(true)
@@ -330,11 +298,14 @@ export default function ChapterReader() {
     }
   }
 
-  function handleParagraphCommentAdded(paragraphIndex) {
-    setParagraphCounts((prev) => ({
-      ...prev,
-      [paragraphIndex]: (prev[paragraphIndex] || 0) + 1,
-    }))
+  function handleParagraphCommentAdded() {
+    setParagraphCounts((prev) => {
+      const idx = openParagraph
+      return {
+        ...prev,
+        [idx]: (prev[idx] || 0) + 1,
+      }
+    })
   }
 
   if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
@@ -510,15 +481,20 @@ export default function ChapterReader() {
         />
       </div>
 
-      {/* CHAPTER CONTENT */}
+      {/* Info hint */}
+      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 12, fontStyle: 'italic' }}>
+        💡 Klik paragraf manapun buat kasih komentar
+      </p>
+
+      {/* CHAPTER CONTENT — pakai onClick React */}
       <div
-        ref={contentRef}
         className="chapter-content"
         style={{ fontSize: '1.05rem' }}
+        onClick={handleContentClick}
         dangerouslySetInnerHTML={{ __html: taggedContent }}
       />
 
-      {/* CSS untuk highlight paragraf */}
+      {/* CSS buat highlight paragraf */}
       <style>{`
         .chapter-content p {
           position: relative;
@@ -530,7 +506,7 @@ export default function ChapterReader() {
           cursor: pointer;
         }
         .chapter-content p:hover {
-          background: rgba(255, 255, 255, 0.03);
+          background: rgba(255, 255, 255, 0.04);
         }
         .chapter-content p[data-has-comment="true"] {
           background: rgba(212, 175, 91, 0.1);
@@ -553,6 +529,9 @@ export default function ChapterReader() {
           border: 1px solid var(--gold);
         }
       `}</style>
+
+      {/* React effect buat nandain paragraf dengan komentar */}
+      <ParagraphHighlighter paragraphCounts={paragraphCounts} />
 
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>
         <button
@@ -707,12 +686,37 @@ export default function ChapterReader() {
           paragraphIndex={openParagraph}
           paragraphPreview={getParagraphPreview(chapter.content, openParagraph)}
           onClose={() => setOpenParagraph(null)}
-          onCommentAdded={() => handleParagraphCommentAdded(openParagraph)}
+          onCommentAdded={handleParagraphCommentAdded}
         />
       )}
 
       <BackToTop />
     </div>
   )
-            }
-       
+}
+
+/* Komponen kecil untuk mark paragraf yang punya komentar */
+function ParagraphHighlighter({ paragraphCounts }) {
+  useEffect(() => {
+    const container = document.querySelector('.chapter-content')
+    if (!container) return
+
+    const paragraphs = container.querySelectorAll('p[data-paragraph]')
+    paragraphs.forEach((p) => {
+      p.removeAttribute('data-has-comment')
+      p.removeAttribute('data-comment-count')
+    })
+
+    Object.entries(paragraphCounts).forEach(([idx, count]) => {
+      if (count > 0) {
+        const p = container.querySelector(`p[data-paragraph="${idx}"]`)
+        if (p) {
+          p.setAttribute('data-has-comment', 'true')
+          p.setAttribute('data-comment-count', String(count))
+        }
+      }
+    })
+  }, [paragraphCounts])
+
+  return null
+                }
