@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, MessageCircle, Send, Reply, Coffee, UserCircle2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -54,7 +54,6 @@ export default function ChapterReader() {
   const [loadingComments, setLoadingComments] = useState(true)
   const [newComment, setNewComment] = useState('')
   const [postingComment, setPostingComment] = useState(false)
-  const [showToolbar, setShowToolbar] = useState(false)
 
   const [replyingTo, setReplyingTo] = useState(null)
   const [replyText, setReplyText] = useState('')
@@ -64,6 +63,10 @@ export default function ChapterReader() {
   const [taggedContent, setTaggedContent] = useState('')
   const [paragraphCounts, setParagraphCounts] = useState({})
   const [openParagraph, setOpenParagraph] = useState(null)
+
+  // Long press
+  const longPressTimer = useRef(null)
+  const pressedParagraph = useRef(null)
 
   useEffect(() => {
     async function load() {
@@ -188,22 +191,53 @@ export default function ChapterReader() {
     chapter ? stripHtml(chapter.content).slice(0, 160) : undefined,
   )
 
-  // Fungsi handle klik di konten chapter
-function handleContentClick(e) {
-  // Cek apakah yang diklik adalah <p> dengan data-paragraph
-  let target = e.target
-  while (target && target !== e.currentTarget) {
-    if (target.tagName === 'P' && target.hasAttribute('data-paragraph')) {
-      const idx = Number(target.getAttribute('data-paragraph'))
-      setOpenParagraph(idx)
-      return
+  // ===== LONG PRESS UNTUK PARAGRAF =====
+  function findParagraph(e) {
+    let target = e.target
+    while (target && target !== e.currentTarget) {
+      if (target.tagName === 'P' && target.hasAttribute('data-paragraph')) {
+        return target
+      }
+      target = target.parentElement
     }
-    target = target.parentElement
+    return null
   }
 
-  // Kalau gak klik paragraf, toggle toolbar
-  setShowToolbar((v) => !v)
-}
+  function handlePressStart(e) {
+    const p = findParagraph(e)
+    if (!p) return
+
+    const idx = Number(p.getAttribute('data-paragraph'))
+    pressedParagraph.current = idx
+
+    p.style.transition = 'background 0.3s'
+    p.style.background = 'rgba(212, 175, 91, 0.15)'
+
+    longPressTimer.current = setTimeout(() => {
+      setOpenParagraph(idx)
+      p.style.background = ''
+      longPressTimer.current = null
+    }, 500)
+  }
+
+  function handlePressEnd(e) {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+    const p = findParagraph(e)
+    if (p) {
+      p.style.background = ''
+    }
+  }
+
+  function handlePressMove() {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }
+  // ===== END LONG PRESS =====
 
   async function loadComments() {
     setLoadingComments(true)
@@ -460,7 +494,7 @@ function handleContentClick(e) {
   }
 
   return (
-    <div className="container" style={{ paddingTop: 40, paddingBottom: 60, maxWidth: 700 }}>
+    <div className="container" style={{ paddingTop: 40, paddingBottom: 100, maxWidth: 700 }}>
       <Link
         to={`/novel/${slug}`}
         style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.9rem' }}
@@ -473,7 +507,7 @@ function handleContentClick(e) {
         Chapter {chapter.chapter_number}{chapter.title ? ` — ${chapter.title}` : ''}
       </h1>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
           <Eye size={14} />
           {(chapter.views ?? 0).toLocaleString('id-ID')} views
@@ -484,65 +518,68 @@ function handleContentClick(e) {
         />
       </div>
 
-      {/* Info hint */}
+      {/* Hint */}
       <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 12, fontStyle: 'italic' }}>
-        💡 Klik paragraf manapun buat kasih komentar
+        💡 Tekan lama paragraf manapun buat kasih komentar
       </p>
 
-      {/* CHAPTER CONTENT — pakai onClick React */}
+      {/* CHAPTER CONTENT — pakai long press */}
       <div
         className="chapter-content"
-        style={{ fontSize: '1.05rem' }}
-        onClick={handleContentClick}
+        style={{ fontSize: '1.05rem', userSelect: 'none', WebkitUserSelect: 'none' }}
+        onMouseDown={handlePressStart}
+        onMouseUp={handlePressEnd}
+        onMouseLeave={handlePressEnd}
+        onTouchStart={handlePressStart}
+        onTouchEnd={handlePressEnd}
+        onTouchMove={handlePressMove}
+        onContextMenu={(e) => e.preventDefault()}
         dangerouslySetInnerHTML={{ __html: taggedContent }}
       />
 
-      {/* CSS buat highlight paragraf */}
+      {/* CSS buat marker paragraf berkomentar */}
       <style>{`
-  .chapter-content p {
-    position: relative;
-    border-radius: 4px;
-    padding: 4px 8px;
-    margin-left: -8px;
-    margin-right: -8px;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-  .chapter-content p:hover {
-    background: rgba(255, 255, 255, 0.04);
-  }
-  /* Marker kecil di pinggir paragraf yang ada komentarnya */
-  .chapter-content p[data-has-comment="true"]::before {
-    content: '';
-    position: absolute;
-    left: -14px;
-    top: 8px;
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: var(--gold);
-    pointer-events: none;
-    box-shadow: 0 0 0 2px rgba(212, 175, 91, 0.25);
-  }
-  /* Tooltip kecil saat hover di paragraf berkomentar */
-  .chapter-content p[data-has-comment="true"]:hover::after {
-    content: '💬 ' attr(data-comment-count);
-    position: absolute;
-    right: -8px;
-    top: -10px;
-    font-size: 0.65rem;
-    color: var(--gold);
-    font-family: sans-serif;
-    pointer-events: none;
-    background: var(--bg);
-    padding: 2px 6px;
-    border-radius: 10px;
-    border: 1px solid var(--gold);
-    z-index: 1;
-  }
-`}</style>
-      
-      {/* React effect buat nandain paragraf dengan komentar */}
+        .chapter-content p {
+          position: relative;
+          border-radius: 4px;
+          padding: 4px 8px;
+          margin-left: -8px;
+          margin-right: -8px;
+          cursor: pointer;
+          transition: background 0.15s;
+        }
+        .chapter-content p:hover {
+          background: rgba(255, 255, 255, 0.04);
+        }
+        .chapter-content p[data-has-comment="true"]::before {
+          content: '';
+          position: absolute;
+          left: -14px;
+          top: 8px;
+          width: 4px;
+          height: 4px;
+          border-radius: 50%;
+          background: var(--gold);
+          pointer-events: none;
+          box-shadow: 0 0 0 2px rgba(212, 175, 91, 0.25);
+        }
+        .chapter-content p[data-has-comment="true"]:hover::after {
+          content: '💬 ' attr(data-comment-count);
+          position: absolute;
+          right: -8px;
+          top: -10px;
+          font-size: 0.65rem;
+          color: var(--gold);
+          font-family: sans-serif;
+          pointer-events: none;
+          background: var(--bg);
+          padding: 2px 6px;
+          border-radius: 10px;
+          border: 1px solid var(--gold);
+          z-index: 1;
+        }
+      `}</style>
+
       <ParagraphHighlighter paragraphCounts={paragraphCounts} />
 
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>
@@ -642,56 +679,67 @@ function handleContentClick(e) {
         ) : <span />}
       </div>
 
-      {showToolbar && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            background: 'var(--surface)',
-            borderTop: '1px solid var(--border)',
-            padding: '10px 16px',
-            display: 'flex',
-            justifyContent: 'space-around',
-            alignItems: 'center',
-            zIndex: 50,
-          }}
+      {/* TOOLBAR NGAMBANG — SELALU MUNCUL */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: 'rgba(18, 23, 29, 0.85)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          borderTop: '1px solid var(--border)',
+          padding: '8px 16px',
+          display: 'flex',
+          justifyContent: 'space-around',
+          alignItems: 'center',
+          zIndex: 50,
+          opacity: 0.7,
+          transition: 'opacity 0.2s',
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+        onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
+        onTouchStart={(e) => (e.currentTarget.style.opacity = '1')}
+        onTouchEnd={(e) =>
+          setTimeout(() => {
+            e.currentTarget.style.opacity = '0.7'
+          }, 1500)
+        }
+      >
+        <button
+          onClick={() => navigate(`/novel/${slug}`)}
+          style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
         >
-          <button
-            onClick={() => navigate(`/novel/${slug}`)}
-            style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
-          >
-            <ArrowLeft size={20} />
-            <span style={{ fontSize: '0.65rem' }}>Novel</span>
-          </button>
-          <button
-            onClick={() => prevNum && navigate(`/novel/${slug}/chapter/${prevNum}`)}
-            disabled={!prevNum}
-            style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: prevNum ? 'pointer' : 'default', opacity: prevNum ? 1 : 0.3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
-          >
-            <ChevronLeft size={20} />
-            <span style={{ fontSize: '0.65rem' }}>Sebelumnya</span>
-          </button>
-          <button
-            onClick={() => nextNum && navigate(`/novel/${slug}/chapter/${nextNum}`)}
-            disabled={!nextNum}
-            style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: nextNum ? 'pointer' : 'default', opacity: nextNum ? 1 : 0.3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
-          >
-            <ChevronRight size={20} />
-            <span style={{ fontSize: '0.65rem' }}>Berikutnya</span>
-          </button>
-          <button
-            onClick={() => navigate('/profil')}
-            style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
-          >
-            <UserCircle2 size={20} />
-            <span style={{ fontSize: '0.65rem' }}>Profil</span>
-          </button>
-        </div>
-      )}
+          <ArrowLeft size={18} />
+          <span style={{ fontSize: '0.6rem' }}>Novel</span>
+        </button>
+        <button
+          onClick={() => prevNum && navigate(`/novel/${slug}/chapter/${prevNum}`)}
+          disabled={!prevNum}
+          style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: prevNum ? 'pointer' : 'default', opacity: prevNum ? 1 : 0.3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
+        >
+          <ChevronLeft size={18} />
+          <span style={{ fontSize: '0.6rem' }}>Sebelumnya</span>
+        </button>
+        <button
+          onClick={() => nextNum && navigate(`/novel/${slug}/chapter/${nextNum}`)}
+          disabled={!nextNum}
+          style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: nextNum ? 'pointer' : 'default', opacity: nextNum ? 1 : 0.3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
+        >
+          <ChevronRight size={18} />
+          <span style={{ fontSize: '0.6rem' }}>Berikutnya</span>
+        </button>
+        <button
+          onClick={() => navigate('/profil')}
+          style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
+        >
+          <UserCircle2 size={18} />
+          <span style={{ fontSize: '0.6rem' }}>Profil</span>
+        </button>
+      </div>
 
-      {/* Panel komentar per paragraf */}
+      {/* Panel komentar paragraf */}
       {openParagraph != null && (
         <ParagraphComments
           chapterId={chapter.id}
@@ -731,4 +779,4 @@ function ParagraphHighlighter({ paragraphCounts }) {
   }, [paragraphCounts])
 
   return null
-                }
+                                      }
