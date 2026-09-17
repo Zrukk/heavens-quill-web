@@ -193,16 +193,17 @@ export default function ChapterReader() {
 
   // ===== LONG PRESS UNTUK PARAGRAF =====
   function findParagraph(e) {
-    let target = e.target
-    while (target && target !== e.currentTarget) {
-      if (target.tagName === 'P' && target.hasAttribute('data-paragraph')) {
-        return target
-      }
-      target = target.parentElement
+  // Cari elemen <p> terdekat dari target (naik ke atas)
+  let target = e.target
+  while (target && target !== e.currentTarget) {
+    if (target.tagName === 'P' && target.hasAttribute('data-paragraph')) {
+      return target
     }
-    return null
+    target = target.parentElement
   }
-
+  return null
+  }
+  
   function handlePressStart(e) {
     const p = findParagraph(e)
     if (!p) return
