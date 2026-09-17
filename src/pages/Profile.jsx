@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { UserCircle2, KeyRound, BookMarked, Save, Camera, Heart, BarChart3, BookOpen, MessageCircle, Star } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import { supabase } from '../lib/supabase'
+import UserReviews from '../components/UserReviews'
 
 export default function Profile() {
   const { user, displayName, avatarUrl, loading, refreshProfile } = useAuth()
@@ -29,6 +30,7 @@ export default function Profile() {
     favorites: 0,
     comments: 0,
     ratings: 0,
+    reviews: 0,
   })
   const [loadingStats, setLoadingStats] = useState(true)
 
@@ -72,35 +74,20 @@ export default function Profile() {
   async function loadStats() {
     setLoadingStats(true)
 
-    // Hitung jumlah chapter yang dibaca
-    const { count: chaptersCount } = await supabase
-      .from('chapter_reads')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-
-    // Hitung jumlah favorit
-    const { count: favoritesCount } = await supabase
-      .from('favorites')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-
-    // Hitung jumlah komentar
-    const { count: commentsCount } = await supabase
-      .from('chapter_comments')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-
-    // Hitung jumlah rating yang diberikan
-    const { count: ratingsCount } = await supabase
-      .from('ratings')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
+    const [chaptersRes, favoritesRes, commentsRes, ratingsRes, reviewsRes] = await Promise.all([
+      supabase.from('chapter_reads').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+      supabase.from('favorites').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+      supabase.from('chapter_comments').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+      supabase.from('ratings').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+      supabase.from('novel_reviews').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+    ])
 
     setStats({
-      chaptersRead: chaptersCount ?? 0,
-      favorites: favoritesCount ?? 0,
-      comments: commentsCount ?? 0,
-      ratings: ratingsCount ?? 0,
+      chaptersRead: chaptersRes.count ?? 0,
+      favorites: favoritesRes.count ?? 0,
+      comments: commentsRes.count ?? 0,
+      ratings: ratingsRes.count ?? 0,
+      reviews: reviewsRes.count ?? 0,
     })
     setLoadingStats(false)
   }
@@ -189,7 +176,7 @@ export default function Profile() {
   if (!user) return <div className="container" style={{ paddingTop: 40 }}>Silakan masuk dulu.</div>
 
   const sectionHeading = (Icon, text) => (
-    <h2 style={{ fontSize: '1.1rem', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+    <h2 style={{ fontSize: '1.1rem', marginBottom: 12, marginTop: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
       <Icon size={18} color="var(--gold)" />
       {text}
     </h2>
@@ -199,21 +186,21 @@ export default function Profile() {
     <div
       className="card"
       style={{
-        padding: 16,
-        flex: '1 1 140px',
-        minWidth: 140,
+        padding: 12,
+        flex: '1 1 100px',
+        minWidth: 100,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 4,
+        gap: 2,
         textAlign: 'center',
       }}
     >
-      <div style={{ color: 'var(--gold)', marginBottom: 4 }}>{icon}</div>
-      <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)' }}>
+      <div style={{ color: 'var(--gold)', marginBottom: 2 }}>{icon}</div>
+      <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text)' }}>
         {value.toLocaleString('id-ID')}
       </div>
-      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{label}</div>
+      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{label}</div>
     </div>
   )
 
@@ -225,20 +212,21 @@ export default function Profile() {
       </div>
       <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: '0.9rem' }}>{user.email}</p>
 
-      {/* ===== STATISTIK ===== */}
+      {/* Statistik */}
       {sectionHeading(BarChart3, 'Statistik Kamu')}
       {loadingStats ? (
         <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>Memuat...</p>
       ) : (
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 32 }}>
-          <StatCard icon={<BookOpen size={20} />} value={stats.chaptersRead} label="Chapter Dibaca" />
-          <StatCard icon={<Heart size={20} />} value={stats.favorites} label="Novel Favorit" />
-          <StatCard icon={<MessageCircle size={20} />} value={stats.comments} label="Komentar" />
-          <StatCard icon={<Star size={20} />} value={stats.ratings} label="Novel Diberi Rating" />
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+          <StatCard icon={<BookOpen size={18} />} value={stats.chaptersRead} label="Chapter Dibaca" />
+          <StatCard icon={<Heart size={18} />} value={stats.favorites} label="Novel Favorit" />
+          <StatCard icon={<MessageCircle size={18} />} value={stats.comments} label="Komentar" />
+          <StatCard icon={<Star size={18} />} value={stats.ratings} label="Rating Diberikan" />
+          <StatCard icon={<Star size={18} />} value={stats.reviews} label="Review Ditulis" />
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32, marginTop: 24 }}>
         <div
           style={{
             width: 72,
@@ -308,7 +296,11 @@ export default function Profile() {
         {passwordMessage && <p style={{ color: 'var(--accent)', fontSize: '0.85rem', margin: 0 }}>{passwordMessage}</p>}
       </form>
 
-      {/* ===== NOVEL FAVORIT ===== */}
+      {/* REVIEW YANG DITULIS */}
+      {sectionHeading(Star, 'Review yang Ditulis')}
+      <UserReviews userId={user.id} limit={10} />
+
+      {/* NOVEL FAVORIT */}
       {sectionHeading(Heart, `Novel Favorit (${favorites.length})`)}
       {loadingFavorites && <p style={{ color: 'var(--text-muted)' }}>Memuat...</p>}
       {!loadingFavorites && favorites.length === 0 && (
@@ -347,7 +339,7 @@ export default function Profile() {
         ))}
       </div>
 
-      {/* ===== SEDANG DIBACA ===== */}
+      {/* SEDANG DIBACA */}
       {sectionHeading(BookMarked, 'Sedang Dibaca')}
       {loadingBookmarks && <p style={{ color: 'var(--text-muted)' }}>Memuat...</p>}
       {!loadingBookmarks && bookmarks.length === 0 && (
