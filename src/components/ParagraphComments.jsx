@@ -23,6 +23,18 @@ export default function ParagraphComments({
   const [replyText, setReplyText] = useState('')
   const [postingReply, setPostingReply] = useState(false)
 
+  // Cek apakah layar kecil (mobile)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    function checkSize() {
+      setIsMobile(window.innerWidth < 640)
+    }
+    checkSize()
+    window.addEventListener('resize', checkSize)
+    return () => window.removeEventListener('resize', checkSize)
+  }, [])
+
   useEffect(() => {
     if (chapterId && paragraphIndex != null) loadComments()
   }, [chapterId, paragraphIndex])
@@ -42,7 +54,6 @@ export default function ParagraphComments({
       return
     }
 
-    // Fetch profil terpisah
     const userIds = [...new Set(commentsData.map((c) => c.user_id))]
     const { data: profilesData } = await supabase
       .from('profiles')
@@ -256,6 +267,37 @@ export default function ParagraphComments({
     )
   }
 
+  // Style panel: bottom sheet di mobile, sidebar kanan di desktop
+  const panelStyle = isMobile
+    ? {
+        position: 'fixed',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        top: '15%',
+        background: 'var(--surface)',
+        borderTop: '1px solid var(--border)',
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        zIndex: 1000,
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 -4px 24px rgba(0,0,0,0.5)',
+      }
+    : {
+        position: 'fixed',
+        right: 0,
+        top: 0,
+        bottom: 0,
+        width: 'min(400px, 100%)',
+        background: 'var(--surface)',
+        borderLeft: '1px solid var(--border)',
+        zIndex: 1000,
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '-4px 0 24px rgba(0,0,0,0.5)',
+      }
+
   return (
     <>
       {/* Overlay */}
@@ -264,31 +306,38 @@ export default function ParagraphComments({
         style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0,0,0,0.5)',
-          zIndex: 998,
+          background: 'rgba(0,0,0,0.6)',
+          zIndex: 999,
         }}
       />
 
       {/* Panel */}
-      <div
-        style={{
-          position: 'fixed',
-          right: 0,
-          top: 0,
-          bottom: 0,
-          width: 'min(400px, 100%)',
-          background: 'var(--surface)',
-          borderLeft: '1px solid var(--border)',
-          zIndex: 999,
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: '-4px 0 24px rgba(0,0,0,0.5)',
-        }}
-      >
+      <div style={panelStyle}>
+        {/* Handle bar (khusus mobile) */}
+        {isMobile && (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              paddingTop: 8,
+              paddingBottom: 4,
+            }}
+          >
+            <div
+              style={{
+                width: 40,
+                height: 4,
+                borderRadius: 2,
+                background: 'var(--border)',
+              }}
+            />
+          </div>
+        )}
+
         {/* Header */}
         <div
           style={{
-            padding: '14px 16px',
+            padding: '10px 16px',
             borderBottom: '1px solid var(--border)',
             display: 'flex',
             justifyContent: 'space-between',
@@ -320,15 +369,21 @@ export default function ParagraphComments({
           <button
             onClick={onClose}
             style={{
-              background: 'none',
-              border: 'none',
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: '50%',
               color: 'var(--text-muted)',
               cursor: 'pointer',
-              padding: 4,
+              padding: 6,
               flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 32,
+              height: 32,
             }}
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
@@ -357,6 +412,7 @@ export default function ParagraphComments({
               display: 'flex',
               flexDirection: 'column',
               gap: 8,
+              background: 'var(--surface)',
             }}
           >
             <textarea
@@ -386,7 +442,7 @@ export default function ParagraphComments({
             </button>
           </form>
         ) : (
-          <div style={{ padding: 12, borderTop: '1px solid var(--border)', textAlign: 'center' }}>
+          <div style={{ padding: 12, borderTop: '1px solid var(--border)', textAlign: 'center', background: 'var(--surface)' }}>
             <Link to="/login" style={{ color: 'var(--gold)', fontSize: '0.85rem' }}>
               Masuk dulu buat komentar
             </Link>
@@ -395,4 +451,4 @@ export default function ParagraphComments({
       </div>
     </>
   )
-                                         }
+    }
