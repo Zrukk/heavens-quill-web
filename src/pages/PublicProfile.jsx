@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { X, UserCircle2, BookOpen, Heart, MessageCircle, Star, BarChart3 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import UserReviews from '../components/UserReviews'
 
 export default function PublicProfile() {
   const { userId } = useParams()
@@ -13,6 +14,7 @@ export default function PublicProfile() {
     favorites: 0,
     comments: 0,
     ratings: 0,
+    reviews: 0,
   })
   const [loadingStats, setLoadingStats] = useState(true)
   const [favorites, setFavorites] = useState([])
@@ -41,23 +43,12 @@ export default function PublicProfile() {
   async function loadStats() {
     setLoadingStats(true)
 
-    const [chaptersRes, favoritesRes, commentsRes, ratingsRes] = await Promise.all([
-      supabase
-        .from('chapter_reads')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId),
-      supabase
-        .from('favorites')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId),
-      supabase
-        .from('chapter_comments')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId),
-      supabase
-        .from('ratings')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId),
+    const [chaptersRes, favoritesRes, commentsRes, ratingsRes, reviewsRes] = await Promise.all([
+      supabase.from('chapter_reads').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('favorites').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('chapter_comments').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('ratings').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('novel_reviews').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     ])
 
     setStats({
@@ -65,6 +56,7 @@ export default function PublicProfile() {
       favorites: favoritesRes.count ?? 0,
       comments: commentsRes.count ?? 0,
       ratings: ratingsRes.count ?? 0,
+      reviews: reviewsRes.count ?? 0,
     })
     setLoadingStats(false)
   }
@@ -162,8 +154,18 @@ export default function PublicProfile() {
               <StatCard icon={<Heart size={18} />} value={stats.favorites} label="Novel Favorit" />
               <StatCard icon={<MessageCircle size={18} />} value={stats.comments} label="Komentar" />
               <StatCard icon={<Star size={18} />} value={stats.ratings} label="Rating Diberikan" />
+              <StatCard icon={<Star size={18} />} value={stats.reviews} label="Review Ditulis" />
             </div>
           )}
+
+          {/* Review yang Ditulis */}
+          <h2 style={{ fontSize: '1.1rem', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Star size={18} color="var(--gold)" />
+            Review yang Ditulis
+          </h2>
+          <div style={{ marginBottom: 32 }}>
+            <UserReviews userId={userId} limit={5} />
+          </div>
 
           {/* Novel Favorit */}
           <h2 style={{ fontSize: '1.1rem', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -210,4 +212,4 @@ export default function PublicProfile() {
       )}
     </div>
   )
-      }
+                             }
