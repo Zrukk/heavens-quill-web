@@ -538,6 +538,7 @@ export default function ChapterReader() {
     z-index: 1;
   }
 `}</style>
+      
       {/* React effect buat nandain paragraf dengan komentar */}
       <ParagraphHighlighter paragraphCounts={paragraphCounts} />
 
