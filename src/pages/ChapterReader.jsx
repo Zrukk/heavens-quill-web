@@ -680,34 +680,34 @@ export default function ChapterReader() {
         ) : <span />}
       </div>
 
-      {/* TOOLBAR NGAMBANG — SELALU MUNCUL */}
-      <div
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          background: 'rgba(18, 23, 29, 0.85)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          borderTop: '1px solid var(--border)',
-          padding: '8px 16px',
-          display: 'flex',
-          justifyContent: 'space-around',
-          alignItems: 'center',
-          zIndex: 50,
-          opacity: 0.7,
-          transition: 'opacity 0.2s',
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-        onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
-        onTouchStart={(e) => (e.currentTarget.style.opacity = '1')}
-        onTouchEnd={(e) =>
-          setTimeout(() => {
-            e.currentTarget.style.opacity = '0.7'
-          }, 1500)
-        }
-      >
+      {/* TOOLBAR NGAMBANG — SELALU MUNCUL, SEMBUNYI KALAU PANEL KOMENTAR BUKA */}
+<div
+  style={{
+    position: 'fixed',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    background: 'rgba(18, 23, 29, 0.85)',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
+    borderTop: '1px solid var(--border)',
+    padding: '8px 16px',
+    display: openParagraph != null ? 'none' : 'flex',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    zIndex: 50,
+    opacity: 0.7,
+    transition: 'opacity 0.2s',
+  }}
+  onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+  onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
+  onTouchStart={(e) => (e.currentTarget.style.opacity = '1')}
+  onTouchEnd={(e) =>
+    setTimeout(() => {
+      e.currentTarget.style.opacity = '0.7'
+    }, 1500)
+  }
+>
         <button
           onClick={() => navigate(`/novel/${slug}`)}
           style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
