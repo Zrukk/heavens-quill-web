@@ -189,18 +189,21 @@ export default function ChapterReader() {
   )
 
   // Fungsi handle klik di konten chapter
-  function handleContentClick(e) {
-    // Cek apakah yang diklik adalah <p> dengan data-paragraph
-    let target = e.target
-    while (target && target !== e.currentTarget) {
-      if (target.tagName === 'P' && target.hasAttribute('data-paragraph')) {
-        const idx = Number(target.getAttribute('data-paragraph'))
-        setOpenParagraph(idx)
-        return
-      }
-      target = target.parentElement
+function handleContentClick(e) {
+  // Cek apakah yang diklik adalah <p> dengan data-paragraph
+  let target = e.target
+  while (target && target !== e.currentTarget) {
+    if (target.tagName === 'P' && target.hasAttribute('data-paragraph')) {
+      const idx = Number(target.getAttribute('data-paragraph'))
+      setOpenParagraph(idx)
+      return
     }
+    target = target.parentElement
   }
+
+  // Kalau gak klik paragraf, toggle toolbar
+  setShowToolbar((v) => !v)
+}
 
   async function loadComments() {
     setLoadingComments(true)
