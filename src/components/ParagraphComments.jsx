@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { X, Send, Reply, Trash2, Loader, MessageCircle } from 'lucide-react'
+import { X, Send, Reply, Loader, MessageCircle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 
@@ -83,6 +83,7 @@ export default function ParagraphComments({
     if (!error) {
       setNewComment('')
       loadComments()
+      if (onCommentAdded) onCommentAdded()
     }
   }
 
@@ -107,6 +108,7 @@ export default function ParagraphComments({
       setReplyText('')
       setReplyingTo(null)
       loadComments()
+      if (onCommentAdded) onCommentAdded()
     }
   }
 
@@ -256,7 +258,7 @@ export default function ParagraphComments({
 
   return (
     <>
-      {/* Overlay untuk mobile */}
+      {/* Overlay */}
       <div
         onClick={onClose}
         style={{
@@ -393,4 +395,4 @@ export default function ParagraphComments({
       </div>
     </>
   )
-                                                   }
+                                         }
