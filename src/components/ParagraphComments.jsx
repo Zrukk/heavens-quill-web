@@ -9,6 +9,7 @@ export default function ParagraphComments({
   paragraphIndex,
   paragraphPreview,
   onClose,
+  onCommentAdded,
 }) {
   const { user, isAdmin } = useAuth()
   const navigate = useNavigate()
