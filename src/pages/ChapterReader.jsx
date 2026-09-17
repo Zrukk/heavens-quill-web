@@ -496,40 +496,48 @@ export default function ChapterReader() {
 
       {/* CSS buat highlight paragraf */}
       <style>{`
-        .chapter-content p {
-          position: relative;
-          transition: background 0.2s;
-          border-radius: 4px;
-          padding: 4px 8px;
-          margin-left: -8px;
-          margin-right: -8px;
-          cursor: pointer;
-        }
-        .chapter-content p:hover {
-          background: rgba(255, 255, 255, 0.04);
-        }
-        .chapter-content p[data-has-comment="true"] {
-          background: rgba(212, 175, 91, 0.1);
-        }
-        .chapter-content p[data-has-comment="true"]:hover {
-          background: rgba(212, 175, 91, 0.18);
-        }
-        .chapter-content p[data-has-comment="true"]::after {
-          content: '💬 ' attr(data-comment-count);
-          position: absolute;
-          right: -8px;
-          top: -4px;
-          font-size: 0.65rem;
-          color: var(--gold);
-          font-family: sans-serif;
-          pointer-events: none;
-          background: var(--bg);
-          padding: 1px 6px;
-          border-radius: 10px;
-          border: 1px solid var(--gold);
-        }
-      `}</style>
-
+  .chapter-content p {
+    position: relative;
+    border-radius: 4px;
+    padding: 4px 8px;
+    margin-left: -8px;
+    margin-right: -8px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .chapter-content p:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+  /* Marker kecil di pinggir paragraf yang ada komentarnya */
+  .chapter-content p[data-has-comment="true"]::before {
+    content: '';
+    position: absolute;
+    left: -14px;
+    top: 8px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--gold);
+    pointer-events: none;
+    box-shadow: 0 0 0 2px rgba(212, 175, 91, 0.25);
+  }
+  /* Tooltip kecil saat hover di paragraf berkomentar */
+  .chapter-content p[data-has-comment="true"]:hover::after {
+    content: '💬 ' attr(data-comment-count);
+    position: absolute;
+    right: -8px;
+    top: -10px;
+    font-size: 0.65rem;
+    color: var(--gold);
+    font-family: sans-serif;
+    pointer-events: none;
+    background: var(--bg);
+    padding: 2px 6px;
+    border-radius: 10px;
+    border: 1px solid var(--gold);
+    z-index: 1;
+  }
+`}</style>
       {/* React effect buat nandain paragraf dengan komentar */}
       <ParagraphHighlighter paragraphCounts={paragraphCounts} />
 
