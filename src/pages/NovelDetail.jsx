@@ -45,10 +45,28 @@ export default function NovelDetail() {
 
   // Auto-buka review kalau ada hash #review-x
   useEffect(() => {
-    if (location.hash.startsWith('#review-')) {
-      setReviewOpen(true)
+  if (!location.hash.startsWith('#review-')) return
+
+  setReviewOpen(true)
+
+  // Tunggu review ke-render dulu, baru scroll
+  const timer = setTimeout(() => {
+    const id = location.hash.replace('#', '')
+    const el = document.getElementById(id)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+      // Highlight
+      el.style.transition = 'background-color 0.3s'
+      el.style.backgroundColor = 'rgba(212, 175, 91, 0.2)'
+      setTimeout(() => {
+        el.style.backgroundColor = ''
+      }, 2000)
     }
-  }, [location.hash])
+  }, 800)
+
+  return () => clearTimeout(timer)
+}, [location.hash])
 
   useEffect(() => {
     async function load() {
