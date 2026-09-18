@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Library, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useDocumentMeta } from '../lib/useDocumentMeta'
@@ -15,7 +16,10 @@ export default function NovelList() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [languageFilter, setLanguageFilter] = useState('all')
   const [genreFilter, setGenreFilter] = useState('all')
-  const [currentPage, setCurrentPage] = useState(1)
+
+  // Ambil halaman dari URL (?page=N), default 1
+  const [searchParams, setSearchParams] = useSearchParams()
+  const currentPage = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
 
   useDocumentMeta(
     'Heaven\'s Quill — Daftar Novel',
@@ -36,9 +40,23 @@ export default function NovelList() {
     loadNovels()
   }, [])
 
+  // Kalau filter berubah → reset ke halaman 1
   useEffect(() => {
-    setCurrentPage(1)
+    if (currentPage !== 1) {
+      setSearchParams({}, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, statusFilter, languageFilter, genreFilter])
+
+  function goToPage(page) {
+    if (page === 1) {
+      setSearchParams({}, { replace: false })
+    } else {
+      setSearchParams({ page: String(page) }, { replace: false })
+    }
+    // Scroll ke atas biar user lihat hasilnya
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const languages = [...new Set(novels.map((n) => n.original_language).filter(Boolean))]
 
@@ -130,11 +148,9 @@ export default function NovelList() {
         <p style={{ color: 'var(--text-muted)' }}>Gak ada novel yang cocok sama pencarian/filter ini.</p>
       )}
 
-      {/* --- BAGIAN NOVEL POPULER --- */}
       {!loading && !error && novels.length > 0 && (
         <NovelPopulerSection dataNovel={novels} />
       )}
-      {/* --------------------------- */}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {paginatedNovels.map((novel) => (
@@ -146,7 +162,7 @@ export default function NovelList() {
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, marginTop: 32 }}>
           <button
             className="btn"
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            onClick={() => goToPage(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
             style={{ opacity: currentPage === 1 ? 0.4 : 1 }}
           >
@@ -158,7 +174,7 @@ export default function NovelList() {
           </span>
           <button
             className="btn"
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
             style={{ opacity: currentPage === totalPages ? 0.4 : 1 }}
           >
@@ -169,4 +185,4 @@ export default function NovelList() {
       )}
     </div>
   )
-      }
+            }
