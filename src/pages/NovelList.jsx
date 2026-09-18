@@ -7,6 +7,7 @@ import NovelCard from '../components/NovelCard'
 import NovelPopulerSection from '../components/NovelPopulerSection'
 
 const NOVELS_PER_PAGE = 10
+const STORAGE_KEY = 'hq-last-page'
 
 export default function NovelList() {
   const [novels, setNovels] = useState([])
@@ -17,9 +18,12 @@ export default function NovelList() {
   const [languageFilter, setLanguageFilter] = useState('all')
   const [genreFilter, setGenreFilter] = useState('all')
 
-  // Ambil halaman dari URL (?page=N), default 1
   const [searchParams, setSearchParams] = useSearchParams()
-  const currentPage = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
+
+  // Ambil currentPage: prioritas dari URL, kalau gak ada ambil dari localStorage
+  const pageFromUrl = parseInt(searchParams.get('page') || '0', 10)
+  const pageFromStorage = parseInt(localStorage.getItem(STORAGE_KEY) || '1', 10)
+  const currentPage = Math.max(1, pageFromUrl || pageFromStorage)
 
   useDocumentMeta(
     'Heaven\'s Quill — Daftar Novel',
@@ -40,21 +44,30 @@ export default function NovelList() {
     loadNovels()
   }, [])
 
+  // Simpan halaman ke localStorage setiap kali berubah
+  useEffect(() => {
+    if (currentPage > 1) {
+      localStorage.setItem(STORAGE_KEY, String(currentPage))
+    } else {
+      localStorage.removeItem(STORAGE_KEY)
+    }
+  }, [currentPage])
+
   // Kalau filter berubah → reset ke halaman 1
   useEffect(() => {
-    if (currentPage !== 1) {
-      setSearchParams({}, { replace: true })
-    }
+    setSearchParams({}, { replace: true })
+    localStorage.removeItem(STORAGE_KEY)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, statusFilter, languageFilter, genreFilter])
 
   function goToPage(page) {
     if (page === 1) {
       setSearchParams({}, { replace: false })
+      localStorage.removeItem(STORAGE_KEY)
     } else {
       setSearchParams({ page: String(page) }, { replace: false })
+      localStorage.setItem(STORAGE_KEY, String(page))
     }
-    // Scroll ke atas biar user lihat hasilnya
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -185,4 +198,4 @@ export default function NovelList() {
       )}
     </div>
   )
-            }
+                                       }
