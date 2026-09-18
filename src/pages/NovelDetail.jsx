@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useLocation } from 'react-router-dom'
 import { BookOpen, PlayCircle, CheckCircle2, Languages, Search, ArrowUpDown, ListOrdered, Eye, Star, ChevronDown, ChevronUp } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { fetchAllChapterRows } from '../lib/fetchAllChapterRows'
