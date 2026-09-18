@@ -1,31 +1,40 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Star, MessageCircle } from 'lucide-react'
+import { Star, MessageCircle, Loader, ChevronDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
-export default function UserReviews({ userId, limit = 5 }) {
+const REVIEWS_PER_PAGE = 5
+
+export default function UserReviews({ userId }) {
   const [reviews, setReviews] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
 
   useEffect(() => {
     if (!userId) return
-    loadReviews()
+    loadReviews(true)
   }, [userId])
 
-  async function loadReviews() {
-    setLoading(true)
+  async function loadReviews(reset = false) {
+    if (reset) setLoading(true)
+    else setLoadingMore(true)
 
-    // Fetch review user
+    const offset = reset ? 0 : reviews.length
+    const limit = REVIEWS_PER_PAGE
+
     const { data: reviewsData } = await supabase
       .from('novel_reviews')
       .select('id, rating, content, has_spoiler, created_at, novel_id')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
-      .limit(limit)
+      .range(offset, offset + limit - 1)
 
     if (!reviewsData || reviewsData.length === 0) {
-      setReviews([])
+      if (reset) setReviews([])
+      setHasMore(false)
       setLoading(false)
+      setLoadingMore(false)
       return
     }
 
@@ -53,14 +62,17 @@ export default function UserReviews({ userId, limit = 5 }) {
       replyCounts[r.review_id] = (replyCounts[r.review_id] || 0) + 1
     })
 
-    setReviews(
-      reviewsData.map((r) => ({
-        ...r,
-        novel: novelsMap[r.novel_id] || null,
-        replyCount: replyCounts[r.id] || 0,
-      }))
-    )
+    const mapped = reviewsData.map((r) => ({
+      ...r,
+      novel: novelsMap[r.novel_id] || null,
+      replyCount: replyCounts[r.id] || 0,
+    }))
+
+    const newReviews = reset ? mapped : [...reviews, ...mapped]
+    setReviews(newReviews)
+    setHasMore(reviewsData.length === limit)
     setLoading(false)
+    setLoadingMore(false)
   }
 
   if (loading) {
@@ -76,106 +88,129 @@ export default function UserReviews({ userId, limit = 5 }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {reviews.map((r) => (
-        <div
-          key={r.id}
-          className="card"
-          style={{ padding: 12, display: 'flex', gap: 12 }}
-        >
-          {/* Cover novel */}
-          {r.novel && (
+    <>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {reviews.map((r) => {
+          // URL ke halaman novel + anchor ke review
+          const url = r.novel ? `/novel/${r.novel.slug}#review-${r.id}` : '#'
+
+          return (
             <Link
-              to={`/novel/${r.novel.slug}`}
+              key={r.id}
+              to={url}
+              className="card"
               style={{
-                width: 48,
-                height: 66,
-                flexShrink: 0,
-                background: r.novel.cover_url
-                  ? `url(${r.novel.cover_url}) center/cover`
-                  : 'var(--border)',
-                borderRadius: 'var(--radius)',
-              }}
-            />
-          )}
-
-          <div style={{ minWidth: 0, flex: 1 }}>
-            {/* Judul novel + rating */}
-            <div
-              style={{
+                padding: 12,
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: 8,
-                marginBottom: 4,
-                flexWrap: 'wrap',
+                gap: 12,
+                textDecoration: 'none',
+                color: 'inherit',
+                cursor: 'pointer',
               }}
             >
+              {/* Cover novel */}
               {r.novel && (
-                <Link
-                  to={`/novel/${r.novel.slug}`}
-                  style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text)' }}
+                <div
+                  style={{
+                    width: 48,
+                    height: 66,
+                    flexShrink: 0,
+                    background: r.novel.cover_url
+                      ? `url(${r.novel.cover_url}) center/cover`
+                      : 'var(--border)',
+                    borderRadius: 'var(--radius)',
+                  }}
+                />
+              )}
+
+              <div style={{ minWidth: 0, flex: 1 }}>
+                {/* Judul novel + rating */}
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 8,
+                    marginBottom: 4,
+                    flexWrap: 'wrap',
+                  }}
                 >
-                  {r.novel.title}
-                </Link>
-              )}
-              <div style={{ display: 'flex', gap: 2 }}>
-                {[1, 2, 3, 4, 5].map((v) => (
-                  <Star
-                    key={v}
-                    size={11}
-                    fill={v <= (r.rating || 0) ? 'var(--gold)' : 'none'}
-                    color="var(--gold)"
-                  />
-                ))}
+                  {r.novel && (
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text)' }}>
+                      {r.novel.title}
+                    </span>
+                  )}
+                  <div style={{ display: 'flex', gap: 2 }}>
+                    {[1, 2, 3, 4, 5].map((v) => (
+                      <Star
+                        key={v}
+                        size={11}
+                        fill={v <= (r.rating || 0) ? 'var(--gold)' : 'none'}
+                        color="var(--gold)"
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Cuplikan review */}
+                <p
+                  style={{
+                    margin: '4px 0 6px',
+                    fontSize: '0.8rem',
+                    color: 'var(--text-muted)',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {r.content}
+                </p>
+
+                {/* Footer info */}
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 10,
+                    fontSize: '0.7rem',
+                    color: 'var(--text-muted)',
+                    alignItems: 'center',
+                  }}
+                >
+                  <span>
+                    {new Date(r.created_at).toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                  </span>
+                  {r.replyCount > 0 && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <MessageCircle size={11} />
+                      {r.replyCount}
+                    </span>
+                  )}
+                  {r.has_spoiler && <span style={{ color: '#D46B5B' }}>⚠ Spoiler</span>}
+                </div>
               </div>
-            </div>
+            </Link>
+          )
+        })}
+      </div>
 
-            {/* Cuplikan review */}
-            <p
-              style={{
-                margin: '4px 0 6px',
-                fontSize: '0.8rem',
-                color: 'var(--text-muted)',
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-              }}
-            >
-              {r.content}
-            </p>
-
-            {/* Footer info */}
-            <div
-              style={{
-                display: 'flex',
-                gap: 10,
-                fontSize: '0.7rem',
-                color: 'var(--text-muted)',
-                alignItems: 'center',
-              }}
-            >
-              <span>
-                {new Date(r.created_at).toLocaleDateString('id-ID', {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                })}
-              </span>
-              {r.replyCount > 0 && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <MessageCircle size={11} />
-                  {r.replyCount}
-                </span>
-              )}
-              {r.has_spoiler && (
-                <span style={{ color: '#D46B5B' }}>⚠ Spoiler</span>
-              )}
-            </div>
-          </div>
+      {hasMore && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
+          <button
+            onClick={() => loadReviews(false)}
+            className="btn"
+            disabled={loadingMore}
+            style={{ fontSize: '0.85rem' }}
+          >
+            {loadingMore ? <Loader size={14} className="spin" /> : <ChevronDown size={14} />}
+            {loadingMore ? 'Memuat...' : 'Muat Lebih Banyak'}
+          </button>
         </div>
-      ))}
-    </div>
+      )}
+    </>
   )
-      }
+                  }
