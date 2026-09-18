@@ -30,6 +30,8 @@ async function fetchAllReadIds(novelId, userId) {
 export default function NovelDetail() {
   const { slug } = useParams()
   const { user } = useAuth()
+  const location = useLocation()
+
   const [novel, setNovel] = useState(null)
   const [chapters, setChapters] = useState([])
   const [bookmark, setBookmark] = useState(null)
@@ -40,6 +42,13 @@ export default function NovelDetail() {
   const [readChapterIds, setReadChapterIds] = useState(new Set())
   const [reviewOpen, setReviewOpen] = useState(false)
   const [reviewCount, setReviewCount] = useState(0)
+
+  // Auto-buka review kalau ada hash #review-x
+  useEffect(() => {
+    if (location.hash.startsWith('#review-')) {
+      setReviewOpen(true)
+    }
+  }, [location.hash])
 
   useEffect(() => {
     async function load() {
