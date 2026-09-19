@@ -5,6 +5,7 @@ import { useAuth } from '../lib/AuthContext'
 import { supabase } from '../lib/supabase'
 import UserReviews from '../components/UserReviews'
 import LevelBadge from '../components/LevelBadge'
+import UserTitles from '../components/UserTitles'
 
 export default function Profile() {
   const { user, displayName, avatarUrl, loading, refreshProfile } = useAuth()
@@ -213,10 +214,13 @@ export default function Profile() {
       </div>
       <p style={{ color: 'var(--text-muted)', marginBottom: 16, fontSize: '0.9rem' }}>{user.email}</p>
 
-      {/* LEVEL BADGE */}
+      {/* LEVEL & TITLE */}
       {!loadingStats && (
         <div style={{ marginBottom: 24 }}>
           <LevelBadge totalChapters={stats.chaptersRead} size="large" showProgress />
+          <div style={{ marginTop: 12 }}>
+            <UserTitles userId={user.id} size="medium" />
+          </div>
         </div>
       )}
 
@@ -384,4 +388,4 @@ export default function Profile() {
       </div>
     </div>
   )
-      }
+                                                                              }
