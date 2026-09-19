@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { UserCircle2, KeyRound, BookMarked, Save, Camera, Heart, BarChart3, BookOpen, MessageCircle, Star } from 'lucide-react'
+import { UserCircle2, KeyRound, BookMarked, Save, Camera, Heart, BarChart3, BookOpen, MessageCircle, Star, Award } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import { supabase } from '../lib/supabase'
 import UserReviews from '../components/UserReviews'
@@ -221,6 +221,20 @@ export default function Profile() {
           <div style={{ marginTop: 12 }}>
             <UserTitles userId={user.id} size="medium" />
           </div>
+          <Link
+            to="/gelar"
+            className="btn btn--outline-gold"
+            style={{
+              marginTop: 12,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: '0.85rem',
+            }}
+          >
+            <Award size={14} />
+            Lihat Semua Gelar
+          </Link>
         </div>
       )}
 
@@ -388,4 +402,4 @@ export default function Profile() {
       </div>
     </div>
   )
-                                                                              }
+      }
