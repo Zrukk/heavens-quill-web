@@ -7,6 +7,7 @@ import { useDocumentMeta } from '../lib/useDocumentMeta'
 import { useAuth } from '../lib/AuthContext'
 import FavoriteButton from '../components/FavoriteButton'
 import ReviewSection from '../components/ReviewSection'
+import AdsterraAd from '../components/AdsterraAd'
 
 async function fetchAllReadIds(novelId, userId) {
   const pageSize = 1000
@@ -31,7 +32,6 @@ export default function NovelDetail() {
   const { slug } = useParams()
   const { user } = useAuth()
   const location = useLocation()
-
   const [novel, setNovel] = useState(null)
   const [chapters, setChapters] = useState([])
   const [bookmark, setBookmark] = useState(null)
@@ -43,30 +43,26 @@ export default function NovelDetail() {
   const [reviewOpen, setReviewOpen] = useState(false)
   const [reviewCount, setReviewCount] = useState(0)
 
-  // Auto-buka review kalau ada hash #review-x
   useEffect(() => {
-  if (!location.hash.startsWith('#review-')) return
+    if (!location.hash.startsWith('#review-')) return
 
-  setReviewOpen(true)
+    setReviewOpen(true)
 
-  // Tunggu review ke-render dulu, baru scroll
-  const timer = setTimeout(() => {
-    const id = location.hash.replace('#', '')
-    const el = document.getElementById(id)
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const timer = setTimeout(() => {
+      const id = location.hash.replace('#', '')
+      const el = document.getElementById(id)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        el.style.transition = 'background-color 0.3s'
+        el.style.backgroundColor = 'rgba(212, 175, 91, 0.2)'
+        setTimeout(() => {
+          el.style.backgroundColor = ''
+        }, 2000)
+      }
+    }, 800)
 
-      // Highlight
-      el.style.transition = 'background-color 0.3s'
-      el.style.backgroundColor = 'rgba(212, 175, 91, 0.2)'
-      setTimeout(() => {
-        el.style.backgroundColor = ''
-      }, 2000)
-    }
-  }, 800)
-
-  return () => clearTimeout(timer)
-}, [location.hash])
+    return () => clearTimeout(timer)
+  }, [location.hash])
 
   useEffect(() => {
     async function load() {
@@ -85,7 +81,6 @@ export default function NovelDetail() {
       const chapterData = await fetchAllChapterRows(novelData.id, 'id, chapter_number, title')
       setChapters(chapterData ?? [])
 
-      // Count review
       const { count } = await supabase
         .from('novel_reviews')
         .select('*', { count: 'exact', head: true })
@@ -246,7 +241,7 @@ export default function NovelDetail() {
         </div>
       </div>
 
-      {/* ===== REVIEW SECTION (collapsible) ===== */}
+      {/* REVIEW SECTION (collapsible) */}
       <div style={{ marginBottom: 32 }}>
         <button
           onClick={() => setReviewOpen(!reviewOpen)}
@@ -331,6 +326,16 @@ export default function NovelDetail() {
           )
         })}
       </div>
+
+      {/* Native Banner Adsterra */}
+      <AdsterraAd
+        type="native"
+        scriptSrc="https://pl31414163.profitableratecpmnetwork.com/d8/44/1f/d8441f650c1fc04bb17d33ebaf88959a.js"
+        containerId={`native-banner-${novel.id}`}
+      />
+
+      {/* Banner 728x90 (desktop) */}
+      <AdsterraAd type="banner" adKey="6d2dd4202a3e1bbbe07c44d9f64f390a" width={728} height={90} />
     </div>
   )
-  }
+}
