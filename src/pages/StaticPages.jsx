@@ -186,7 +186,7 @@ export function Privacy() {
   return (
     <PageWrapper icon={<Shield size={26} />} title="Kebijakan Privasi">
       <p style={{ fontStyle: 'italic' }}>
-        Terakhir diperbarui: 15 September 2026
+        Terakhir diperbarui: 19 September 2026
       </p>
 
       <p>
@@ -209,15 +209,35 @@ export function Privacy() {
         kecil yang disimpan di perangkatmu.
       </p>
 
-      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>3. Google AdSense dan Pihak Ketiga</h2>
+      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>3. Iklan Pihak Ketiga (Adsterra)</h2>
       <p>
-        Heaven's Quill menggunakan <strong style={{ color: 'var(--text)' }}>Google AdSense</strong>{' '}
-        untuk menampilkan iklan. Google, sebagai vendor pihak ketiga, menggunakan cookie (termasuk
-        cookie DART) untuk menayangkan iklan berdasarkan kunjunganmu ke situs ini dan situs lain
-        di internet.
+        Heaven's Quill menampilkan iklan melalui jaringan pihak ketiga, saat ini{' '}
+        <strong style={{ color: 'var(--text)' }}>Adsterra</strong>. Adsterra dan mitranya dapat
+        menggunakan cookie, web beacon, dan teknologi serupa untuk menayangkan iklan yang relevan
+        berdasarkan kunjunganmu ke situs ini dan situs lain di internet.
       </p>
       <p>
-        Kamu dapat menonaktifkan iklan yang dipersonalisasi dengan mengunjungi{' '}
+        Iklan ini membantu kami menutupi biaya operasional situs. Kami berusaha semaksimal mungkin
+        memfilter kategori iklan yang tidak sesuai (seperti judi, konten dewasa, atau materi
+        berbahaya), namun jaringan iklan pihak ketiga tidak sepenuhnya dapat kami kontrol.
+      </p>
+      <p>
+        Untuk informasi lebih lanjut tentang bagaimana Adsterra menangani data, kunjungi{' '}
+        <a
+          href="https://adsterra.com/privacy-policy/"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: 'var(--gold)' }}
+        >
+          Kebijakan Privasi Adsterra
+        </a>.
+      </p>
+
+      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>4. Google AdSense (Jika Ada)</h2>
+      <p>
+        Jika kami mengaktifkan Google AdSense di masa depan, Google sebagai vendor pihak ketiga
+        akan menggunakan cookie (termasuk cookie DART) untuk menayangkan iklan berdasarkan
+        kunjunganmu. Kamu dapat menonaktifkan iklan yang dipersonalisasi dengan mengunjungi{' '}
         <a
           href="https://www.google.com/settings/ads"
           target="_blank"
@@ -225,51 +245,50 @@ export function Privacy() {
           style={{ color: 'var(--gold)' }}
         >
           Pengaturan Iklan Google
-        </a>. Untuk informasi lebih lanjut tentang bagaimana Google menggunakan data, kunjungi{' '}
-        <a
-          href="https://policies.google.com/technologies/partner-sites"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: 'var(--gold)' }}
-        >
-          Kebijakan Google
         </a>.
       </p>
 
-      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>4. Penggunaan Informasi</h2>
+      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>5. Penggunaan Informasi</h2>
       <p>
         Informasi yang kami kumpulkan digunakan untuk: mengoperasikan situs, meningkatkan kualitas
         layanan, menampilkan iklan, dan mencegah penyalahgunaan. Kami tidak menjual data pribadi
         pengguna ke pihak ketiga.
       </p>
 
-      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>5. Keamanan</h2>
+      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>6. Keamanan</h2>
       <p>
         Kami berusaha melindungi data pengguna dengan langkah-langkah keamanan yang wajar. Namun,
         tidak ada metode transmisi di internet yang 100% aman. Kami tidak dapat menjamin keamanan
         absolut.
       </p>
 
-      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>6. Tautan ke Situs Lain</h2>
+      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>7. Tautan ke Situs Lain</h2>
       <p>
-        Situs ini dapat berisi tautan ke situs pihak ketiga. Kami tidak bertanggung jawab atas
-        kebijakan privasi atau konten dari situs-situs tersebut.
+        Situs ini dapat berisi tautan ke situs pihak ketiga (termasuk iklan). Kami tidak
+        bertanggung jawab atas kebijakan privasi atau konten dari situs-situs tersebut.
       </p>
 
-      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>7. Hak Pengguna</h2>
+      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>8. Hak Pengguna</h2>
       <p>
         Kamu berhak untuk mengakses, memperbarui, atau menghapus akunmu kapan saja. Jika ingin
         menghapus akun, hubungi kami melalui halaman{' '}
         <Link to="/kontak" style={{ color: 'var(--gold)' }}>Kontak</Link>.
       </p>
 
-      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>8. Perubahan Kebijakan</h2>
+      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>9. Penggunaan AdBlock</h2>
+      <p>
+        Kami tidak melarang penggunaan AdBlock. Kamu bebas menggunakan AdBlock atau pemblokir
+        iklan lain untuk kenyamanan membaca. Situs ini tetap dapat diakses sepenuhnya tanpa
+        mematikan AdBlock.
+      </p>
+
+      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>10. Perubahan Kebijakan</h2>
       <p>
         Kami dapat memperbarui Kebijakan Privasi ini dari waktu ke waktu. Perubahan akan
         dipublikasikan di halaman ini dengan tanggal pembaruan terbaru.
       </p>
 
-      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>9. Kontak</h2>
+      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>11. Kontak</h2>
       <p>
         Jika ada pertanyaan tentang Kebijakan Privasi ini, silakan hubungi kami melalui
         halaman <Link to="/kontak" style={{ color: 'var(--gold)' }}>Kontak</Link> atau email
@@ -280,4 +299,4 @@ export function Privacy() {
       </p>
     </PageWrapper>
   )
-            }
+        }
