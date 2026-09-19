@@ -9,6 +9,7 @@ import Admin from './pages/Admin'
 import Profile from './pages/Profile'
 import PublicProfile from './pages/PublicProfile'
 import Settings from './pages/Settings'
+import Leaderboard from './pages/Leaderboard'
 import { About, Contact, Privacy } from './pages/StaticPages'
 import BackToTop from './components/BackToTop'
 import { useScrollToAnchor } from './lib/useScrollToAnchor'
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/profil" element={<Profile />} />
           <Route path="/pembaca/:userId" element={<PublicProfile />} />
           <Route path="/pengaturan" element={<Settings />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/tentang" element={<About />} />
           <Route path="/kontak" element={<Contact />} />
           <Route path="/kebijakan-privasi" element={<Privacy />} />
