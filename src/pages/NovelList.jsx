@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useDocumentMeta } from '../lib/useDocumentMeta'
 import NovelCard from '../components/NovelCard'
 import NovelPopulerSection from '../components/NovelPopulerSection'
+import AdsterraAd from '../components/AdsterraAd'
 
 const NOVELS_PER_PAGE = 10
 const STORAGE_KEY = 'hq-last-page'
@@ -20,7 +21,6 @@ export default function NovelList() {
 
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // Ambil halaman dari URL dulu. Kalau gak ada, dari localStorage. Kalau gak ada juga, halaman 1.
   const pageFromUrl = parseInt(searchParams.get('page') || '0', 10)
   const pageFromStorage = parseInt(localStorage.getItem(STORAGE_KEY) || '1', 10)
   const currentPage = Math.max(1, pageFromUrl || pageFromStorage)
@@ -44,7 +44,6 @@ export default function NovelList() {
     loadNovels()
   }, [])
 
-  // Simpan halaman terakhir ke localStorage
   useEffect(() => {
     if (currentPage > 1) {
       localStorage.setItem(STORAGE_KEY, String(currentPage))
@@ -53,7 +52,6 @@ export default function NovelList() {
     }
   }, [currentPage])
 
-  // Kalau filter berubah → reset ke halaman 1
   useEffect(() => {
     setSearchParams({}, { replace: true })
     localStorage.removeItem(STORAGE_KEY)
@@ -165,6 +163,11 @@ export default function NovelList() {
         <NovelPopulerSection dataNovel={novels} />
       )}
 
+      {/* Banner 300x250 */}
+      {!loading && !error && (
+        <AdsterraAd type="banner" adKey="aa5ff47e024bb3150e2aff6aa97f2813" width={300} height={250} />
+      )}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {paginatedNovels.map((novel) => (
           <NovelCard key={novel.id} novel={novel} />
@@ -198,4 +201,4 @@ export default function NovelList() {
       )}
     </div>
   )
-    }
+        }
