@@ -8,6 +8,7 @@ import { useAuth } from '../lib/AuthContext'
 import ShareButton from '../components/ShareButton'
 import BackToTop from '../components/BackToTop'
 import ParagraphComments from '../components/ParagraphComments'
+import AdsterraAd from '../components/AdsterraAd'
 import { tagParagraphs, getParagraphPreview } from '../lib/paragraphUtils'
 
 async function notifyDiscord({ authorName, novelTitle, chapterNumber, chapterTitle, content, url, isReply }) {
@@ -59,15 +60,12 @@ export default function ChapterReader() {
   const [replyText, setReplyText] = useState('')
   const [postingReply, setPostingReply] = useState(false)
 
-  // State komentar per paragraf
   const [taggedContent, setTaggedContent] = useState('')
   const [paragraphCounts, setParagraphCounts] = useState({})
   const [openParagraph, setOpenParagraph] = useState(null)
 
-  // Toolbar toggle
   const [showToolbar, setShowToolbar] = useState(true)
 
-  // Long press
   const longPressTimer = useRef(null)
   const pressedParagraph = useRef(null)
 
@@ -112,19 +110,18 @@ export default function ChapterReader() {
           { onConflict: 'user_id,novel_id' },
         )
         await supabase.from('chapter_reads').upsert(
-  {
-    chapter_id: chapterData.id,
-    novel_id: novelData.id,
-    user_id: user.id,
-    read_at: new Date().toISOString(),
-  },
-  { onConflict: 'chapter_id,user_id' },
-)
+          {
+            chapter_id: chapterData.id,
+            novel_id: novelData.id,
+            user_id: user.id,
+            read_at: new Date().toISOString(),
+          },
+          { onConflict: 'chapter_id,user_id' },
+        )
 
-// Cek & kasih title baru
-supabase.rpc('check_and_award_titles', { target_user_id: user.id }).then(({ error }) => {
-  if (error) console.error('Error award titles:', error)
-})
+        supabase.rpc('check_and_award_titles', { target_user_id: user.id }).then(({ error }) => {
+          if (error) console.error('Error award titles:', error)
+        })
       }
 
       setLoading(false)
@@ -200,7 +197,6 @@ supabase.rpc('check_and_award_titles', { target_user_id: user.id }).then(({ erro
     chapter ? stripHtml(chapter.content).slice(0, 160) : undefined,
   )
 
-  // ===== LONG PRESS UNTUK PARAGRAF =====
   function findParagraph(e) {
     let target = e.target
     while (target && target !== e.currentTarget) {
@@ -246,9 +242,7 @@ supabase.rpc('check_and_award_titles', { target_user_id: user.id }).then(({ erro
       longPressTimer.current = null
     }
   }
-  // ===== END LONG PRESS =====
 
-  // Toggle toolbar saat klik area kosong (bukan paragraf)
   function handleContentClick(e) {
     let target = e.target
     while (target && target !== e.currentTarget) {
@@ -539,6 +533,9 @@ supabase.rpc('check_and_award_titles', { target_user_id: user.id }).then(({ erro
         />
       </div>
 
+      {/* Banner 320x50 */}
+      <AdsterraAd type="banner" adKey="97f299f37ffd7602748c660fc39f2af7" width={320} height={50} />
+
       {/* Hint */}
       <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 12, fontStyle: 'italic' }}>
         💡 Tekan lama paragraf manapun buat kasih komentar
@@ -700,7 +697,7 @@ supabase.rpc('check_and_award_titles', { target_user_id: user.id }).then(({ erro
         ) : <span />}
       </div>
 
-      {/* TOOLBAR NGAMBANG — cuma muncul kalau showToolbar true & panel komentar gak buka */}
+      {/* TOOLBAR NGAMBANG */}
       {showToolbar && openParagraph == null && (
         <div
           style={{
@@ -749,8 +746,6 @@ supabase.rpc('check_and_award_titles', { target_user_id: user.id }).then(({ erro
             <UserCircle2 size={18} />
             <span style={{ fontSize: '0.6rem' }}>Profil</span>
           </button>
-
-          {/* Tombol close toolbar */}
           <button
             onClick={() => setShowToolbar(false)}
             title="Sembunyikan toolbar"
@@ -792,7 +787,6 @@ supabase.rpc('check_and_award_titles', { target_user_id: user.id }).then(({ erro
   )
 }
 
-/* Komponen kecil untuk mark paragraf yang punya komentar */
 function ParagraphHighlighter({ paragraphCounts }) {
   useEffect(() => {
     const container = document.querySelector('.chapter-content')
@@ -816,5 +810,4 @@ function ParagraphHighlighter({ paragraphCounts }) {
   }, [paragraphCounts])
 
   return null
-      }
-          
+                }
