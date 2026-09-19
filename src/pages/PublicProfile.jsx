@@ -150,12 +150,11 @@ export default function PublicProfile() {
             <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>Memuat...</p>
           ) : (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 32 }}>
-              <StatCard icon={<BookOpen size={18} />} value={stats.chaptersRead} label="Chapter Dibaca" />
-              <StatCard icon={<Heart size={18} />} value={stats.favorites} label="Novel Favorit" />
-              <StatCard icon={<MessageCircle size={18} />} value={stats.comments} label="Komentar" />
-              <StatCard icon={<Star size={18} />} value={stats.ratings} label="Rating Diberikan" />
-              <StatCard icon={<Star size={18} />} value={stats.reviews} label="Review Ditulis" />
-            </div>
+  <StatCard icon={<BookOpen size={18} />} value={stats.chaptersRead} label="Chapter Dibaca" />
+  <StatCard icon={<Heart size={18} />} value={stats.favorites} label="Novel Favorit" />
+  <StatCard icon={<MessageCircle size={18} />} value={stats.comments} label="Komentar" />
+  <StatCard icon={<Star size={18} />} value={stats.reviews} label="Review Ditulis" />
+</div>
           )}
 
           {/* Review yang Ditulis */}
