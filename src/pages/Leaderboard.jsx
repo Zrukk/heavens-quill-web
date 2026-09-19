@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Trophy, BookOpen, Medal, Crown } from 'lucide-react'
+import { Trophy } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useDocumentMeta } from '../lib/useDocumentMeta'
+import { getLevelInfo } from '../lib/levelSystem'
 
 export default function Leaderboard() {
   const [readers, setReaders] = useState([])
   const [loading, setLoading] = useState(true)
 
   useDocumentMeta(
-    'Wall of Fame — Heaven\'s Quill',
-    'Pembaca teraktif di Heaven\'s Quill. Lihat ranking pembaca berdasarkan jumlah chapter yang dibaca.',
+    "Wall of Fame — Heaven's Quill",
+    "Pembaca teraktif di Heaven's Quill. Lihat ranking pembaca berdasarkan jumlah chapter yang dibaca.",
   )
 
   useEffect(() => {
@@ -39,17 +40,17 @@ export default function Leaderboard() {
   const top3 = readers.slice(0, 3)
   const rest = readers.slice(3, 10)
 
-  // Susun podium: #2 kiri, #1 tengah, #3 kanan
+  // Podium: #2 kiri, #1 tengah, #3 kanan
   const podiumOrder = [
-    top3[1] ? { ...top3[1], rank: 2 } : null, // kiri
-    top3[0] ? { ...top3[0], rank: 1 } : null, // tengah
-    top3[2] ? { ...top3[2], rank: 3 } : null, // kanan
+    top3[1] ? { ...top3[1], rank: 2 } : null,
+    top3[0] ? { ...top3[0], rank: 1 } : null,
+    top3[2] ? { ...top3[2], rank: 3 } : null,
   ].filter(Boolean)
 
   const rankColors = {
-    1: { border: 'var(--gold)', bg: 'rgba(212, 175, 91, 0.08)', label: '🥇', crown: true },
-    2: { border: '#C0C0C0', bg: 'rgba(192, 192, 192, 0.06)', label: '🥈', crown: false },
-    3: { border: '#CD7F32', bg: 'rgba(205, 127, 50, 0.06)', label: '🥉', crown: false },
+    1: { border: 'var(--gold)', bg: 'rgba(212, 175, 91, 0.08)' },
+    2: { border: '#C0C0C0', bg: 'rgba(192, 192, 192, 0.06)' },
+    3: { border: '#CD7F32', bg: 'rgba(205, 127, 50, 0.06)' },
   }
 
   return (
@@ -73,10 +74,11 @@ export default function Leaderboard() {
           flexWrap: 'wrap',
         }}
       >
-        {podiumOrder.map((r, i) => {
+        {podiumOrder.map((r) => {
           const colors = rankColors[r.rank]
-          // Rank 1 lebih tinggi
           const isChampion = r.rank === 1
+          const levelInfo = getLevelInfo(r.total_chapters)
+
           return (
             <Link
               key={r.user_id}
@@ -97,12 +99,10 @@ export default function Leaderboard() {
                 marginTop: isChampion ? 0 : 20,
               }}
             >
-              {/* Rank label */}
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
                 #{r.rank} {isChampion && '👑'}
               </div>
 
-              {/* Avatar */}
               <div
                 style={{
                   width: isChampion ? 80 : 64,
@@ -122,7 +122,6 @@ export default function Leaderboard() {
                 {!r.avatar_url && '👤'}
               </div>
 
-              {/* Name */}
               <div
                 style={{
                   fontSize: isChampion ? '1rem' : '0.9rem',
@@ -137,7 +136,20 @@ export default function Leaderboard() {
                 {r.display_name}
               </div>
 
-              {/* Chapter count */}
+              {/* Level badge */}
+              <div
+                style={{
+                  fontSize: '0.7rem',
+                  color: levelInfo.color,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: '100%',
+                }}
+              >
+                Lv.{levelInfo.level} · {levelInfo.title}
+              </div>
+
               <div
                 style={{
                   fontSize: '0.8rem',
@@ -175,6 +187,8 @@ export default function Leaderboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {rest.map((r, i) => {
               const rank = i + 4
+              const levelInfo = getLevelInfo(r.total_chapters)
+
               return (
                 <Link
                   key={r.user_id}
@@ -189,7 +203,6 @@ export default function Leaderboard() {
                     color: 'inherit',
                   }}
                 >
-                  {/* Rank number */}
                   <div
                     style={{
                       width: 28,
@@ -203,7 +216,6 @@ export default function Leaderboard() {
                     {rank}
                   </div>
 
-                  {/* Avatar */}
                   <div
                     style={{
                       width: 36,
@@ -223,22 +235,32 @@ export default function Leaderboard() {
                     {!r.avatar_url && '👤'}
                   </div>
 
-                  {/* Name */}
-                  <div
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                      fontSize: '0.9rem',
-                      fontWeight: 600,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {r.display_name}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {r.display_name}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '0.7rem',
+                        color: levelInfo.color,
+                        marginTop: 2,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      Lv.{levelInfo.level} · {levelInfo.title}
+                    </div>
                   </div>
 
-                  {/* Count */}
                   <div
                     style={{
                       fontSize: '0.85rem',
@@ -256,7 +278,6 @@ export default function Leaderboard() {
         </div>
       )}
 
-      {/* Info kecil */}
       <p
         style={{
           textAlign: 'center',
@@ -269,4 +290,4 @@ export default function Leaderboard() {
       </p>
     </div>
   )
-          }
+                      }
