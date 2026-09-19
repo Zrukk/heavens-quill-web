@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Feather, ShieldCheck, UserCircle2, LogOut, LogIn, Coffee, Menu, X, Settings } from 'lucide-react'
+import { Feather, ShieldCheck, UserCircle2, LogOut, LogIn, Coffee, Menu, X, Settings, Trophy } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import GlobalSearch from './GlobalSearch'
 import NotificationBell from './NotificationBell'
@@ -197,6 +197,11 @@ export default function Navbar() {
                     Profil
                   </Link>
 
+                  <Link to="/leaderboard" style={menuItemStyle} onClick={() => setMenuOpen(false)}>
+                    <Trophy size={16} color="var(--gold)" />
+                    Wall of Fame
+                  </Link>
+
                   <Link to="/pengaturan" style={menuItemStyle} onClick={() => setMenuOpen(false)}>
                     <Settings size={16} color="var(--gold)" />
                     Pengaturan
@@ -222,4 +227,4 @@ export default function Navbar() {
       </div>
     </header>
   )
-                }
+                        }
