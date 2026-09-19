@@ -4,6 +4,7 @@ import { X, UserCircle2, BookOpen, Heart, MessageCircle, Star, BarChart3 } from 
 import { supabase } from '../lib/supabase'
 import UserReviews from '../components/UserReviews'
 import LevelBadge from '../components/LevelBadge'
+import UserTitles from '../components/UserTitles'
 
 export default function PublicProfile() {
   const { userId } = useParams()
@@ -141,9 +142,12 @@ export default function PublicProfile() {
             </div>
             <h1 style={{ fontSize: '1.6rem' }}>{profile.display_name || 'Pembaca'}</h1>
 
-            {/* LEVEL BADGE */}
+            {/* LEVEL & TITLE */}
             {!loadingStats && (
-              <LevelBadge totalChapters={stats.chaptersRead} size="medium" />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                <LevelBadge totalChapters={stats.chaptersRead} size="medium" />
+                <UserTitles userId={userId} size="medium" />
+              </div>
             )}
           </div>
 
@@ -217,4 +221,4 @@ export default function PublicProfile() {
       )}
     </div>
   )
-                                       }
+                }
