@@ -20,14 +20,14 @@ export default function NovelList() {
 
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // Ambil currentPage: prioritas dari URL, kalau gak ada ambil dari localStorage
+  // Ambil halaman dari URL dulu. Kalau gak ada, dari localStorage. Kalau gak ada juga, halaman 1.
   const pageFromUrl = parseInt(searchParams.get('page') || '0', 10)
   const pageFromStorage = parseInt(localStorage.getItem(STORAGE_KEY) || '1', 10)
   const currentPage = Math.max(1, pageFromUrl || pageFromStorage)
 
   useDocumentMeta(
-    'Heaven\'s Quill — Daftar Novel',
-    'Terjemahan novel Tionghoa, Jepang, dan Korea ke Bahasa Indonesia. Baca gratis di Heaven\'s Quill.',
+    "Heaven's Quill — Daftar Novel",
+    "Terjemahan novel Tionghoa, Jepang, dan Korea ke Bahasa Indonesia. Baca gratis di Heaven's Quill.",
   )
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export default function NovelList() {
     loadNovels()
   }, [])
 
-  // Simpan halaman ke localStorage setiap kali berubah
+  // Simpan halaman terakhir ke localStorage
   useEffect(() => {
     if (currentPage > 1) {
       localStorage.setItem(STORAGE_KEY, String(currentPage))
@@ -198,4 +198,4 @@ export default function NovelList() {
       )}
     </div>
   )
-                                       }
+          }
