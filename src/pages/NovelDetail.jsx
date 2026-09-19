@@ -327,11 +327,11 @@ export default function NovelDetail() {
         })}
       </div>
 
-      {/* Banner 300x250 (native ganti ke banner statis) */}
-<AdsterraAd type="banner" adKey="aa5ff47e024bb3150e2aff6aa97f2813" width={300} height={250} />
+      {/* Banner 300x250 (ganti Native yang suka kabur) */}
+      <AdsterraAd type="banner" adKey="aa5ff47e024bb3150e2aff6aa97f2813" width={300} height={250} />
 
-{/* Banner 728x90 (desktop) */}
-<AdsterraAd type="banner" adKey="6d2dd4202a3e1bbbe07c44d9f64f390a" width={728} height={90} />
+      {/* Banner 728x90 (desktop) */}
+      <AdsterraAd type="banner" adKey="6d2dd4202a3e1bbbe07c44d9f64f390a" width={728} height={90} />
     </div>
   )
-}
+              }
