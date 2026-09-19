@@ -1,13 +1,15 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { PlayCircle, CheckCircle2, Languages, Eye } from 'lucide-react'
 
 export default function NovelCard({ novel }) {
+  const location = useLocation()
   const isOngoing = novel.status === 'ongoing'
   const genres = novel.genre ? novel.genre.split(',').map((g) => g.trim()).filter(Boolean) : []
 
   return (
     <Link
       to={`/novel/${novel.slug}`}
+      state={{ from: location.pathname + location.search }}
       className="card"
       style={{
         display: 'flex',
