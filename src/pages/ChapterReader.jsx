@@ -112,13 +112,19 @@ export default function ChapterReader() {
           { onConflict: 'user_id,novel_id' },
         )
         await supabase.from('chapter_reads').upsert(
-          {
-            chapter_id: chapterData.id,
-            novel_id: novelData.id,
-            user_id: user.id,
-          },
-          { onConflict: 'chapter_id,user_id' },
-        )
+  {
+    chapter_id: chapterData.id,
+    novel_id: novelData.id,
+    user_id: user.id,
+    read_at: new Date().toISOString(),
+  },
+  { onConflict: 'chapter_id,user_id' },
+)
+
+// Cek & kasih title baru
+supabase.rpc('check_and_award_titles', { target_user_id: user.id }).then(({ error }) => {
+  if (error) console.error('Error award titles:', error)
+})
       }
 
       setLoading(false)
