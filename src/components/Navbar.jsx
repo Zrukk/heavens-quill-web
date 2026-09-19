@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { ShieldCheck, UserCircle2, LogOut, LogIn, Coffee, Menu, X, Settings } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Feather, ShieldCheck, UserCircle2, LogOut, LogIn, Coffee, Menu, X, Settings } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import GlobalSearch from './GlobalSearch'
 import NotificationBell from './NotificationBell'
 
 export default function Navbar() {
   const { user, isAdmin, signOut, displayName, avatarUrl } = useAuth()
+  const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
@@ -23,6 +24,19 @@ export default function Navbar() {
   async function handleSignOut() {
     setMenuOpen(false)
     await signOut()
+  }
+
+  // Klik logo → balik ke halaman novel terakhir
+  function handleLogoClick(e) {
+    e.preventDefault()
+    const saved = localStorage.getItem('hq-last-page')
+    const page = saved && saved !== '1' ? saved : null
+
+    if (page) {
+      navigate(`/?page=${page}`)
+    } else {
+      navigate('/')
+    }
   }
 
   const menuItemStyle = {
@@ -54,7 +68,11 @@ export default function Navbar() {
           padding: '14px 24px',
         }}
       >
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <a
+          href="/"
+          onClick={handleLogoClick}
+          style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, cursor: 'pointer' }}
+        >
           <img
             src="/heavens_quill_icon_dark.png"
             alt="Heaven's Quill"
@@ -68,7 +86,7 @@ export default function Navbar() {
           <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 600 }}>
             Heaven's Quill
           </span>
-        </Link>
+        </a>
 
         <GlobalSearch />
 
@@ -204,4 +222,4 @@ export default function Navbar() {
       </div>
     </header>
   )
-              }
+                }
