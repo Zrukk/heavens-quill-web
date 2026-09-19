@@ -4,6 +4,7 @@ import { UserCircle2, KeyRound, BookMarked, Save, Camera, Heart, BarChart3, Book
 import { useAuth } from '../lib/AuthContext'
 import { supabase } from '../lib/supabase'
 import UserReviews from '../components/UserReviews'
+import LevelBadge from '../components/LevelBadge'
 
 export default function Profile() {
   const { user, displayName, avatarUrl, loading, refreshProfile } = useAuth()
@@ -210,7 +211,14 @@ export default function Profile() {
         <UserCircle2 size={26} color="var(--gold)" strokeWidth={1.75} />
         <h1 className="gradient-text" style={{ fontSize: '1.8rem' }}>Profil</h1>
       </div>
-      <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: '0.9rem' }}>{user.email}</p>
+      <p style={{ color: 'var(--text-muted)', marginBottom: 16, fontSize: '0.9rem' }}>{user.email}</p>
+
+      {/* LEVEL BADGE */}
+      {!loadingStats && (
+        <div style={{ marginBottom: 24 }}>
+          <LevelBadge totalChapters={stats.chaptersRead} size="large" showProgress />
+        </div>
+      )}
 
       {/* Statistik */}
       {sectionHeading(BarChart3, 'Statistik Kamu')}
@@ -218,11 +226,11 @@ export default function Profile() {
         <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>Memuat...</p>
       ) : (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-  <StatCard icon={<BookOpen size={18} />} value={stats.chaptersRead} label="Chapter Dibaca" />
-  <StatCard icon={<Heart size={18} />} value={stats.favorites} label="Novel Favorit" />
-  <StatCard icon={<MessageCircle size={18} />} value={stats.comments} label="Komentar" />
-  <StatCard icon={<Star size={18} />} value={stats.reviews} label="Review Ditulis" />
-</div>
+          <StatCard icon={<BookOpen size={18} />} value={stats.chaptersRead} label="Chapter Dibaca" />
+          <StatCard icon={<Heart size={18} />} value={stats.favorites} label="Novel Favorit" />
+          <StatCard icon={<MessageCircle size={18} />} value={stats.comments} label="Komentar" />
+          <StatCard icon={<Star size={18} />} value={stats.reviews} label="Review Ditulis" />
+        </div>
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32, marginTop: 24 }}>
@@ -297,7 +305,7 @@ export default function Profile() {
 
       {/* REVIEW YANG DITULIS */}
       {sectionHeading(Star, 'Review yang Ditulis')}
-      <UserReviews userId={user.id} limit={10} />
+      <UserReviews userId={user.id} />
 
       {/* NOVEL FAVORIT */}
       {sectionHeading(Heart, `Novel Favorit (${favorites.length})`)}
