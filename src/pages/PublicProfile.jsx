@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { X, UserCircle2, BookOpen, Heart, MessageCircle, Star, BarChart3 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import UserReviews from '../components/UserReviews'
+import LevelBadge from '../components/LevelBadge'
 
 export default function PublicProfile() {
   const { userId } = useParams()
@@ -123,7 +124,7 @@ export default function PublicProfile() {
       {!loading && profile && (
         <>
           {/* Header Profil */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center', marginBottom: 32 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center', marginBottom: 32 }}>
             <div
               style={{
                 width: 96,
@@ -139,6 +140,11 @@ export default function PublicProfile() {
               {!profile.avatar_url && <UserCircle2 size={52} color="var(--text-muted)" />}
             </div>
             <h1 style={{ fontSize: '1.6rem' }}>{profile.display_name || 'Pembaca'}</h1>
+
+            {/* LEVEL BADGE */}
+            {!loadingStats && (
+              <LevelBadge totalChapters={stats.chaptersRead} size="medium" />
+            )}
           </div>
 
           {/* Statistik */}
@@ -150,11 +156,11 @@ export default function PublicProfile() {
             <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>Memuat...</p>
           ) : (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 32 }}>
-  <StatCard icon={<BookOpen size={18} />} value={stats.chaptersRead} label="Chapter Dibaca" />
-  <StatCard icon={<Heart size={18} />} value={stats.favorites} label="Novel Favorit" />
-  <StatCard icon={<MessageCircle size={18} />} value={stats.comments} label="Komentar" />
-  <StatCard icon={<Star size={18} />} value={stats.reviews} label="Review Ditulis" />
-</div>
+              <StatCard icon={<BookOpen size={18} />} value={stats.chaptersRead} label="Chapter Dibaca" />
+              <StatCard icon={<Heart size={18} />} value={stats.favorites} label="Novel Favorit" />
+              <StatCard icon={<MessageCircle size={18} />} value={stats.comments} label="Komentar" />
+              <StatCard icon={<Star size={18} />} value={stats.reviews} label="Review Ditulis" />
+            </div>
           )}
 
           {/* Review yang Ditulis */}
@@ -163,7 +169,7 @@ export default function PublicProfile() {
             Review yang Ditulis
           </h2>
           <div style={{ marginBottom: 32 }}>
-            <UserReviews userId={userId} limit={5} />
+            <UserReviews userId={userId} />
           </div>
 
           {/* Novel Favorit */}
@@ -211,4 +217,4 @@ export default function PublicProfile() {
       )}
     </div>
   )
-                             }
+                                       }
