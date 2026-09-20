@@ -40,6 +40,7 @@ export default function Leaderboard() {
   const top3 = readers.slice(0, 3)
   const rest = readers.slice(3, 10)
 
+  // Urutan: #2 kiri, #1 tengah, #3 kanan
   const podiumOrder = [
     top3[1] ? { ...top3[1], rank: 2 } : null,
     top3[0] ? { ...top3[0], rank: 1 } : null,
@@ -63,14 +64,7 @@ export default function Leaderboard() {
       </p>
 
       {/* Tab filter waktu */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 6,
-          marginBottom: 32,
-          flexWrap: 'wrap',
-        }}
-      >
+      <div style={{ display: 'flex', gap: 6, marginBottom: 32, flexWrap: 'wrap' }}>
         {PERIODS.map((p) => (
           <button
             key={p.id}
@@ -96,12 +90,13 @@ export default function Leaderboard() {
           {/* PODIUM TOP 3 */}
           <div
             style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'flex-end',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
               gap: 12,
               marginBottom: 32,
-              flexWrap: 'wrap',
+              alignItems: 'end',
+              maxWidth: 720,
+              margin: '0 auto 32px',
             }}
           >
             {podiumOrder.map((r) => {
@@ -118,15 +113,15 @@ export default function Leaderboard() {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
+                    justifyContent: 'flex-start',
                     gap: 6,
-                    padding: isChampion ? 20 : 16,
-                    width: isChampion ? 200 : 170,
+                    padding: isChampion ? 16 : 14,
                     border: `2px solid ${colors.border}`,
                     background: colors.bg,
                     textDecoration: 'none',
                     color: 'inherit',
-                    transform: isChampion ? 'translateY(-20px)' : 'translateY(0)',
-                    marginTop: isChampion ? 0 : 20,
+                    minHeight: isChampion ? 260 : 230,
+                    transform: isChampion ? 'translateY(-16px)' : 'translateY(0)',
                   }}
                 >
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
@@ -135,8 +130,8 @@ export default function Leaderboard() {
 
                   <div
                     style={{
-                      width: isChampion ? 80 : 64,
-                      height: isChampion ? 80 : 64,
+                      width: isChampion ? 72 : 60,
+                      height: isChampion ? 72 : 60,
                       borderRadius: '50%',
                       background: r.avatar_url
                         ? `url(${r.avatar_url}) center/cover`
@@ -147,6 +142,7 @@ export default function Leaderboard() {
                       justifyContent: 'center',
                       fontSize: '1.5rem',
                       color: 'var(--text-muted)',
+                      flexShrink: 0,
                     }}
                   >
                     {!r.avatar_url && '👤'}
@@ -166,7 +162,6 @@ export default function Leaderboard() {
                     {r.display_name}
                   </div>
 
-                  {/* Level */}
                   <div
                     style={{
                       fontSize: '0.7rem',
@@ -175,14 +170,16 @@ export default function Leaderboard() {
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       maxWidth: '100%',
+                      textAlign: 'center',
                     }}
                   >
                     Lv.{levelInfo.level} · {levelInfo.title}
                   </div>
 
-                  {/* Title (kalau ada) */}
+                  {/* Title (kalau ada) — cuma icon + tooltip biar gak kepotong */}
                   {r.title_name && (
                     <div
+                      title={r.title_name}
                       style={{
                         fontSize: '0.65rem',
                         color: 'var(--gold)',
@@ -194,17 +191,24 @@ export default function Leaderboard() {
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         maxWidth: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
                       }}
                     >
-                      {r.title_icon} {r.title_name}
+                      <span>{r.title_icon}</span>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {r.title_name}
+                      </span>
                     </div>
                   )}
 
                   <div
                     style={{
-                      fontSize: '0.8rem',
+                      fontSize: '0.85rem',
                       color: 'var(--gold)',
                       fontWeight: 700,
+                      marginTop: 'auto',
                     }}
                   >
                     {Number(r.total_chapters).toLocaleString('id-ID')} BAB
