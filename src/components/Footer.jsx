@@ -42,6 +42,9 @@ export default function Footer() {
           <Link to="/kontak" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
             Kontak
           </Link>
+          <Link to="/peraturan" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+            Peraturan
+          </Link>
           <Link to="/kebijakan-privasi" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
             Kebijakan Privasi
           </Link>
