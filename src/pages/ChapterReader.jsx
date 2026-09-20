@@ -8,7 +8,6 @@ import { useAuth } from '../lib/AuthContext'
 import ShareButton from '../components/ShareButton'
 import BackToTop from '../components/BackToTop'
 import ParagraphComments from '../components/ParagraphComments'
-import AdsterraAd from '../components/AdsterraAd'
 import { tagParagraphs, getParagraphPreview } from '../lib/paragraphUtils'
 
 async function notifyDiscord({ authorName, novelTitle, chapterNumber, chapterTitle, content, url, isReply }) {
@@ -533,9 +532,6 @@ export default function ChapterReader() {
         />
       </div>
 
-      {/* Banner 320x50 */}
-      <AdsterraAd type="banner" adKey="97f299f37ffd7602748c660fc39f2af7" width={320} height={50} />
-
       {/* Hint */}
       <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 12, fontStyle: 'italic' }}>
         💡 Tekan lama paragraf manapun buat kasih komentar
@@ -810,4 +806,4 @@ function ParagraphHighlighter({ paragraphCounts }) {
   }, [paragraphCounts])
 
   return null
-                }
+          }
