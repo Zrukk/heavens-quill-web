@@ -1,17 +1,65 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Lock, Check, Award, BookOpen, MessageCircle, Star } from 'lucide-react'
+import { ArrowLeft, Lock, Check, Award, BookOpen, Star, Flame } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import { useDocumentMeta } from '../lib/useDocumentMeta'
 
 const TITLES = [
+  // === TITLE STREAK (login beruntun) ===
+  {
+    key: 'streak_1',
+    name: 'First Step Cultivator',
+    icon: '🌱',
+    description: 'Langkah pertama di jalan kultivasi. Kamu udah mulai!',
+    requirement: 'Login & check-in 1 hari berturut-turut',
+    category: 'streak',
+    metric: 'currentStreak',
+    target: 1,
+    unit: 'hari',
+  },
+  {
+    key: 'streak_7',
+    name: 'Weekly Dao Seeker',
+    icon: '🔥',
+    description: 'Seorang pencari Dao yang tekun. Seminggu berturut-turut, konsisten!',
+    requirement: 'Login & check-in 7 hari berturut-turut',
+    category: 'streak',
+    metric: 'currentStreak',
+    target: 7,
+    unit: 'hari',
+  },
+  {
+    key: 'streak_30',
+    name: 'Monthly Ascendant',
+    icon: '💎',
+    description: 'Kamu udah naik ke level yang jarang dicapai. Sebulan penuh, luar biasa!',
+    requirement: 'Login & check-in 30 hari berturut-turut',
+    category: 'streak',
+    metric: 'currentStreak',
+    target: 30,
+    unit: 'hari',
+  },
+  {
+    key: 'streak_365',
+    name: 'Eternal Heavenly Reader',
+    icon: '🌌',
+    description: "Setahun penuh tanpa putus. Kamu udah jadi bagian dari legenda Heaven's Quill.",
+    requirement: 'Login & check-in 365 hari berturut-turut',
+    category: 'streak',
+    metric: 'currentStreak',
+    target: 365,
+    unit: 'hari',
+  },
+
+  // === TITLE GENRE (dari fitur lama) ===
   {
     key: 'heavenly_beauties',
     name: 'Venerable Enjoyer of Heavenly Beauties',
     icon: '🍃',
     description: 'Bagi mereka yang mengabdikan diri pada kisah-kisah cinta abadi dan harem yang legendaris.',
     requirement: 'Baca 500+ chapter dari novel bergenre Romance atau Harem',
+    category: 'genre',
     metric: 'romanceHaremChapters',
     target: 500,
     unit: 'chapter',
@@ -22,6 +70,7 @@ const TITLES = [
     icon: '⚡',
     description: 'Penguasa jalan kultivasi dunia maya. Menaklukkan kisah xianxia, wuxia, dan fantasy.',
     requirement: 'Baca 500+ chapter dari novel bergenre Xianxia, Cultivation, Wuxia, atau Fantasy',
+    category: 'genre',
     metric: 'cultivationChapters',
     target: 500,
     unit: 'chapter',
@@ -32,6 +81,7 @@ const TITLES = [
     icon: '🔮',
     description: 'Grandmaster sekte maya yang tak terbatas. Telah menjelajahi ribuan chapter dari berbagai dunia.',
     requirement: 'Total 1000+ chapter dibaca (semua genre)',
+    category: 'genre',
     metric: 'totalChapters',
     target: 1000,
     unit: 'chapter',
@@ -42,6 +92,7 @@ const TITLES = [
     icon: '👁️',
     description: 'Patriarch tertinggi sekte Dao digital. Bukan hanya pembaca, tapi juga kontributor sejati.',
     requirement: 'Punya 1000+ chapter dibaca, 50+ review, dan 100+ komentar',
+    category: 'genre',
     metric: 'combined',
     target: 1000,
     unit: 'chapter',
@@ -56,6 +107,8 @@ export default function Titles() {
     cultivationChapters: 0,
     reviewCount: 0,
     commentCount: 0,
+    currentStreak: 0,
+    longestStreak: 0,
   })
   const [unlocked, setUnlocked] = useState(new Set())
   const [loading, setLoading] = useState(true)
@@ -119,12 +172,21 @@ export default function Titles() {
       supabase.from('chapter_comments').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
     ])
 
+    // Fetch daily streak
+    const { data: streakData } = await supabase
+      .from('daily_streaks')
+      .select('current_streak, longest_streak')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
     setStats({
       totalChapters: uniqueChapters.size,
       romanceHaremChapters: romanceHarem,
       cultivationChapters: cultivation,
       reviewCount: reviewsRes.count ?? 0,
       commentCount: commentsRes.count ?? 0,
+      currentStreak: streakData?.current_streak ?? 0,
+      longestStreak: streakData?.longest_streak ?? 0,
     })
 
     // Fetch title yang udah didapat
@@ -137,10 +199,8 @@ export default function Titles() {
     setLoading(false)
   }
 
-  // Hitung progress untuk tiap title
   function getProgress(title) {
     if (title.metric === 'combined') {
-      // Title 4: butuh 3 syarat
       const chaptersDone = Math.min(stats.totalChapters, 1000)
       const reviewsDone = Math.min(stats.reviewCount, 50)
       const commentsDone = Math.min(stats.commentCount, 100)
@@ -170,6 +230,160 @@ export default function Titles() {
     }
   }
 
+  function renderTitleCard(t) {
+    const isUnlocked = unlocked.has(t.key)
+    const { progress, details } = getProgress(t)
+
+    return (
+      <div
+        key={t.key}
+        className="card"
+        style={{
+          padding: 20,
+          border: isUnlocked ? '1px solid var(--gold)' : '1px solid var(--border)',
+          background: isUnlocked ? 'rgba(212, 175, 91, 0.05)' : 'var(--surface)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            right: -10,
+            top: -10,
+            fontSize: '6rem',
+            opacity: isUnlocked ? 0.08 : 0.03,
+            pointerEvents: 'none',
+            userSelect: 'none',
+          }}
+        >
+          {t.icon}
+        </div>
+
+        <div style={{ position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 12 }}>
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: '50%',
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.8rem',
+                background: isUnlocked ? 'var(--gold)' : 'var(--border)',
+                color: isUnlocked ? '#1a1a1a' : 'var(--text-muted)',
+                border: isUnlocked ? '2px solid var(--gold)' : '2px solid var(--border)',
+              }}
+            >
+              {t.icon}
+            </div>
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                <h3 style={{ fontSize: '1.05rem', margin: 0, color: isUnlocked ? 'var(--gold)' : 'var(--text)' }}>
+                  {t.name}
+                </h3>
+                {isUnlocked ? (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 3,
+                      fontSize: '0.65rem',
+                      color: '#5BBF8A',
+                      border: '1px solid #5BBF8A',
+                      borderRadius: 12,
+                      padding: '1px 6px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    <Check size={10} />
+                    Terbuka
+                  </span>
+                ) : (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 3,
+                      fontSize: '0.65rem',
+                      color: 'var(--text-muted)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 12,
+                      padding: '1px 6px',
+                    }}
+                  >
+                    <Lock size={10} />
+                    Terkunci
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+                {t.description}
+              </p>
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: 12,
+              padding: 12,
+              background: 'var(--bg)',
+              borderRadius: 'var(--radius)',
+              border: '1px solid var(--border)',
+            }}
+          >
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Syarat
+            </div>
+            <p style={{ fontSize: '0.85rem', margin: '0 0 10px', color: 'var(--text)' }}>
+              {t.requirement}
+            </p>
+
+            {details.map((d, i) => (
+              <div key={i} style={{ marginBottom: 8 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: '0.75rem',
+                    marginBottom: 4,
+                    color: 'var(--text-muted)',
+                  }}
+                >
+                  <span>{d.label}</span>
+                  <span style={{ color: d.done ? '#5BBF8A' : 'var(--text-muted)', fontWeight: 600 }}>
+                    {d.value.toLocaleString('id-ID')} / {d.target.toLocaleString('id-ID')}
+                    {d.done && ' ✓'}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    height: 6,
+                    background: 'var(--border)',
+                    borderRadius: 3,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      height: '100%',
+                      width: `${Math.min(100, (d.value / d.target) * 100)}%`,
+                      background: d.done ? '#5BBF8A' : 'var(--gold)',
+                      transition: 'width 0.4s',
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (!user) {
     return (
       <div className="container" style={{ paddingTop: 40, paddingBottom: 60, maxWidth: 700 }}>
@@ -190,6 +404,9 @@ export default function Titles() {
     )
   }
 
+  const streakTitles = TITLES.filter((t) => t.category === 'streak')
+  const genreTitles = TITLES.filter((t) => t.category === 'genre')
+
   return (
     <div className="container" style={{ paddingTop: 40, paddingBottom: 60, maxWidth: 700 }}>
       <Link
@@ -205,171 +422,29 @@ export default function Titles() {
         <h1 className="gradient-text" style={{ fontSize: '1.8rem' }}>Gelar</h1>
       </div>
       <p style={{ color: 'var(--text-muted)', marginBottom: 8 }}>
-        Koleksi gelar bergengsi dari Heaven's Quill. Dapatkan dengan membaca dan berkontribusi.
+        Koleksi gelar bergengsi dari Heaven's Quill. Dapatkan dengan membaca, berkontribusi, dan login rutin.
       </p>
       <p style={{ color: 'var(--gold)', fontSize: '0.85rem', marginBottom: 24 }}>
         Kamu telah mengumpulkan {unlocked.size} dari {TITLES.length} gelar.
       </p>
 
+      {/* === SECTION: STREAK === */}
+      <h2 style={{ fontSize: '1.1rem', marginBottom: 12, marginTop: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <Flame size={18} color="var(--gold)" />
+        Login Beruntun (Streak)
+      </h2>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32 }}>
+        {streakTitles.map((t) => renderTitleCard(t))}
+      </div>
+
+      {/* === SECTION: GENRE === */}
+      <h2 style={{ fontSize: '1.1rem', marginBottom: 12, marginTop: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <BookOpen size={18} color="var(--gold)" />
+        Pencapaian Genre & Aktivitas
+      </h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {TITLES.map((t) => {
-          const isUnlocked = unlocked.has(t.key)
-          const { progress, details } = getProgress(t)
-
-          return (
-            <div
-              key={t.key}
-              className="card"
-              style={{
-                padding: 20,
-                border: isUnlocked ? '1px solid var(--gold)' : '1px solid var(--border)',
-                background: isUnlocked ? 'rgba(212, 175, 91, 0.05)' : 'var(--surface)',
-                position: 'relative',
-                overflow: 'hidden',
-              }}
-            >
-              {/* Icon besar di background */}
-              <div
-                style={{
-                  position: 'absolute',
-                  right: -10,
-                  top: -10,
-                  fontSize: '6rem',
-                  opacity: isUnlocked ? 0.08 : 0.03,
-                  pointerEvents: 'none',
-                  userSelect: 'none',
-                }}
-              >
-                {t.icon}
-              </div>
-
-              <div style={{ position: 'relative' }}>
-                {/* Header */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 12 }}>
-                  <div
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: '50%',
-                      flexShrink: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1.8rem',
-                      background: isUnlocked ? 'var(--gold)' : 'var(--border)',
-                      color: isUnlocked ? '#1a1a1a' : 'var(--text-muted)',
-                      border: isUnlocked ? '2px solid var(--gold)' : '2px solid var(--border)',
-                    }}
-                  >
-                    {t.icon}
-                  </div>
-
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                      <h3 style={{ fontSize: '1.05rem', margin: 0, color: isUnlocked ? 'var(--gold)' : 'var(--text)' }}>
-                        {t.name}
-                      </h3>
-                      {isUnlocked ? (
-                        <span
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 3,
-                            fontSize: '0.65rem',
-                            color: '#5BBF8A',
-                            border: '1px solid #5BBF8A',
-                            borderRadius: 12,
-                            padding: '1px 6px',
-                            fontWeight: 600,
-                          }}
-                        >
-                          <Check size={10} />
-                          Terbuka
-                        </span>
-                      ) : (
-                        <span
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 3,
-                            fontSize: '0.65rem',
-                            color: 'var(--text-muted)',
-                            border: '1px solid var(--border)',
-                            borderRadius: 12,
-                            padding: '1px 6px',
-                          }}
-                        >
-                          <Lock size={10} />
-                          Terkunci
-                        </span>
-                      )}
-                    </div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
-                      {t.description}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Syarat */}
-                <div
-                  style={{
-                    marginTop: 12,
-                    padding: 12,
-                    background: 'var(--bg)',
-                    borderRadius: 'var(--radius)',
-                    border: '1px solid var(--border)',
-                  }}
-                >
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                    Syarat
-                  </div>
-                  <p style={{ fontSize: '0.85rem', margin: '0 0 10px', color: 'var(--text)' }}>
-                    {t.requirement}
-                  </p>
-
-                  {/* Progress detail */}
-                  {details.map((d, i) => (
-                    <div key={i} style={{ marginBottom: 8 }}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          fontSize: '0.75rem',
-                          marginBottom: 4,
-                          color: 'var(--text-muted)',
-                        }}
-                      >
-                        <span>{d.label}</span>
-                        <span style={{ color: d.done ? '#5BBF8A' : 'var(--text-muted)', fontWeight: 600 }}>
-                          {d.value.toLocaleString('id-ID')} / {d.target.toLocaleString('id-ID')}
-                          {d.done && ' ✓'}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          height: 6,
-                          background: 'var(--border)',
-                          borderRadius: 3,
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <div
-                          style={{
-                            height: '100%',
-                            width: `${Math.min(100, (d.value / d.target) * 100)}%`,
-                            background: d.done ? '#5BBF8A' : 'var(--gold)',
-                            transition: 'width 0.4s',
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )
-        })}
+        {genreTitles.map((t) => renderTitleCard(t))}
       </div>
     </div>
   )
-    }
+      }
