@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase'
 import { useDocumentMeta } from '../lib/useDocumentMeta'
 import NovelCard from '../components/NovelCard'
 import NovelPopulerSection from '../components/NovelPopulerSection'
-import AdsterraAd from '../components/AdsterraAd'
 
 const NOVELS_PER_PAGE = 10
 const STORAGE_KEY = 'hq-last-page'
@@ -161,11 +160,6 @@ export default function NovelList() {
 
       {!loading && !error && novels.length > 0 && (
         <NovelPopulerSection dataNovel={novels} />
-      )}
-
-      {/* Banner 300x250 */}
-      {!loading && !error && (
-        <AdsterraAd type="banner" adKey="aa5ff47e024bb3150e2aff6aa97f2813" width={300} height={250} />
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
