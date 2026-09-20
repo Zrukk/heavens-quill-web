@@ -118,9 +118,9 @@ export default function Leaderboard() {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: 8,
+                    gap: 6,
                     padding: isChampion ? 20 : 16,
-                    width: isChampion ? 180 : 150,
+                    width: isChampion ? 200 : 170,
                     border: `2px solid ${colors.border}`,
                     background: colors.bg,
                     textDecoration: 'none',
@@ -166,6 +166,7 @@ export default function Leaderboard() {
                     {r.display_name}
                   </div>
 
+                  {/* Level */}
                   <div
                     style={{
                       fontSize: '0.7rem',
@@ -178,6 +179,26 @@ export default function Leaderboard() {
                   >
                     Lv.{levelInfo.level} · {levelInfo.title}
                   </div>
+
+                  {/* Title (kalau ada) */}
+                  {r.title_name && (
+                    <div
+                      style={{
+                        fontSize: '0.65rem',
+                        color: 'var(--gold)',
+                        border: '1px solid var(--gold)',
+                        borderRadius: 12,
+                        padding: '2px 8px',
+                        background: 'rgba(212, 175, 91, 0.08)',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        maxWidth: '100%',
+                      }}
+                    >
+                      {r.title_icon} {r.title_name}
+                    </div>
+                  )}
 
                   <div
                     style={{
@@ -287,6 +308,11 @@ export default function Leaderboard() {
                           }}
                         >
                           Lv.{levelInfo.level} · {levelInfo.title}
+                          {r.title_name && (
+                            <span style={{ color: 'var(--gold)', marginLeft: 6 }}>
+                              · {r.title_icon} {r.title_name}
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -321,4 +347,4 @@ export default function Leaderboard() {
       </p>
     </div>
   )
-                  }
+      }
