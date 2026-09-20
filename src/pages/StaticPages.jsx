@@ -186,7 +186,7 @@ export function Privacy() {
   return (
     <PageWrapper icon={<Shield size={26} />} title="Kebijakan Privasi">
       <p style={{ fontStyle: 'italic' }}>
-        Terakhir diperbarui: 19 September 2026
+        Terakhir diperbarui: 20 September 2026
       </p>
 
       <p>
@@ -209,10 +209,10 @@ export function Privacy() {
         kecil yang disimpan di perangkatmu.
       </p>
 
-      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>3. Iklan Pihak Ketiga (Adsterra)</h2>
+      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>3. Iklan Pihak Ketiga (Monetag)</h2>
       <p>
         Heaven's Quill menampilkan iklan melalui jaringan pihak ketiga, saat ini{' '}
-        <strong style={{ color: 'var(--text)' }}>Adsterra</strong>. Adsterra dan mitranya dapat
+        <strong style={{ color: 'var(--text)' }}>Monetag</strong>. Monetag dan mitranya dapat
         menggunakan cookie, web beacon, dan teknologi serupa untuk menayangkan iklan yang relevan
         berdasarkan kunjunganmu ke situs ini dan situs lain di internet.
       </p>
@@ -222,14 +222,14 @@ export function Privacy() {
         berbahaya), namun jaringan iklan pihak ketiga tidak sepenuhnya dapat kami kontrol.
       </p>
       <p>
-        Untuk informasi lebih lanjut tentang bagaimana Adsterra menangani data, kunjungi{' '}
+        Untuk informasi lebih lanjut tentang bagaimana Monetag menangani data, kunjungi{' '}
         <a
-          href="https://adsterra.com/privacy-policy/"
+          href="https://monetag.com/privacy-policy/"
           target="_blank"
           rel="noopener noreferrer"
           style={{ color: 'var(--gold)' }}
         >
-          Kebijakan Privasi Adsterra
+          Kebijakan Privasi Monetag
         </a>.
       </p>
 
