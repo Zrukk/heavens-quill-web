@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { X, UserCircle2, BookOpen, Heart, MessageCircle, Star, BarChart3 } from 'lucide-react'
+import { X, UserCircle2, BookOpen, Heart, MessageCircle, Star, BarChart3, Flame } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import UserReviews from '../components/UserReviews'
 import LevelBadge from '../components/LevelBadge'
@@ -125,7 +125,7 @@ export default function PublicProfile() {
       {!loading && profile && (
         <>
           {/* Header Profil */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center', marginBottom: 32 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center', marginBottom: 24 }}>
             <div
               style={{
                 width: 96,
@@ -150,6 +150,9 @@ export default function PublicProfile() {
               </div>
             )}
           </div>
+
+          {/* DAILY STREAK (read-only) */}
+          <StreakDisplay userId={userId} />
 
           {/* Statistik */}
           <h2 style={{ fontSize: '1.1rem', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -221,4 +224,67 @@ export default function PublicProfile() {
       )}
     </div>
   )
-                }
+}
+
+/* === Komponen kecil: Streak read-only untuk PublicProfile === */
+function StreakDisplay({ userId }) {
+  const [streak, setStreak] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase
+        .from('daily_streaks')
+        .select('current_streak, longest_streak')
+        .eq('user_id', userId)
+        .maybeSingle()
+      setStreak(data)
+      setLoading(false)
+    }
+    if (userId) load()
+  }, [userId])
+
+  if (loading || !streak || streak.current_streak === 0) return null
+
+  return (
+    <div
+      className="card"
+      style={{
+        padding: 12,
+        marginBottom: 24,
+        background: 'linear-gradient(135deg, rgba(212, 175, 91, 0.1), rgba(212, 175, 91, 0.03))',
+        border: '1px solid var(--gold)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+      }}
+    >
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          background: 'var(--gold)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#1a1a1a',
+          flexShrink: 0,
+        }}
+      >
+        <Flame size={20} />
+      </div>
+      <div>
+        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Daily Streak</div>
+        <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--gold)' }}>
+          {streak.current_streak} hari
+        </div>
+        {streak.longest_streak > 0 && (
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+            Terlama: {streak.longest_streak} hari
+          </div>
+        )}
+      </div>
+    </div>
+  )
+                      }
