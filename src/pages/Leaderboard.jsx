@@ -40,7 +40,6 @@ export default function Leaderboard() {
   const top3 = readers.slice(0, 3)
   const rest = readers.slice(3, 10)
 
-  // Urutan: #2 kiri, #1 tengah, #3 kanan
   const podiumOrder = [
     top3[1] ? { ...top3[1], rank: 2 } : null,
     top3[0] ? { ...top3[0], rank: 1 } : null,
@@ -88,17 +87,7 @@ export default function Leaderboard() {
       {!loading && readers.length > 0 && (
         <>
           {/* PODIUM TOP 3 */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: 12,
-              marginBottom: 32,
-              alignItems: 'end',
-              maxWidth: 720,
-              margin: '0 auto 32px',
-            }}
-          >
+          <div className="podium-grid">
             {podiumOrder.map((r) => {
               const colors = rankColors[r.rank]
               const isChampion = r.rank === 1
@@ -113,15 +102,13 @@ export default function Leaderboard() {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    justifyContent: 'flex-start',
-                    gap: 6,
-                    padding: isChampion ? 16 : 14,
+                    gap: 8,
+                    padding: 16,
                     border: `2px solid ${colors.border}`,
                     background: colors.bg,
                     textDecoration: 'none',
                     color: 'inherit',
-                    minHeight: isChampion ? 260 : 230,
-                    transform: isChampion ? 'translateY(-16px)' : 'translateY(0)',
+                    minHeight: 230,
                   }}
                 >
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
@@ -176,7 +163,6 @@ export default function Leaderboard() {
                     Lv.{levelInfo.level} · {levelInfo.title}
                   </div>
 
-                  {/* Title (kalau ada) — cuma icon + tooltip biar gak kepotong */}
                   {r.title_name && (
                     <div
                       title={r.title_name}
@@ -349,6 +335,32 @@ export default function Leaderboard() {
       >
         💡 Chapter yang dibaca berulang kali tetap dihitung satu.
       </p>
+
+      {/* CSS untuk podium responsive */}
+      <style>{`
+        .podium-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 12px;
+          margin-bottom: 32px;
+        }
+        @media (min-width: 700px) {
+          .podium-grid {
+            grid-template-columns: repeat(3, 1fr);
+            align-items: end;
+            max-width: 720px;
+            margin: 0 auto 32px;
+          }
+          /* Champion lebih tinggi di desktop */
+          .podium-grid > a:nth-child(2) {
+            transform: translateY(-16px);
+          }
+        }
+        @media (max-width: 699px) {
+          /* Di HP, champion tetap paling atas (urutan sudah dari backend: #2, #1, #3) */
+          /* Kita tetap tampilkan urutannya, tapi full width */
+        }
+      `}</style>
     </div>
   )
-      }
+                      }
