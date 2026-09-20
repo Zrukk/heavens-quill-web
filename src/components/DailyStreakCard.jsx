@@ -50,6 +50,7 @@ export default function DailyStreakCard() {
 
   const today = new Date().toISOString().slice(0, 10)
   const checkedInToday = streak?.last_check_in === today
+  const notCheckedInYet = !checkedInToday
 
   return (
     <div
@@ -58,11 +59,31 @@ export default function DailyStreakCard() {
         padding: 16,
         marginBottom: 24,
         background: 'linear-gradient(135deg, rgba(212, 175, 91, 0.1), rgba(212, 175, 91, 0.03))',
-        border: '1px solid var(--gold)',
+        border: notCheckedInYet ? '2px solid #D46B5B' : '1px solid var(--gold)',
         position: 'relative',
         overflow: 'hidden',
       }}
     >
+      {/* Tanda merah kalau belum check-in */}
+      {notCheckedInYet && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            background: '#D46B5B',
+            color: '#fff',
+            fontSize: '0.65rem',
+            fontWeight: 700,
+            padding: '2px 8px',
+            borderRadius: 12,
+            animation: 'pulse 1.5s infinite',
+          }}
+        >
+          BELUM CHECK-IN
+        </div>
+      )}
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <div
           style={{
@@ -116,7 +137,12 @@ export default function DailyStreakCard() {
             onClick={handleCheckIn}
             className="btn btn--gold"
             disabled={checking}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              boxShadow: '0 0 12px rgba(212, 175, 91, 0.5)',
+            }}
           >
             {checking ? <Loader size={16} className="spin" /> : <Flame size={16} />}
             {checking ? 'Check-in...' : 'Check-in Hari Ini'}
@@ -124,7 +150,6 @@ export default function DailyStreakCard() {
         )}
       </div>
 
-      {/* Milestone info */}
       <div
         style={{
           marginTop: 12,
@@ -146,7 +171,6 @@ export default function DailyStreakCard() {
         <span>🌌 365 hari</span>
       </div>
 
-      {/* Popup new title */}
       {newTitle && (
         <div
           style={{
@@ -165,7 +189,6 @@ export default function DailyStreakCard() {
             gap: 8,
             fontWeight: 600,
             fontSize: '0.9rem',
-            animation: 'slideDown 0.3s',
           }}
         >
           <Sparkles size={18} />
@@ -174,11 +197,11 @@ export default function DailyStreakCard() {
       )}
 
       <style>{`
-        @keyframes slideDown {
-          from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-          to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
         }
       `}</style>
     </div>
   )
-    }
+            }
