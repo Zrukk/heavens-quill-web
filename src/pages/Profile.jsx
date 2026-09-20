@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import UserReviews from '../components/UserReviews'
 import LevelBadge from '../components/LevelBadge'
 import UserTitles from '../components/UserTitles'
+import DailyStreakCard from '../components/DailyStreakCard'
 
 export default function Profile() {
   const { user, displayName, avatarUrl, loading, refreshProfile } = useAuth()
@@ -213,6 +214,9 @@ export default function Profile() {
         <h1 className="gradient-text" style={{ fontSize: '1.8rem' }}>Profil</h1>
       </div>
       <p style={{ color: 'var(--text-muted)', marginBottom: 16, fontSize: '0.9rem' }}>{user.email}</p>
+
+      {/* DAILY STREAK */}
+      <DailyStreakCard />
 
       {/* LEVEL & TITLE */}
       {!loadingStats && (
