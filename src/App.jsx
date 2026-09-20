@@ -13,7 +13,6 @@ import Leaderboard from './pages/Leaderboard'
 import Titles from './pages/Titles'
 import { About, Contact, Privacy, Rules } from './pages/StaticPages'
 import BackToTop from './components/BackToTop'
-import AdsterraAd from './components/AdsterraAd'
 import { useScrollToAnchor } from './lib/useScrollToAnchor'
 
 export default function App() {
@@ -41,13 +40,6 @@ export default function App() {
         </Routes>
       </div>
       <Footer />
-
-      <AdsterraAd
-        type="socialbar"
-        scriptSrc="https://pl31414162.profitableratecpmnetwork.com/f9237b127bf03def083602edd29801ff/invoke.js"
-        containerId="container-f9237b127bf03def083602edd29801ff"
-      />
-
       <BackToTop />
     </div>
   )
