@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Info, Mail, Shield, ArrowLeft, MessageCircle } from 'lucide-react'
+import { Info, Mail, Shield, ArrowLeft, MessageCircle, BookOpen } from 'lucide-react'
 
 function PageWrapper({ icon, title, children }) {
   return (
@@ -299,4 +299,102 @@ export function Privacy() {
       </p>
     </PageWrapper>
   )
-        }
+}
+
+export function Rules() {
+  return (
+    <PageWrapper icon={<BookOpen size={26} />} title="Peraturan">
+      <p style={{ fontStyle: 'italic' }}>
+        Terakhir diperbarui: 20 September 2026
+      </p>
+
+      <p>
+        Selamat datang di Heaven's Quill! Biar komunitas kita tetap nyaman dan asyik,
+        tolong baca dan patuhi peraturan berikut. Dengan menggunakan situs ini, kamu
+        dianggap sudah menyetujui semua peraturan di bawah.
+      </p>
+
+      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>1. Aturan Umum</h2>
+      <ul style={{ paddingLeft: 20, margin: '8px 0' }}>
+        <li>Gunakan Bahasa Indonesia yang sopan dan mudah dipahami.</li>
+        <li>Jangan spam, flood, atau mengirim pesan berulang-ulang.</li>
+        <li>Jangan promosi produk/jasa/situs lain tanpa izin admin.</li>
+        <li>Jangan upload konten ilegal, berbahaya, atau melanggar hukum.</li>
+        <li>Hormati sesama pembaca dan penerjemah.</li>
+      </ul>
+
+      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>2. Aturan Komentar & Review</h2>
+      <ul style={{ paddingLeft: 20, margin: '8px 0' }}>
+        <li>Dilarang SARA (Suku, Agama, Ras, Antargolongan) dan ujaran kebencian.</li>
+        <li>Dilarang berkata kasar, menghina, atau melecehkan user lain.</li>
+        <li>Dilarang spoiler tanpa tanda spoiler (gunakan fitur spoiler yang tersedia).</li>
+        <li>Dilarang promosi judi, situs dewasa, atau konten ilegal lainnya.</li>
+        <li>Kritik boleh, tapi sampaikan dengan sopan dan membangun.</li>
+        <li>Komentar yang tidak relevan dengan chapter/novel akan dihapus.</li>
+      </ul>
+
+      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>3. Aturan Akun</h2>
+      <ul style={{ paddingLeft: 20, margin: '8px 0' }}>
+        <li>Satu orang disarankan hanya punya satu akun.</li>
+        <li>Dilarang menggunakan nama tampilan yang menyerupai admin/moderator.</li>
+        <li>Dilarang menggunakan foto profil yang tidak pantas.</li>
+        <li>Jangan bagikan password akunmu ke siapa pun.</li>
+        <li>Akun yang melanggar bisa diblokir tanpa pemberitahuan sebelumnya.</li>
+      </ul>
+
+      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>4. Aturan Konten</h2>
+      <ul style={{ paddingLeft: 20, margin: '8px 0' }}>
+        <li>Heaven's Quill hanya menampilkan karya terjemahan yang sudah diizinkan atau tersedia bebas.</li>
+        <li>Dilarang menyalin konten dari Heaven's Quill tanpa izin dan kredit.</li>
+        <li>Jika kamu pemegang hak cipta dan merasa keberatan, hubungi kami lewat halaman Kontak.</li>
+        <li>Admin berhak menghapus konten yang dianggap melanggar tanpa pemberitahuan.</li>
+      </ul>
+
+      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>5. Sanksi Pelanggaran</h2>
+      <p>Pelanggaran akan ditindak sesuai tingkat keparahan:</p>
+      <ul style={{ paddingLeft: 20, margin: '8px 0' }}>
+        <li><strong style={{ color: 'var(--text)' }}>Peringatan:</strong> untuk pelanggaran ringan pertama kali.</li>
+        <li><strong style={{ color: 'var(--text)' }}>Hapus konten:</strong> komentar/review yang melanggar akan dihapus.</li>
+        <li><strong style={{ color: 'var(--text)' }}>Blokir sementara:</strong> 7 hari untuk pelanggaran sedang.</li>
+        <li><strong style={{ color: 'var(--text)' }}>Blokir permanen:</strong> untuk pelanggaran berat atau berulang.</li>
+      </ul>
+
+      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>6. Pelaporan</h2>
+      <p>
+        Kalau kamu menemukan pelanggaran, tolong laporkan ke kami lewat halaman{' '}
+        <Link to="/kontak" style={{ color: 'var(--gold)' }}>Kontak</Link> atau join Discord kami.
+        Sertakan bukti (screenshot) biar lebih mudah ditindaklanjuti.
+      </p>
+
+      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>7. Perubahan Peraturan</h2>
+      <p>
+        Peraturan ini bisa berubah kapan saja tanpa pemberitahuan sebelumnya. Perubahan akan
+        dipublikasikan di halaman ini dengan tanggal pembaruan terbaru.
+      </p>
+
+      <h2 style={{ fontSize: '1.2rem', color: 'var(--text)', marginTop: 24 }}>8. Kontak</h2>
+      <p>
+        Ada pertanyaan tentang peraturan ini? Hubungi kami lewat halaman{' '}
+        <Link to="/kontak" style={{ color: 'var(--gold)' }}>Kontak</Link>.
+      </p>
+
+      <div
+        style={{
+          marginTop: 32,
+          padding: 16,
+          background: 'var(--surface)',
+          border: '1px solid var(--gold)',
+          borderRadius: 'var(--radius)',
+          fontSize: '0.9rem',
+          textAlign: 'center',
+        }}
+      >
+        <strong style={{ color: 'var(--gold)' }}>📚 Selamat membaca!</strong>
+        <br />
+        <span style={{ color: 'var(--text-muted)' }}>
+          Dengan mengikuti peraturan, kita bantu Heaven's Quill jadi tempat yang nyaman buat semua.
+        </span>
+      </div>
+    </PageWrapper>
+  )
+      }
