@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Clock, Lock } from 'lucide-react'
+import { Clock } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 export default function LatestUpdates() {
@@ -14,7 +14,7 @@ export default function LatestUpdates() {
   async function loadUpdates() {
     setLoading(true)
 
-    // Fetch 20 chapter terbaru
+    // Fetch 30 chapter terbaru
     const { data: chapters } = await supabase
       .from('chapters')
       .select('id, chapter_number, title, created_at, novel_id')
@@ -200,7 +200,6 @@ export default function LatestUpdates() {
                     >
                       {ch.title || 'Tanpa judul'}
                     </span>
-                    <Lock size={11} style={{ flexShrink: 0, opacity: 0.4 }} />
                     <span
                       style={{
                         fontSize: '0.7rem',
@@ -219,4 +218,4 @@ export default function LatestUpdates() {
       </div>
     </div>
   )
-              }
+                        }
