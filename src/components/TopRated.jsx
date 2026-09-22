@@ -14,7 +14,7 @@ export default function TopRated() {
   async function load() {
     setLoading(true)
 
-    // Fetch semua rating dari novel_reviews
+    // Fetch rating dari novel_reviews
     const { data: reviews } = await supabase
       .from('novel_reviews')
       .select('novel_id, rating')
@@ -35,7 +35,7 @@ export default function TopRated() {
       novelRatings[r.novel_id].count++
     })
 
-    // Ambil top 5 novel berdasarkan rata-rata rating (minimal 1 rating)
+    // Top 10
     const sorted = Object.entries(novelRatings)
       .map(([novelId, data]) => ({
         novelId,
@@ -44,18 +44,18 @@ export default function TopRated() {
       }))
       .filter((n) => n.count >= 1)
       .sort((a, b) => b.avg - a.avg || b.count - a.count)
-      .slice(0, 5)
+      .slice(0, 10)
 
     if (sorted.length === 0) {
       setLoading(false)
       return
     }
 
-    // Fetch detail novel
+    // Fetch novel info
     const novelIds = sorted.map((s) => s.novelId)
     const { data: novelsData } = await supabase
       .from('novels')
-      .select('id, title, slug, cover_url, author, total_views')
+      .select('id, title, slug, cover_url, total_views')
       .in('id', novelIds)
 
     const novelsMap = {}
@@ -77,8 +77,11 @@ export default function TopRated() {
 
   if (loading || novels.length === 0) return null
 
+  const top1 = novels[0]
+  const rest = novels.slice(1, 10)
+
   return (
-    <div style={{ marginBottom: 32 }}>
+    <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
         <Star size={22} color="var(--gold)" fill="var(--gold)" />
         <h2 className="gradient-text" style={{ fontSize: '1.5rem' }}>
@@ -86,97 +89,177 @@ export default function TopRated() {
         </h2>
       </div>
 
-      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
-        {novels.map((n, i) => (
+      {/* #1 Featured */}
+      {top1 && (
+        <Link
+          to={`/novel/${top1.slug}`}
+          className="card"
+          style={{
+            display: 'block',
+            position: 'relative',
+            height: 220,
+            borderRadius: 'var(--radius)',
+            overflow: 'hidden',
+            marginBottom: 12,
+            textDecoration: 'none',
+            color: 'inherit',
+          }}
+        >
+          {/* Background cover */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: top1.cover_url
+                ? `url(${top1.cover_url}) center/cover`
+                : 'var(--surface)',
+            }}
+          />
+          {/* Gradient overlay */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(to top, rgba(12, 16, 20, 0.95) 0%, rgba(12, 16, 20, 0.3) 60%, transparent 100%)',
+            }}
+          />
+          {/* Content */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              padding: 16,
+            }}
+          >
+            <div
+              style={{
+                display: 'inline-block',
+                background: 'var(--gold)',
+                color: '#1a1a1a',
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                padding: '2px 10px',
+                borderRadius: 12,
+                marginBottom: 8,
+              }}
+            >
+              🏆 #1 Top Rated
+            </div>
+            <div
+              style={{
+                fontSize: '1.1rem',
+                fontWeight: 700,
+                color: '#fff',
+                marginBottom: 6,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {top1.title}
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                fontSize: '0.8rem',
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--gold)' }}>
+                <Star size={13} fill="var(--gold)" />
+                {top1.avgRating.toFixed(1)}
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'rgba(255,255,255,0.7)' }}>
+                <Eye size={12} />
+                {(top1.total_views || 0).toLocaleString('id-ID')}
+              </span>
+            </div>
+          </div>
+        </Link>
+      )}
+
+      {/* Rank 2-10 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {rest.map((n, i) => (
           <Link
             key={n.id}
             to={`/novel/${n.slug}`}
             className="card"
             style={{
-              minWidth: 140,
-              width: 140,
-              flexShrink: 0,
-              padding: 12,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: 10,
               textDecoration: 'none',
               color: 'inherit',
-              position: 'relative',
             }}
           >
+            {/* Rank */}
             <div
               style={{
-                position: 'absolute',
-                top: 8,
-                left: 8,
-                background: 'var(--gold)',
-                color: '#1a1a1a',
-                fontSize: '0.65rem',
+                width: 22,
+                textAlign: 'center',
+                fontSize: '0.9rem',
                 fontWeight: 700,
-                padding: '2px 8px',
-                borderRadius: 12,
-                zIndex: 1,
+                color: 'var(--text-muted)',
+                flexShrink: 0,
               }}
             >
-              #{i + 1}
+              {i + 2}
             </div>
 
+            {/* Cover */}
             <div
               style={{
-                width: '100%',
-                height: 180,
+                width: 36,
+                height: 48,
+                flexShrink: 0,
                 background: n.cover_url
                   ? `url(${n.cover_url}) center/cover`
                   : 'var(--border)',
-                borderRadius: 'var(--radius)',
-                marginBottom: 10,
+                borderRadius: 4,
               }}
             />
 
-            <div
-              style={{
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                marginBottom: 6,
-                minHeight: '2.4em',
-              }}
-            >
-              {n.title}
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                fontSize: '0.75rem',
-                color: 'var(--gold)',
-                marginBottom: 4,
-              }}
-            >
-              <Star size={12} fill="var(--gold)" />
-              {n.avgRating.toFixed(1)}
-              <span style={{ color: 'var(--text-muted)' }}>({n.ratingCount})</span>
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                fontSize: '0.7rem',
-                color: 'var(--text-muted)',
-              }}
-            >
-              <Eye size={11} />
-              {(n.total_views || 0).toLocaleString('id-ID')}
+            {/* Info */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  marginBottom: 3,
+                }}
+              >
+                {n.title}
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: '0.7rem',
+                  color: 'var(--text-muted)',
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: 3, color: 'var(--gold)' }}>
+                  <Star size={10} fill="var(--gold)" />
+                  {n.avgRating.toFixed(1)}
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <Eye size={10} />
+                  {(n.total_views || 0).toLocaleString('id-ID')}
+                </span>
+              </div>
             </div>
           </Link>
         ))}
       </div>
     </div>
   )
-}
+      }
