@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, MessageCircle, Send, Reply, Coffee, UserCircle2, X, ChevronUp } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, MessageCircle, Send, Reply, Coffee, UserCircle2, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { fetchAllChapterRows } from '../lib/fetchAllChapterRows'
 import { useDocumentMeta, stripHtml } from '../lib/useDocumentMeta'
@@ -616,53 +616,59 @@ export default function ChapterReader() {
         />
 
         <style>{`
-  .chapter-content {
-    line-height: 1.9;
-    letter-spacing: 0.01em;
-    padding-left: 8px;
-    padding-right: 8px;
-  }
-  .chapter-content p {
-    position: relative;
-    border-radius: 4px;
-    padding: 4px 8px;
-    margin-left: -8px;
-    margin-right: -8px;
-    margin-bottom: 1.6em;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-  .chapter-content p:hover {
-    background: rgba(255, 255, 255, 0.04);
-  }
-  .chapter-content p[data-has-comment="true"]::before {
-    content: '';
-    position: absolute;
-    left: -14px;
-    top: 14px;
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: var(--gold);
-    pointer-events: none;
-    box-shadow: 0 0 0 2px rgba(212, 175, 91, 0.25);
-  }
-  .chapter-content p[data-has-comment="true"]:hover::after {
-    content: '💬 ' attr(data-comment-count);
-    position: absolute;
-    right: -8px;
-    top: -10px;
-    font-size: 0.65rem;
-    color: var(--gold);
-    font-family: sans-serif;
-    pointer-events: none;
-    background: var(--bg);
-    padding: 2px 6px;
-    border-radius: 10px;
-    border: 1px solid var(--gold);
-    z-index: 1;
-  }
-`}</style>
+          .chapter-content {
+            line-height: 1.8;
+            letter-spacing: 0.005em;
+          }
+          .chapter-content p {
+            position: relative;
+            margin-bottom: 0.9em;
+            cursor: pointer;
+          }
+          /* Hover effect cuma di desktop (bukan HP) — biar gak kedip saat scroll di HP */
+          @media (hover: hover) and (pointer: fine) {
+            .chapter-content p {
+              border-radius: 4px;
+              padding: 4px 8px;
+              margin-left: -8px;
+              margin-right: -8px;
+              transition: background 0.15s;
+            }
+            .chapter-content p:hover {
+              background: rgba(255, 255, 255, 0.04);
+            }
+          }
+          /* Marker paragraf yang ada komentar */
+          .chapter-content p[data-has-comment="true"]::before {
+            content: '';
+            position: absolute;
+            left: -14px;
+            top: 0.9em;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--gold);
+            pointer-events: none;
+            box-shadow: 0 0 0 2px rgba(212, 175, 91, 0.25);
+          }
+          @media (hover: hover) and (pointer: fine) {
+            .chapter-content p[data-has-comment="true"]:hover::after {
+              content: '💬 ' attr(data-comment-count);
+              position: absolute;
+              right: -8px;
+              top: -10px;
+              font-size: 0.65rem;
+              color: var(--gold);
+              font-family: sans-serif;
+              pointer-events: none;
+              background: var(--bg);
+              padding: 2px 6px;
+              border-radius: 10px;
+              border: 1px solid var(--gold);
+              z-index: 1;
+            }
+          }
+        `}</style>
 
         <ParagraphHighlighter paragraphCounts={paragraphCounts} />
 
