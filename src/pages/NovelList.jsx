@@ -6,6 +6,8 @@ import { useDocumentMeta } from '../lib/useDocumentMeta'
 import NovelCard from '../components/NovelCard'
 import NovelPopulerSection from '../components/NovelPopulerSection'
 import HeroSection from '../components/HeroSection'
+import LatestUpdates from '../components/LatestUpdates'
+import TopRated from '../components/TopRated'
 
 const NOVELS_PER_PAGE = 10
 const STORAGE_KEY = 'hq-last-page'
@@ -116,11 +118,17 @@ export default function NovelList() {
       <HeroSection />
 
       {/* NOVEL POPULER */}
-      {!loading && !error && novels.length > 0 && (
-        <NovelPopulerSection dataNovel={novels} />
-      )}
+{!loading && !error && novels.length > 0 && (
+  <NovelPopulerSection dataNovel={novels} />
+)}
 
-      {/* DAFTAR NOVEL */}
+{/* UPDATE TERBARU */}
+<LatestUpdates />
+
+{/* RATING TERTINGGI */}
+<TopRated />
+
+{/* DAFTAR NOVEL */}
       <div id="daftar-novel" style={{ paddingTop: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
           <SlidersHorizontal size={22} color="var(--gold)" strokeWidth={1.75} />
