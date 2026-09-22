@@ -5,6 +5,8 @@ export default function NovelCard({ novel }) {
   const location = useLocation()
   const isOngoing = novel.status === 'ongoing'
   const genres = novel.genre ? novel.genre.split(',').map((g) => g.trim()).filter(Boolean) : []
+  const avgRating = Number(novel.avg_rating ?? 0)
+  const ratingCount = Number(novel.rating_count ?? 0)
 
   return (
     <Link
@@ -58,10 +60,17 @@ export default function NovelCard({ novel }) {
             <Eye size={13} />
             {(novel.total_views ?? 0).toLocaleString('id-ID')}
           </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--gold)' }}>
-            <Star size={13} fill="var(--gold)" />
-            4.5
-          </span>
+
+          {/* Rating — cuma muncul kalau ada rating */}
+          {ratingCount > 0 && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--gold)' }}>
+              <Star size={13} fill="var(--gold)" />
+              {avgRating.toFixed(1)}
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>
+                ({ratingCount})
+              </span>
+            </span>
+          )}
         </div>
         {genres.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
