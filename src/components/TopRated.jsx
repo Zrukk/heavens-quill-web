@@ -14,17 +14,20 @@ export default function TopRated() {
   async function load() {
     setLoading(true)
 
-    // Fetch semua rating, group by novel_id
-    const { data: ratings } = await supabase.from('ratings').select('novel_id, rating')
+    // Fetch semua rating dari novel_reviews
+    const { data: reviews } = await supabase
+      .from('novel_reviews')
+      .select('novel_id, rating')
+      .not('rating', 'is', null)
 
-    if (!ratings || ratings.length === 0) {
+    if (!reviews || reviews.length === 0) {
       setLoading(false)
       return
     }
 
     // Hitung rata-rata rating per novel
     const novelRatings = {}
-    ratings.forEach((r) => {
+    reviews.forEach((r) => {
       if (!novelRatings[r.novel_id]) {
         novelRatings[r.novel_id] = { sum: 0, count: 0 }
       }
@@ -32,15 +35,15 @@ export default function TopRated() {
       novelRatings[r.novel_id].count++
     })
 
-    // Ambil top 5 novel berdasarkan rata-rata rating (minimal 3 rating)
+    // Ambil top 5 novel berdasarkan rata-rata rating (minimal 1 rating)
     const sorted = Object.entries(novelRatings)
       .map(([novelId, data]) => ({
         novelId,
         avg: data.sum / data.count,
         count: data.count,
       }))
-      .filter((n) => n.count >= 3)
-      .sort((a, b) => b.avg - a.avg)
+      .filter((n) => n.count >= 1)
+      .sort((a, b) => b.avg - a.avg || b.count - a.count)
       .slice(0, 5)
 
     if (sorted.length === 0) {
@@ -99,7 +102,6 @@ export default function TopRated() {
               position: 'relative',
             }}
           >
-            {/* Rank badge */}
             <div
               style={{
                 position: 'absolute',
@@ -177,4 +179,4 @@ export default function TopRated() {
       </div>
     </div>
   )
-           }
+}
