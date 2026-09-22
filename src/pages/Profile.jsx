@@ -179,28 +179,37 @@ export default function Profile() {
   if (!user) return <div className="container" style={{ paddingTop: 40 }}>Silakan masuk dulu.</div>
 
   const sectionHeading = (Icon, text) => (
-    <h2 style={{ fontSize: '1.1rem', marginBottom: 12, marginTop: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
+    <h2
+      style={{
+        fontSize: '1.1rem',
+        marginBottom: 12,
+        marginTop: 32,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+      }}
+    >
       <Icon size={18} color="var(--gold)" />
       {text}
     </h2>
   )
 
-  const StatCard = ({ icon, value, label }) => (
+  const StatCard = ({ icon, value, label, color }) => (
     <div
       className="card"
       style={{
-        padding: 12,
+        padding: 14,
         flex: '1 1 100px',
         minWidth: 100,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 2,
+        gap: 4,
         textAlign: 'center',
       }}
     >
-      <div style={{ color: 'var(--gold)', marginBottom: 2 }}>{icon}</div>
-      <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text)' }}>
+      <div style={{ fontSize: '1.5rem', marginBottom: 2 }}>{icon}</div>
+      <div style={{ fontSize: '1.3rem', fontWeight: 700, color: color || 'var(--gold)' }}>
         {value.toLocaleString('id-ID')}
       </div>
       <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{label}</div>
@@ -208,122 +217,251 @@ export default function Profile() {
   )
 
   return (
-    <div className="container" style={{ paddingTop: 40, paddingBottom: 60, maxWidth: 600 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-        <UserCircle2 size={26} color="var(--gold)" strokeWidth={1.75} />
-        <h1 className="gradient-text" style={{ fontSize: '1.8rem' }}>Profil</h1>
+    <div className="container" style={{ paddingTop: 24, paddingBottom: 60, maxWidth: 700 }}>
+      {/* HEADER PROFIL */}
+      <div
+        className="card"
+        style={{
+          padding: 0,
+          marginBottom: 24,
+          overflow: 'hidden',
+          border: '1px solid var(--border)',
+        }}
+      >
+        {/* Banner gradient */}
+        <div
+          style={{
+            height: 120,
+            background: 'linear-gradient(135deg, rgba(212, 175, 91, 0.25), rgba(91, 168, 212, 0.15), transparent)',
+            position: 'relative',
+          }}
+        />
+
+        {/* Avatar & info */}
+        <div
+          style={{
+            padding: '0 24px 20px',
+            marginTop: -50,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center',
+          }}
+        >
+          <div
+            style={{
+              width: 100,
+              height: 100,
+              borderRadius: '50%',
+              background: avatarUrl ? `url(${avatarUrl}) center/cover` : 'var(--surface)',
+              border: '4px solid var(--bg)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 12,
+              position: 'relative',
+            }}
+          >
+            {!avatarUrl && <UserCircle2 size={52} color="var(--text-muted)" />}
+
+            {/* Tombol ganti foto (overlay) */}
+            <label
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                right: 0,
+                background: 'var(--gold)',
+                color: '#1a1a1a',
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                border: '3px solid var(--bg)',
+              }}
+              title="Ganti foto"
+            >
+              <Camera size={13} />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                disabled={uploadingAvatar}
+                style={{ display: 'none' }}
+              />
+            </label>
+          </div>
+
+          <h1
+            className="gradient-text"
+            style={{
+              fontSize: '1.6rem',
+              marginBottom: 4,
+              fontWeight: 700,
+            }}
+          >
+            {displayName || 'Pembaca'}
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '0 0 12px' }}>
+            {user.email}
+          </p>
+
+          {avatarMessage && (
+            <p style={{ color: 'var(--accent)', fontSize: '0.8rem', margin: '0 0 12px' }}>
+              {avatarMessage}
+            </p>
+          )}
+
+          {/* Level & Title */}
+          {!loadingStats && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+              <LevelBadge totalChapters={stats.chaptersRead} size="large" showProgress />
+              <UserTitles userId={user.id} size="medium" />
+            </div>
+          )}
+        </div>
       </div>
-      <p style={{ color: 'var(--text-muted)', marginBottom: 16, fontSize: '0.9rem' }}>{user.email}</p>
 
       {/* DAILY STREAK */}
       <DailyStreakCard />
 
-      {/* LEVEL & TITLE */}
-      {!loadingStats && (
-        <div style={{ marginBottom: 24 }}>
-          <LevelBadge totalChapters={stats.chaptersRead} size="large" showProgress />
-          <div style={{ marginTop: 12 }}>
-            <UserTitles userId={user.id} size="medium" />
+      {/* STATISTIK */}
+      <div style={{ marginTop: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <BarChart3 size={18} color="var(--gold)" />
+          <h2 style={{ fontSize: '1.1rem' }}>Statistik</h2>
+        </div>
+
+        {loadingStats ? (
+          <p style={{ color: 'var(--text-muted)' }}>Memuat...</p>
+        ) : (
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <StatCard icon="📖" value={stats.chaptersRead} label="Chapter Dibaca" color="var(--accent)" />
+            <StatCard icon="❤️" value={stats.favorites} label="Novel Favorit" color="#D46B7B" />
+            <StatCard icon="💬" value={stats.comments} label="Komentar" color="#5BBF8A" />
+            <StatCard icon="⭐" value={stats.reviews} label="Review Ditulis" color="var(--gold)" />
           </div>
-          <Link
-            to="/gelar"
-            className="btn btn--outline-gold"
-            style={{
-              marginTop: 12,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: '0.85rem',
-            }}
-          >
-            <Award size={14} />
-            Lihat Semua Gelar
-          </Link>
-        </div>
-      )}
-
-      {/* Statistik */}
-      {sectionHeading(BarChart3, 'Statistik Kamu')}
-      {loadingStats ? (
-        <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>Memuat...</p>
-      ) : (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-          <StatCard icon={<BookOpen size={18} />} value={stats.chaptersRead} label="Chapter Dibaca" />
-          <StatCard icon={<Heart size={18} />} value={stats.favorites} label="Novel Favorit" />
-          <StatCard icon={<MessageCircle size={18} />} value={stats.comments} label="Komentar" />
-          <StatCard icon={<Star size={18} />} value={stats.reviews} label="Review Ditulis" />
-        </div>
-      )}
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32, marginTop: 24 }}>
-        <div
-          style={{
-            width: 72,
-            height: 72,
-            borderRadius: '50%',
-            background: avatarUrl ? `url(${avatarUrl}) center/cover` : 'var(--surface)',
-            border: '2px solid var(--gold)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}
-        >
-          {!avatarUrl && <UserCircle2 size={40} color="var(--text-muted)" />}
-        </div>
-        <div>
-          <label className="btn btn--gold" style={{ cursor: 'pointer' }}>
-            <Camera size={16} />
-            {uploadingAvatar ? 'Mengupload...' : 'Ganti Foto'}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarChange}
-              disabled={uploadingAvatar}
-              style={{ display: 'none' }}
-            />
-          </label>
-          {avatarMessage && <p style={{ color: 'var(--accent)', fontSize: '0.8rem', margin: '6px 0 0' }}>{avatarMessage}</p>}
-        </div>
+        )}
       </div>
 
-      {sectionHeading(UserCircle2, 'Nama Tampilan')}
-      <form onSubmit={handleSaveName} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-        <input
-          type="text"
-          placeholder="Nama kamu"
-          value={nameInput}
-          onChange={(e) => setNameInput(e.target.value)}
-          style={{ flex: 1 }}
-        />
-        <button type="submit" className="btn btn--gold" disabled={savingName}>
-          <Save size={16} />
-          {savingName ? 'Menyimpan...' : 'Simpan'}
-        </button>
-      </form>
-      {nameMessage && <p style={{ color: 'var(--accent)', fontSize: '0.85rem', marginBottom: 24 }}>{nameMessage}</p>}
-      {!nameMessage && <div style={{ marginBottom: 24 }} />}
+      {/* TOMBOL LIHAT GELAR */}
+      <Link
+        to="/gelar"
+        className="card"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: 16,
+          marginTop: 24,
+          textDecoration: 'none',
+          color: 'inherit',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              background: 'rgba(212, 175, 91, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Award size={20} color="var(--gold)" />
+          </div>
+          <div>
+            <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>Lihat Semua Gelar</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Koleksi achievement kamu
+            </div>
+          </div>
+        </div>
+        <span style={{ color: 'var(--gold)', fontSize: '1.2rem' }}>→</span>
+      </Link>
 
-      {sectionHeading(KeyRound, 'Ganti Password')}
-      <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 32 }}>
-        <input
-          type="password"
-          placeholder="Password baru"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="Ulangi password baru"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-        />
-        <button type="submit" className="btn btn--gold" disabled={savingPassword} style={{ alignSelf: 'flex-start' }}>
-          <KeyRound size={16} />
-          {savingPassword ? 'Menyimpan...' : 'Ganti Password'}
-        </button>
-        {passwordMessage && <p style={{ color: 'var(--accent)', fontSize: '0.85rem', margin: 0 }}>{passwordMessage}</p>}
-      </form>
+      {/* PENGATURAN AKUN */}
+      {sectionHeading(UserCircle2, 'Pengaturan Akun')}
+
+      {/* Nama Tampilan */}
+      <div
+        className="card"
+        style={{ padding: 16, marginBottom: 16 }}
+      >
+        <label
+          style={{
+            fontSize: '0.8rem',
+            color: 'var(--gold)',
+            textTransform: 'uppercase',
+            letterSpacing: 0.5,
+            marginBottom: 10,
+            display: 'block',
+            fontWeight: 600,
+          }}
+        >
+          Nama Tampilan
+        </label>
+        <form onSubmit={handleSaveName} style={{ display: 'flex', gap: 8 }}>
+          <input
+            type="text"
+            placeholder="Nama kamu"
+            value={nameInput}
+            onChange={(e) => setNameInput(e.target.value)}
+            style={{ flex: 1 }}
+          />
+          <button type="submit" className="btn btn--gold" disabled={savingName}>
+            <Save size={16} />
+            {savingName ? 'Menyimpan...' : 'Simpan'}
+          </button>
+        </form>
+        {nameMessage && (
+          <p style={{ color: 'var(--accent)', fontSize: '0.85rem', margin: '8px 0 0' }}>
+            {nameMessage}
+          </p>
+        )}
+      </div>
+
+      {/* Ganti Password */}
+      <div className="card" style={{ padding: 16, marginBottom: 24 }}>
+        <label
+          style={{
+            fontSize: '0.8rem',
+            color: 'var(--gold)',
+            textTransform: 'uppercase',
+            letterSpacing: 0.5,
+            marginBottom: 10,
+            display: 'block',
+            fontWeight: 600,
+          }}
+        >
+          Ganti Password
+        </label>
+        <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <input
+            type="password"
+            placeholder="Password baru"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+          />
+          <input
+            type="password"
+            placeholder="Ulangi password baru"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
+          <button type="submit" className="btn btn--gold" disabled={savingPassword} style={{ alignSelf: 'flex-start' }}>
+            <KeyRound size={16} />
+            {savingPassword ? 'Menyimpan...' : 'Ganti Password'}
+          </button>
+          {passwordMessage && (
+            <p style={{ color: 'var(--accent)', fontSize: '0.85rem', margin: 0 }}>{passwordMessage}</p>
+          )}
+        </form>
+      </div>
 
       {/* REVIEW YANG DITULIS */}
       {sectionHeading(Star, 'Review yang Ditulis')}
@@ -333,11 +471,11 @@ export default function Profile() {
       {sectionHeading(Heart, `Novel Favorit (${favorites.length})`)}
       {loadingFavorites && <p style={{ color: 'var(--text-muted)' }}>Memuat...</p>}
       {!loadingFavorites && favorites.length === 0 && (
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 32 }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 24 }}>
           Belum ada novel favorit. Klik ❤️ di halaman novel buat nambahin.
         </p>
       )}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 32 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {favorites.map((f) => f.novels && (
           <Link
             key={f.novels.id}
