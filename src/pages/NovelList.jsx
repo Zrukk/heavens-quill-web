@@ -34,13 +34,10 @@ export default function NovelList() {
 
   useEffect(() => {
     async function loadNovels() {
-      const { data, error } = await supabase
-        .from('novels')
-        .select('*')
-        .order('created_at', { ascending: false })
+      const { data, error } = await supabase.rpc('get_novels_with_rating')
 
       if (error) setError(error.message)
-      else setNovels(data)
+      else setNovels(data ?? [])
       setLoading(false)
     }
     loadNovels()
@@ -118,17 +115,17 @@ export default function NovelList() {
       <HeroSection />
 
       {/* NOVEL POPULER */}
-{!loading && !error && novels.length > 0 && (
-  <NovelPopulerSection dataNovel={novels} />
-)}
+      {!loading && !error && novels.length > 0 && (
+        <NovelPopulerSection dataNovel={novels} />
+      )}
 
-{/* UPDATE TERBARU */}
-<LatestUpdates />
+      {/* UPDATE TERBARU */}
+      <LatestUpdates />
 
-{/* RATING TERTINGGI */}
-<TopRated />
+      {/* RATING TERTINGGI */}
+      <TopRated />
 
-{/* DAFTAR NOVEL */}
+      {/* DAFTAR NOVEL */}
       <div id="daftar-novel" style={{ paddingTop: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
           <SlidersHorizontal size={22} color="var(--gold)" strokeWidth={1.75} />
@@ -211,4 +208,4 @@ export default function NovelList() {
       </div>
     </div>
   )
-      }
+                                       }
