@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, MessageCircle, Send, Reply, Coffee, UserCircle2, X } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, MessageCircle, Send, Reply, Coffee, UserCircle2, X, ChevronUp } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { fetchAllChapterRows } from '../lib/fetchAllChapterRows'
 import { useDocumentMeta, stripHtml } from '../lib/useDocumentMeta'
@@ -64,6 +64,7 @@ export default function ChapterReader() {
   const [openParagraph, setOpenParagraph] = useState(null)
 
   const [showToolbar, setShowToolbar] = useState(true)
+  const [readProgress, setReadProgress] = useState(0)
 
   const longPressTimer = useRef(null)
   const pressedParagraph = useRef(null)
@@ -195,6 +196,19 @@ export default function ChapterReader() {
       : undefined,
     chapter ? stripHtml(chapter.content).slice(0, 160) : undefined,
   )
+
+  // Progress bar berdasarkan scroll
+  useEffect(() => {
+    function handleScroll() {
+      const scrollTop = window.scrollY
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight
+      const progress = docHeight > 0 ? Math.min(100, (scrollTop / docHeight) * 100) : 0
+      setReadProgress(progress)
+    }
+    window.addEventListener('scroll', handleScroll)
+    handleScroll()
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   function findParagraph(e) {
     let target = e.target
@@ -508,278 +522,376 @@ export default function ChapterReader() {
   }
 
   return (
-    <div className="container" style={{ paddingTop: 40, paddingBottom: 100, maxWidth: 700 }}>
-      <Link
-        to={`/novel/${slug}`}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.9rem' }}
-      >
-        <ArrowLeft size={15} />
-        {novel.title}
-      </Link>
-
-      <h1 style={{ fontSize: '1.6rem', marginTop: 20, marginBottom: 10 }}>
-        Chapter {chapter.chapter_number}{chapter.title ? ` — ${chapter.title}` : ''}
-      </h1>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-          <Eye size={14} />
-          {(chapter.views ?? 0).toLocaleString('id-ID')} views
-        </div>
-        <ShareButton
-          url={`${window.location.origin}/novel/${slug}/chapter/${number}`}
-          title={`${novel.title} — Chapter ${chapter.chapter_number}${chapter.title ? `: ${chapter.title}` : ''}`}
-        />
-      </div>
-
-      {/* Hint */}
-      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 12, fontStyle: 'italic' }}>
-        💡 Tekan lama paragraf manapun buat kasih komentar
-      </p>
-
-      {/* CHAPTER CONTENT */}
-      <div
-        className="chapter-content"
-        style={{ fontSize: '1.05rem', userSelect: 'none', WebkitUserSelect: 'none' }}
-        onClick={handleContentClick}
-        onMouseDown={handlePressStart}
-        onMouseUp={handlePressEnd}
-        onMouseLeave={handlePressEnd}
-        onTouchStart={handlePressStart}
-        onTouchEnd={handlePressEnd}
-        onTouchMove={handlePressMove}
-        onContextMenu={(e) => e.preventDefault()}
-        dangerouslySetInnerHTML={{ __html: taggedContent }}
-      />
-
-      <style>{`
-        .chapter-content p {
-          position: relative;
-          border-radius: 4px;
-          padding: 4px 8px;
-          margin-left: -8px;
-          margin-right: -8px;
-          cursor: pointer;
-          transition: background 0.15s;
-        }
-        .chapter-content p:hover {
-          background: rgba(255, 255, 255, 0.04);
-        }
-        .chapter-content p[data-has-comment="true"]::before {
-          content: '';
-          position: absolute;
-          left: -14px;
-          top: 8px;
-          width: 4px;
-          height: 4px;
-          border-radius: 50%;
-          background: var(--gold);
-          pointer-events: none;
-          box-shadow: 0 0 0 2px rgba(212, 175, 91, 0.25);
-        }
-        .chapter-content p[data-has-comment="true"]:hover::after {
-          content: '💬 ' attr(data-comment-count);
-          position: absolute;
-          right: -8px;
-          top: -10px;
-          font-size: 0.65rem;
-          color: var(--gold);
-          font-family: sans-serif;
-          pointer-events: none;
-          background: var(--bg);
-          padding: 2px 6px;
-          border-radius: 10px;
-          border: 1px solid var(--gold);
-          z-index: 1;
-        }
-      `}</style>
-
-      <ParagraphHighlighter paragraphCounts={paragraphCounts} />
-
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>
-        <button
-          onClick={handleToggleLike}
-          className={liked ? 'btn btn--gold' : 'btn'}
-          style={{ borderColor: 'var(--gold)', color: liked ? undefined : 'var(--gold)' }}
-        >
-          <Heart size={16} fill={liked ? 'currentColor' : 'none'} />
-          {liked ? 'Disukai' : 'Suka'} · {likeCount.toLocaleString('id-ID')}
-        </button>
-      </div>
-
-      <div className="card" style={{ padding: 16, marginTop: 24, textAlign: 'center' }}>
-        <p style={{ margin: '0 0 10px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-          Suka sama terjemahannya? Dukung Heaven's Quill biar bisa terus lanjut nerjemahin.
-        </p>
-        <a
-          href="https://sociabuzz.com/heavensquill/tribe"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn--gold"
-        >
-          <Coffee size={16} />
-          Traktir Penerjemah
-        </a>
-      </div>
-
-      <div style={{ marginTop: 48, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
-        <h2 style={{ fontSize: '1.2rem', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <MessageCircle size={18} color="var(--gold)" />
-          Komentar ({comments.length})
-        </h2>
-
-        {user ? (
-          <form onSubmit={handlePostComment} style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
-            <textarea
-              placeholder="Tulis komentar..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              rows={3}
-              style={{
-                padding: 10,
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)',
-                fontFamily: 'inherit',
-                width: '100%',
-              }}
-            />
-            <button
-              type="submit"
-              className="btn btn--filled"
-              disabled={postingComment || !newComment.trim()}
-              style={{ alignSelf: 'flex-start' }}
-            >
-              <Send size={16} />
-              {postingComment ? 'Mengirim...' : 'Kirim'}
-            </button>
-          </form>
-        ) : (
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 24 }}>
-            <Link to="/login" style={{ color: 'var(--gold)' }}>Masuk</Link> dulu buat kasih komentar.
-          </p>
-        )}
-
-        {loadingComments && <p style={{ color: 'var(--text-muted)' }}>Memuat komentar...</p>}
-        {!loadingComments && comments.length === 0 && (
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Belum ada komentar. Jadi yang pertama!</p>
-        )}
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {topLevelComments.map((c) => renderCommentTree(c, 0))}
-        </div>
-      </div>
-
+    <>
+      {/* Progress bar di atas */}
       <div
         style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginTop: 32,
-          paddingTop: 24,
-          borderTop: '1px solid var(--border)',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 3,
+          background: 'var(--border)',
+          zIndex: 100,
         }}
       >
-        {prevNum ? (
-          <Link to={`/novel/${slug}/chapter/${prevNum}`} className="btn">
-            <ChevronLeft size={16} />
-            Chapter {prevNum}
-          </Link>
-        ) : <span />}
-        {nextNum ? (
-          <Link to={`/novel/${slug}/chapter/${nextNum}`} className="btn btn--filled">
-            Chapter {nextNum}
-            <ChevronRight size={16} />
-          </Link>
-        ) : <span />}
-      </div>
-
-      {/* TOOLBAR NGAMBANG */}
-      {showToolbar && openParagraph == null && (
         <div
           style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            background: 'rgba(18, 23, 29, 0.92)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            borderTop: '1px solid var(--border)',
-            padding: '8px 16px',
+            height: '100%',
+            width: `${readProgress}%`,
+            background: 'var(--gold)',
+            transition: 'width 0.1s',
+          }}
+        />
+      </div>
+
+      <div className="container" style={{ paddingTop: 40, paddingBottom: 100, maxWidth: 700 }}>
+        {/* Breadcrumb */}
+        <div
+          style={{
             display: 'flex',
-            justifyContent: 'space-around',
             alignItems: 'center',
-            zIndex: 50,
+            gap: 6,
+            color: 'var(--text-muted)',
+            fontSize: '0.85rem',
+            marginBottom: 20,
+            flexWrap: 'wrap',
           }}
         >
+          <Link to={`/novel/${slug}`} style={{ color: 'var(--text-muted)' }}>
+            {novel.title}
+          </Link>
+          <ChevronRight size={14} />
+          <span style={{ color: 'var(--text)' }}>
+            Chapter {chapter.chapter_number}
+          </span>
+        </div>
+
+        {/* Header Chapter */}
+        <h1
+          style={{
+            fontSize: 'clamp(1.4rem, 4vw, 1.8rem)',
+            marginBottom: 12,
+            lineHeight: 1.3,
+          }}
+        >
+          Chapter {chapter.chapter_number}
+          {chapter.title ? ` — ${chapter.title}` : ''}
+        </h1>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            marginBottom: 24,
+            flexWrap: 'wrap',
+            fontSize: '0.85rem',
+            color: 'var(--text-muted)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Eye size={14} />
+            {(chapter.views ?? 0).toLocaleString('id-ID')} views
+          </div>
+          <ShareButton
+            url={`${window.location.origin}/novel/${slug}/chapter/${number}`}
+            title={`${novel.title} — Chapter ${chapter.chapter_number}${chapter.title ? `: ${chapter.title}` : ''}`}
+          />
+        </div>
+
+        {/* Konten Chapter */}
+        <div
+          className="chapter-content"
+          style={{ fontSize: '1.05rem', userSelect: 'none', WebkitUserSelect: 'none' }}
+          onClick={handleContentClick}
+          onMouseDown={handlePressStart}
+          onMouseUp={handlePressEnd}
+          onMouseLeave={handlePressEnd}
+          onTouchStart={handlePressStart}
+          onTouchEnd={handlePressEnd}
+          onTouchMove={handlePressMove}
+          onContextMenu={(e) => e.preventDefault()}
+          dangerouslySetInnerHTML={{ __html: taggedContent }}
+        />
+
+        <style>{`
+          .chapter-content {
+            line-height: 1.85;
+            letter-spacing: 0.01em;
+          }
+          .chapter-content p {
+            position: relative;
+            border-radius: 4px;
+            padding: 6px 8px;
+            margin-left: -8px;
+            margin-right: -8px;
+            margin-bottom: 1.3em;
+            cursor: pointer;
+            transition: background 0.15s;
+          }
+          .chapter-content p:hover {
+            background: rgba(255, 255, 255, 0.04);
+          }
+          .chapter-content p[data-has-comment="true"]::before {
+            content: '';
+            position: absolute;
+            left: -14px;
+            top: 14px;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--gold);
+            pointer-events: none;
+            box-shadow: 0 0 0 2px rgba(212, 175, 91, 0.25);
+          }
+          .chapter-content p[data-has-comment="true"]:hover::after {
+            content: '💬 ' attr(data-comment-count);
+            position: absolute;
+            right: -8px;
+            top: -10px;
+            font-size: 0.65rem;
+            color: var(--gold);
+            font-family: sans-serif;
+            pointer-events: none;
+            background: var(--bg);
+            padding: 2px 6px;
+            border-radius: 10px;
+            border: 1px solid var(--gold);
+            z-index: 1;
+          }
+        `}</style>
+
+        <ParagraphHighlighter paragraphCounts={paragraphCounts} />
+
+        {/* Like button */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>
           <button
-            onClick={() => navigate(`/novel/${slug}`)}
-            style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
+            onClick={handleToggleLike}
+            className={liked ? 'btn btn--gold' : 'btn'}
+            style={{ borderColor: 'var(--gold)', color: liked ? undefined : 'var(--gold)' }}
           >
-            <ArrowLeft size={18} />
-            <span style={{ fontSize: '0.6rem' }}>Novel</span>
-          </button>
-          <button
-            onClick={() => prevNum && navigate(`/novel/${slug}/chapter/${prevNum}`)}
-            disabled={!prevNum}
-            style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: prevNum ? 'pointer' : 'default', opacity: prevNum ? 1 : 0.3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
-          >
-            <ChevronLeft size={18} />
-            <span style={{ fontSize: '0.6rem' }}>Sebelumnya</span>
-          </button>
-          <button
-            onClick={() => nextNum && navigate(`/novel/${slug}/chapter/${nextNum}`)}
-            disabled={!nextNum}
-            style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: nextNum ? 'pointer' : 'default', opacity: nextNum ? 1 : 0.3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
-          >
-            <ChevronRight size={18} />
-            <span style={{ fontSize: '0.6rem' }}>Berikutnya</span>
-          </button>
-          <button
-            onClick={() => navigate('/profil')}
-            style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
-          >
-            <UserCircle2 size={18} />
-            <span style={{ fontSize: '0.6rem' }}>Profil</span>
-          </button>
-          <button
-            onClick={() => setShowToolbar(false)}
-            title="Sembunyikan toolbar"
-            style={{
-              position: 'absolute',
-              top: -12,
-              right: 12,
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: '50%',
-              width: 24,
-              height: 24,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: 'var(--text-muted)',
-              padding: 0,
-            }}
-          >
-            <X size={14} />
+            <Heart size={16} fill={liked ? 'currentColor' : 'none'} />
+            {liked ? 'Disukai' : 'Suka'} · {likeCount.toLocaleString('id-ID')}
           </button>
         </div>
-      )}
 
-      {/* Panel komentar paragraf */}
-      {openParagraph != null && (
-        <ParagraphComments
-          chapterId={chapter.id}
-          paragraphIndex={openParagraph}
-          paragraphPreview={getParagraphPreview(chapter.content, openParagraph)}
-          onClose={() => setOpenParagraph(null)}
-          onCommentAdded={handleParagraphCommentAdded}
-        />
-      )}
+        {/* Dukung */}
+        <div className="card" style={{ padding: 16, marginTop: 24, textAlign: 'center' }}>
+          <p style={{ margin: '0 0 10px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+            Suka sama terjemahannya? Dukung Heaven's Quill biar bisa terus lanjut nerjemahin.
+          </p>
+          <a
+            href="https://sociabuzz.com/heavensquill/tribe"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn--gold"
+          >
+            <Coffee size={16} />
+            Traktir Penerjemah
+          </a>
+        </div>
 
-      <BackToTop />
-    </div>
+        {/* Komentar */}
+        <div style={{ marginTop: 48, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
+          <h2 style={{ fontSize: '1.2rem', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <MessageCircle size={18} color="var(--gold)" />
+            Komentar ({comments.length})
+          </h2>
+
+          {user ? (
+            <form onSubmit={handlePostComment} style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+              <textarea
+                placeholder="Tulis komentar..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                rows={3}
+                style={{
+                  padding: 10,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)',
+                  fontFamily: 'inherit',
+                  width: '100%',
+                }}
+              />
+              <button
+                type="submit"
+                className="btn btn--filled"
+                disabled={postingComment || !newComment.trim()}
+                style={{ alignSelf: 'flex-start' }}
+              >
+                <Send size={16} />
+                {postingComment ? 'Mengirim...' : 'Kirim'}
+              </button>
+            </form>
+          ) : (
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 24 }}>
+              <Link to="/login" style={{ color: 'var(--gold)' }}>Masuk</Link> dulu buat kasih komentar.
+            </p>
+          )}
+
+          {loadingComments && <p style={{ color: 'var(--text-muted)' }}>Memuat komentar...</p>}
+          {!loadingComments && comments.length === 0 && (
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Belum ada komentar. Jadi yang pertama!</p>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {topLevelComments.map((c) => renderCommentTree(c, 0))}
+          </div>
+        </div>
+
+        {/* Navigasi Prev/Next */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: prevNum && nextNum ? '1fr 1fr' : '1fr',
+            gap: 12,
+            marginTop: 32,
+            paddingTop: 24,
+            borderTop: '1px solid var(--border)',
+          }}
+        >
+          {prevNum ? (
+            <Link
+              to={`/novel/${slug}/chapter/${prevNum}`}
+              className="card"
+              style={{
+                padding: '14px 16px',
+                textDecoration: 'none',
+                color: 'inherit',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <ChevronLeft size={18} color="var(--gold)" />
+              <div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 2 }}>
+                  Sebelumnya
+                </div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>
+                  Chapter {prevNum}
+                </div>
+              </div>
+            </Link>
+          ) : <span />}
+          {nextNum ? (
+            <Link
+              to={`/novel/${slug}/chapter/${nextNum}`}
+              className="card"
+              style={{
+                padding: '14px 16px',
+                textDecoration: 'none',
+                color: 'inherit',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                gap: 8,
+                textAlign: 'right',
+              }}
+            >
+              <div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 2 }}>
+                  Berikutnya
+                </div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>
+                  Chapter {nextNum}
+                </div>
+              </div>
+              <ChevronRight size={18} color="var(--gold)" />
+            </Link>
+          ) : <span />}
+        </div>
+
+        {/* Toolbar ngambang */}
+        {showToolbar && openParagraph == null && (
+          <div
+            style={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              background: 'rgba(18, 23, 29, 0.92)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              borderTop: '1px solid var(--border)',
+              padding: '8px 16px',
+              display: 'flex',
+              justifyContent: 'space-around',
+              alignItems: 'center',
+              zIndex: 50,
+            }}
+          >
+            <button
+              onClick={() => navigate(`/novel/${slug}`)}
+              style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
+            >
+              <ArrowLeft size={18} />
+              <span style={{ fontSize: '0.6rem' }}>Novel</span>
+            </button>
+            <button
+              onClick={() => prevNum && navigate(`/novel/${slug}/chapter/${prevNum}`)}
+              disabled={!prevNum}
+              style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: prevNum ? 'pointer' : 'default', opacity: prevNum ? 1 : 0.3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
+            >
+              <ChevronLeft size={18} />
+              <span style={{ fontSize: '0.6rem' }}>Sebelumnya</span>
+            </button>
+            <button
+              onClick={() => nextNum && navigate(`/novel/${slug}/chapter/${nextNum}`)}
+              disabled={!nextNum}
+              style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: nextNum ? 'pointer' : 'default', opacity: nextNum ? 1 : 0.3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
+            >
+              <ChevronRight size={18} />
+              <span style={{ fontSize: '0.6rem' }}>Berikutnya</span>
+            </button>
+            <button
+              onClick={() => navigate('/profil')}
+              style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 4 }}
+            >
+              <UserCircle2 size={18} />
+              <span style={{ fontSize: '0.6rem' }}>Profil</span>
+            </button>
+            <button
+              onClick={() => setShowToolbar(false)}
+              title="Sembunyikan toolbar"
+              style={{
+                position: 'absolute',
+                top: -12,
+                right: 12,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: '50%',
+                width: 24,
+                height: 24,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                padding: 0,
+              }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
+        {/* Panel komentar paragraf */}
+        {openParagraph != null && (
+          <ParagraphComments
+            chapterId={chapter.id}
+            paragraphIndex={openParagraph}
+            paragraphPreview={getParagraphPreview(chapter.content, openParagraph)}
+            onClose={() => setOpenParagraph(null)}
+            onCommentAdded={handleParagraphCommentAdded}
+          />
+        )}
+
+        <BackToTop />
+      </div>
+    </>
   )
 }
 
@@ -806,4 +918,4 @@ function ParagraphHighlighter({ paragraphCounts }) {
   }, [paragraphCounts])
 
   return null
-          }
+            }
