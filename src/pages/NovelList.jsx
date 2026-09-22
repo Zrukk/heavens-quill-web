@@ -23,9 +23,18 @@ export default function NovelList() {
 
   const [searchParams, setSearchParams] = useSearchParams()
 
-  const pageFromUrl = parseInt(searchParams.get('page') || '0', 10)
-  const pageFromStorage = parseInt(localStorage.getItem(STORAGE_KEY) || '1', 10)
-  const currentPage = Math.max(1, pageFromUrl || pageFromStorage)
+const pageFromUrl = parseInt(searchParams.get('page') || '0', 10)
+const pageFromStorage = parseInt(localStorage.getItem(STORAGE_KEY) || '1', 10)
+const currentPage = Math.max(1, pageFromUrl || pageFromStorage)
+
+// Sync genre dari URL ke state
+useEffect(() => {
+  const genreFromUrl = searchParams.get('genre')
+  if (genreFromUrl && genreFromUrl !== genreFilter) {
+    setGenreFilter(genreFromUrl)
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [searchParams])
 
   useDocumentMeta(
     "Heaven's Quill — Baca Novel Terjemahan Gratis",
