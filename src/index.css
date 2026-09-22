@@ -57,6 +57,7 @@ button, input, textarea, select {
   color: inherit;
 }
 
+/* gradient headline text — blue-to-gold, for a distinctive modern touch */
 .gradient-text {
   background: var(--gradient-brand);
   -webkit-background-clip: text;
@@ -64,6 +65,7 @@ button, input, textarea, select {
   color: transparent;
 }
 
+/* geometric diamond motif — small status/divider mark */
 .diamond {
   display: inline-block;
   width: 6px;
@@ -177,7 +179,7 @@ input:focus {
 }
 
 .chapter-content p {
-  margin: 0 0 1.3em;
+  margin: 0 0 1.6em;
 }
 
 .chapter-content img {
