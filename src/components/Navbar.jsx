@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Feather, ShieldCheck, UserCircle2, LogOut, LogIn, Coffee, Menu, X, Settings, Trophy } from 'lucide-react'
+import { ShieldCheck, UserCircle2, LogOut, LogIn, Coffee, Menu, X, Settings, Trophy } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import GlobalSearch from './GlobalSearch'
 import NotificationBell from './NotificationBell'
@@ -26,7 +26,6 @@ export default function Navbar() {
     await signOut()
   }
 
-  // Klik logo → balik ke halaman novel terakhir
   function handleLogoClick(e) {
     e.preventDefault()
     const saved = localStorage.getItem('hq-last-page')
@@ -77,7 +76,6 @@ export default function Navbar() {
           padding: '12px 24px',
         }}
       >
-        {/* LOGO */}
         <a
           href="/"
           onClick={handleLogoClick}
@@ -116,12 +114,10 @@ export default function Navbar() {
           </span>
         </a>
 
-        {/* SEARCH — selalu terlihat */}
         <div className="navbar-search" style={{ flex: 1, maxWidth: 480, minWidth: 0 }}>
           <GlobalSearch />
         </div>
 
-        {/* ICONS */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           {user && isAdmin && (
             <Link
@@ -259,7 +255,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* CSS responsive */}
       <style>{`
         @media (max-width: 700px) {
           .navbar-logo-text {
@@ -270,12 +265,7 @@ export default function Navbar() {
             padding: 10px 16px !important;
           }
         }
-        @media (max-width: 400px) {
-          .navbar-search {
-            display: none !important;
-          }
-        }
       `}</style>
     </header>
   )
-      }
+          }
