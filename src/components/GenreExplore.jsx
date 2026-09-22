@@ -26,7 +26,7 @@ const GENRE_ICONS = {
   mature: '🔞',
   seinen: '📖',
   shounen: '🔥',
-  gender bender: '🔄',
+  'gender bender': '🔄',
   historical: '🏯',
   military: '🎖️',
 }
