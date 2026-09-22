@@ -24,23 +24,23 @@ export default function NovelList() {
 
   const [searchParams, setSearchParams] = useSearchParams()
 
-const pageFromUrl = parseInt(searchParams.get('page') || '0', 10)
-const pageFromStorage = parseInt(localStorage.getItem(STORAGE_KEY) || '1', 10)
-const currentPage = Math.max(1, pageFromUrl || pageFromStorage)
-
-// Sync genre dari URL ke state
-useEffect(() => {
-  const genreFromUrl = searchParams.get('genre')
-  if (genreFromUrl && genreFromUrl !== genreFilter) {
-    setGenreFilter(genreFromUrl)
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [searchParams])
+  const pageFromUrl = parseInt(searchParams.get('page') || '0', 10)
+  const pageFromStorage = parseInt(localStorage.getItem(STORAGE_KEY) || '1', 10)
+  const currentPage = Math.max(1, pageFromUrl || pageFromStorage)
 
   useDocumentMeta(
     "Heaven's Quill — Baca Novel Terjemahan Gratis",
     "Terjemahan novel Tionghoa, Jepang, dan Korea ke Bahasa Indonesia. Baca gratis di Heaven's Quill.",
   )
+
+  // Sync genre dari URL ke state
+  useEffect(() => {
+    const genreFromUrl = searchParams.get('genre')
+    if (genreFromUrl && genreFromUrl !== genreFilter) {
+      setGenreFilter(genreFromUrl)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   useEffect(() => {
     async function loadNovels() {
@@ -125,18 +125,18 @@ useEffect(() => {
       <HeroSection />
 
       {/* NOVEL POPULER */}
-{!loading && !error && novels.length > 0 && (
-  <NovelPopulerSection dataNovel={novels} />
-)}
+      {!loading && !error && novels.length > 0 && (
+        <NovelPopulerSection dataNovel={novels} />
+      )}
 
-{/* JELAJAHI GENRE */}
-<GenreExplore />
+      {/* JELAJAHI GENRE */}
+      <GenreExplore />
 
-{/* UPDATE TERBARU */}
-<LatestUpdates />
-
-      {/* RATING TERTINGGI */}
-      <TopRated />
+      {/* UPDATE TERBARU & RATING TERTINGGI - SIDE BY SIDE DI DESKTOP */}
+      <div className="homepage-duo">
+        <LatestUpdates />
+        <TopRated />
+      </div>
 
       {/* DAFTAR NOVEL */}
       <div id="daftar-novel" style={{ paddingTop: 24 }}>
@@ -219,6 +219,23 @@ useEffect(() => {
           </div>
         )}
       </div>
+
+      {/* CSS untuk layout 2 kolom di desktop */}
+      <style>{`
+        .homepage-duo {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+        @media (min-width: 900px) {
+          .homepage-duo {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            align-items: start;
+          }
+        }
+      `}</style>
     </div>
   )
                                        }
