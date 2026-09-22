@@ -132,11 +132,15 @@ export default function NovelList() {
       {/* JELAJAHI GENRE */}
       <GenreExplore />
 
-      {/* UPDATE TERBARU & RATING TERTINGGI - SIDE BY SIDE DI DESKTOP */}
-      <div className="homepage-duo">
-        <LatestUpdates />
-        <TopRated />
-      </div>
+      {/* UPDATE TERBARU & RATING TERTINGGI - 2 KOLOM */}
+<div className="homepage-duo">
+  <div>
+    <LatestUpdates />
+  </div>
+  <div>
+    <TopRated />
+  </div>
+</div>
 
       {/* DAFTAR NOVEL */}
       <div id="daftar-novel" style={{ paddingTop: 24 }}>
