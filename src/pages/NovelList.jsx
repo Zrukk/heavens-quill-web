@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Library, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useDocumentMeta } from '../lib/useDocumentMeta'
 import NovelCard from '../components/NovelCard'
 import NovelPopulerSection from '../components/NovelPopulerSection'
+import HeroSection from '../components/HeroSection'
 
 const NOVELS_PER_PAGE = 10
 const STORAGE_KEY = 'hq-last-page'
@@ -25,7 +26,7 @@ export default function NovelList() {
   const currentPage = Math.max(1, pageFromUrl || pageFromStorage)
 
   useDocumentMeta(
-    "Heaven's Quill — Daftar Novel",
+    "Heaven's Quill — Baca Novel Terjemahan Gratis",
     "Terjemahan novel Tionghoa, Jepang, dan Korea ke Bahasa Indonesia. Baca gratis di Heaven's Quill.",
   )
 
@@ -65,7 +66,7 @@ export default function NovelList() {
       setSearchParams({ page: String(page) }, { replace: false })
       localStorage.setItem(STORAGE_KEY, String(page))
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    document.getElementById('daftar-novel')?.scrollIntoView({ behavior: 'smooth' })
   }
 
   const languages = [...new Set(novels.map((n) => n.original_language).filter(Boolean))]
@@ -106,93 +107,100 @@ export default function NovelList() {
     fontFamily: 'inherit',
     flex: 1,
     minWidth: 130,
+    fontSize: '0.9rem',
   }
 
   return (
-    <div className="container" style={{ paddingTop: 40, paddingBottom: 60 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-        <Library size={26} color="var(--gold)" strokeWidth={1.75} />
-        <h1 className="gradient-text" style={{ fontSize: '2rem' }}>Daftar Novel</h1>
-      </div>
-      <p style={{ color: 'var(--text-muted)', marginBottom: 24 }}>
-        Terjemahan novel Tionghoa, Jepang, dan Korea ke Bahasa Indonesia.
-      </p>
+    <div className="container" style={{ paddingTop: 24, paddingBottom: 60 }}>
+      {/* HERO SECTION */}
+      <HeroSection />
 
-      <div style={{ position: 'relative', marginBottom: 12 }}>
-        <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
-        <input
-          type="text"
-          placeholder="Cari judul atau nama author..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ paddingLeft: 38 }}
-        />
-      </div>
-
-      <div style={{ display: 'flex', gap: 10, marginBottom: 32, flexWrap: 'wrap' }}>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={selectStyle}>
-          <option value="all">Semua Status</option>
-          <option value="ongoing">Berjalan</option>
-          <option value="completed">Tamat</option>
-        </select>
-        <select value={languageFilter} onChange={(e) => setLanguageFilter(e.target.value)} style={selectStyle}>
-          <option value="all">Semua Bahasa</option>
-          {languages.map((lang) => (
-            <option key={lang} value={lang}>{lang}</option>
-          ))}
-        </select>
-        <select value={genreFilter} onChange={(e) => setGenreFilter(e.target.value)} style={selectStyle}>
-          <option value="all">Semua Genre</option>
-          {genres.map((g) => (
-            <option key={g} value={g}>{g}</option>
-          ))}
-        </select>
-      </div>
-
-      {loading && <p style={{ color: 'var(--text-muted)' }}>Memuat...</p>}
-      {error && <p style={{ color: '#D46B5B' }}>Gagal memuat novel: {error}</p>}
-      {!loading && !error && novels.length === 0 && (
-        <p style={{ color: 'var(--text-muted)' }}>Belum ada novel yang ditambahkan.</p>
-      )}
-      {!loading && !error && novels.length > 0 && filteredNovels.length === 0 && (
-        <p style={{ color: 'var(--text-muted)' }}>Gak ada novel yang cocok sama pencarian/filter ini.</p>
-      )}
-
+      {/* NOVEL POPULER */}
       {!loading && !error && novels.length > 0 && (
         <NovelPopulerSection dataNovel={novels} />
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {paginatedNovels.map((novel) => (
-          <NovelCard key={novel.id} novel={novel} />
-        ))}
-      </div>
-
-      {filteredNovels.length > NOVELS_PER_PAGE && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, marginTop: 32 }}>
-          <button
-            className="btn"
-            onClick={() => goToPage(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-            style={{ opacity: currentPage === 1 ? 0.4 : 1 }}
-          >
-            <ChevronLeft size={16} />
-            Sebelumnya
-          </button>
-          <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            Halaman {currentPage} dari {totalPages}
-          </span>
-          <button
-            className="btn"
-            onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages}
-            style={{ opacity: currentPage === totalPages ? 0.4 : 1 }}
-          >
-            Berikutnya
-            <ChevronRight size={16} />
-          </button>
+      {/* DAFTAR NOVEL */}
+      <div id="daftar-novel" style={{ paddingTop: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+          <SlidersHorizontal size={22} color="var(--gold)" strokeWidth={1.75} />
+          <h2 className="gradient-text" style={{ fontSize: '1.5rem' }}>
+            Semua Novel
+          </h2>
         </div>
-      )}
+
+        <div style={{ position: 'relative', marginBottom: 12 }}>
+          <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
+          <input
+            type="text"
+            placeholder="Cari judul atau nama author..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ paddingLeft: 38 }}
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: 10, marginBottom: 32, flexWrap: 'wrap' }}>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={selectStyle}>
+            <option value="all">Semua Status</option>
+            <option value="ongoing">Berjalan</option>
+            <option value="completed">Tamat</option>
+          </select>
+          <select value={languageFilter} onChange={(e) => setLanguageFilter(e.target.value)} style={selectStyle}>
+            <option value="all">Semua Bahasa</option>
+            {languages.map((lang) => (
+              <option key={lang} value={lang}>{lang}</option>
+            ))}
+          </select>
+          <select value={genreFilter} onChange={(e) => setGenreFilter(e.target.value)} style={selectStyle}>
+            <option value="all">Semua Genre</option>
+            {genres.map((g) => (
+              <option key={g} value={g}>{g}</option>
+            ))}
+          </select>
+        </div>
+
+        {loading && <p style={{ color: 'var(--text-muted)' }}>Memuat...</p>}
+        {error && <p style={{ color: '#D46B5B' }}>Gagal memuat novel: {error}</p>}
+        {!loading && !error && novels.length === 0 && (
+          <p style={{ color: 'var(--text-muted)' }}>Belum ada novel yang ditambahkan.</p>
+        )}
+        {!loading && !error && novels.length > 0 && filteredNovels.length === 0 && (
+          <p style={{ color: 'var(--text-muted)' }}>Gak ada novel yang cocok sama pencarian/filter ini.</p>
+        )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {paginatedNovels.map((novel) => (
+            <NovelCard key={novel.id} novel={novel} />
+          ))}
+        </div>
+
+        {filteredNovels.length > NOVELS_PER_PAGE && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, marginTop: 32 }}>
+            <button
+              className="btn"
+              onClick={() => goToPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              style={{ opacity: currentPage === 1 ? 0.4 : 1 }}
+            >
+              <ChevronLeft size={16} />
+              Sebelumnya
+            </button>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+              Halaman {currentPage} dari {totalPages}
+            </span>
+            <button
+              className="btn"
+              onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              style={{ opacity: currentPage === totalPages ? 0.4 : 1 }}
+            >
+              Berikutnya
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
-        }
+      }
