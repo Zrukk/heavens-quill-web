@@ -56,46 +56,78 @@ export default function Navbar() {
   }
 
   return (
-    <header style={{ borderBottom: '1px solid var(--border)', position: 'relative', zIndex: 100 }}>
+    <header
+      className="navbar-header"
+      style={{
+        borderBottom: '1px solid var(--border)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        background: 'rgba(12, 16, 20, 0.85)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+      }}
+    >
       <div
-        className="container"
+        className="container navbar-container"
         style={{
           display: 'flex',
-          flexWrap: 'wrap',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 10,
-          padding: '14px 24px',
+          gap: 12,
+          padding: '12px 24px',
         }}
       >
+        {/* LOGO */}
         <a
           href="/"
           onClick={handleLogoClick}
-          style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, cursor: 'pointer' }}
+          className="navbar-logo"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            flexShrink: 0,
+            cursor: 'pointer',
+            transition: 'opacity 0.2s',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.85')}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
         >
           <img
             src="/heavens_quill_icon_dark.png"
             alt="Heaven's Quill"
             style={{
-              width: 32,
-              height: 32,
+              width: 30,
+              height: 30,
               objectFit: 'contain',
               borderRadius: 6,
             }}
           />
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 600 }}>
+          <span
+            className="navbar-logo-text"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '1.25rem',
+              fontWeight: 600,
+              whiteSpace: 'nowrap',
+            }}
+          >
             Heaven's Quill
           </span>
         </a>
 
-        <GlobalSearch />
+        {/* SEARCH — selalu terlihat */}
+        <div className="navbar-search" style={{ flex: 1, maxWidth: 480, minWidth: 0 }}>
+          <GlobalSearch />
+        </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* ICONS */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           {user && isAdmin && (
             <Link
               to="/admin"
-              className="btn btn--outline-gold"
-              style={{ padding: '8px 10px' }}
+              className="btn navbar-icon-btn"
+              style={{ padding: '8px 10px', borderColor: 'var(--gold)', color: 'var(--gold)' }}
               title="Admin Panel"
             >
               <ShieldCheck size={18} />
@@ -108,7 +140,7 @@ export default function Navbar() {
             <div ref={menuRef} style={{ position: 'relative' }}>
               <button
                 onClick={() => setMenuOpen((v) => !v)}
-                className="btn"
+                className="btn navbar-icon-btn"
                 style={{ padding: '8px 10px' }}
                 title="Menu"
               >
@@ -119,39 +151,40 @@ export default function Navbar() {
                 <div
                   style={{
                     position: 'fixed',
-                    top: 70,
+                    top: 64,
                     right: 16,
-                    width: 'min(240px, calc(100vw - 32px))',
+                    width: 'min(260px, calc(100vw - 32px))',
                     background: 'var(--surface)',
                     border: '1px solid var(--border)',
                     borderRadius: 'var(--radius)',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
                     overflow: 'hidden',
                     zIndex: 999,
                   }}
                 >
                   <div
                     style={{
-                      padding: '12px 16px',
+                      padding: '14px 16px',
                       borderBottom: '1px solid var(--border)',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 10,
+                      background: 'linear-gradient(135deg, rgba(212, 175, 91, 0.08), transparent)',
                     }}
                   >
                     {avatarUrl ? (
                       <img
                         src={avatarUrl}
                         alt=""
-                        style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }}
+                        style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }}
                       />
                     ) : (
-                      <UserCircle2 size={32} color="var(--text-muted)" />
+                      <UserCircle2 size={36} color="var(--text-muted)" />
                     )}
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div
                         style={{
-                          fontSize: '0.85rem',
+                          fontSize: '0.9rem',
                           fontWeight: 600,
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
@@ -218,13 +251,31 @@ export default function Navbar() {
               )}
             </div>
           ) : (
-            <Link to="/login" className="btn btn--filled">
+            <Link to="/login" className="btn btn--filled" style={{ whiteSpace: 'nowrap' }}>
               <LogIn size={16} />
               Masuk
             </Link>
           )}
         </div>
       </div>
+
+      {/* CSS responsive */}
+      <style>{`
+        @media (max-width: 700px) {
+          .navbar-logo-text {
+            display: none;
+          }
+          .navbar-container {
+            gap: 8px !important;
+            padding: 10px 16px !important;
+          }
+        }
+        @media (max-width: 400px) {
+          .navbar-search {
+            display: none !important;
+          }
+        }
+      `}</style>
     </header>
   )
-                        }
+      }
