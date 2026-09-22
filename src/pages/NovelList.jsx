@@ -8,6 +8,7 @@ import NovelPopulerSection from '../components/NovelPopulerSection'
 import HeroSection from '../components/HeroSection'
 import LatestUpdates from '../components/LatestUpdates'
 import TopRated from '../components/TopRated'
+import GenreExplore from '../components/GenreExplore'
 
 const NOVELS_PER_PAGE = 10
 const STORAGE_KEY = 'hq-last-page'
@@ -124,12 +125,15 @@ useEffect(() => {
       <HeroSection />
 
       {/* NOVEL POPULER */}
-      {!loading && !error && novels.length > 0 && (
-        <NovelPopulerSection dataNovel={novels} />
-      )}
+{!loading && !error && novels.length > 0 && (
+  <NovelPopulerSection dataNovel={novels} />
+)}
 
-      {/* UPDATE TERBARU */}
-      <LatestUpdates />
+{/* JELAJAHI GENRE */}
+<GenreExplore />
+
+{/* UPDATE TERBARU */}
+<LatestUpdates />
 
       {/* RATING TERTINGGI */}
       <TopRated />
