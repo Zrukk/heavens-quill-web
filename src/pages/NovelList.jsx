@@ -227,18 +227,18 @@ export default function NovelList() {
       {/* CSS untuk layout 2 kolom di desktop */}
       <style>{`
         .homepage-duo {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-        }
-        @media (min-width: 900px) {
-          .homepage-duo {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            align-items: start;
-          }
-        }
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+@media (min-width: 900px) {
+  .homepage-duo {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+}
       `}</style>
     </div>
   )
