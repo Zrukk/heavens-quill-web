@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useLocation } from 'react-router-dom'
-import { BookOpen, PlayCircle, CheckCircle2, Languages, Search, ArrowUpDown, ListOrdered, Eye, Star, ChevronDown, ChevronUp } from 'lucide-react'
+import { BookOpen, PlayCircle, CheckCircle2, Languages, Search, ArrowUpDown, ListOrdered, Eye, Star, ChevronDown, ChevronUp, Heart } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { fetchAllChapterRows } from '../lib/fetchAllChapterRows'
 import { useDocumentMeta } from '../lib/useDocumentMeta'
@@ -41,6 +41,7 @@ export default function NovelDetail() {
   const [readChapterIds, setReadChapterIds] = useState(new Set())
   const [reviewOpen, setReviewOpen] = useState(false)
   const [reviewCount, setReviewCount] = useState(0)
+  const [avgRating, setAvgRating] = useState(0)
 
   useEffect(() => {
     if (!location.hash.startsWith('#review-')) return
@@ -80,11 +81,18 @@ export default function NovelDetail() {
       const chapterData = await fetchAllChapterRows(novelData.id, 'id, chapter_number, title')
       setChapters(chapterData ?? [])
 
-      const { count } = await supabase
+      // Fetch reviews (count + avg rating)
+      const { data: reviewsData } = await supabase
         .from('novel_reviews')
-        .select('*', { count: 'exact', head: true })
+        .select('rating')
         .eq('novel_id', novelData.id)
-      setReviewCount(count ?? 0)
+        .not('rating', 'is', null)
+
+      setReviewCount(reviewsData?.length ?? 0)
+      if (reviewsData && reviewsData.length > 0) {
+        const sum = reviewsData.reduce((acc, r) => acc + r.rating, 0)
+        setAvgRating(sum / reviewsData.length)
+      }
 
       if (user) {
         const { data: bookmarkData } = await supabase
@@ -135,54 +143,109 @@ export default function NovelDetail() {
     .sort((a, b) => (sortOrder === 'asc' ? a.chapter_number - b.chapter_number : b.chapter_number - a.chapter_number))
 
   return (
-    <div className="container" style={{ paddingTop: 40, paddingBottom: 60 }}>
-      <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
-        <div
-          style={{
-            width: 140,
-            height: 190,
-            flexShrink: 0,
-            background: novel.cover_url ? `url(${novel.cover_url}) center/cover` : 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius)',
-          }}
-        />
+    <div className="container" style={{ paddingTop: 32, paddingBottom: 60, maxWidth: 900 }}>
+      {/* HEADER: Cover + Info */}
+      <div
+        className="novel-header"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr',
+          gap: 24,
+          marginBottom: 32,
+        }}
+      >
+        {/* Cover */}
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <div
+            style={{
+              width: 200,
+              height: 280,
+              background: novel.cover_url ? `url(${novel.cover_url}) center/cover` : 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+            }}
+          />
+        </div>
+
+        {/* Info */}
         <div>
-          <h1 style={{ fontSize: '2rem', marginBottom: 4 }}>{novel.title}</h1>
+          <h1
+            className="gradient-text"
+            style={{
+              fontSize: 'clamp(1.5rem, 4vw, 2.2rem)',
+              marginBottom: 8,
+              lineHeight: 1.2,
+            }}
+          >
+            {novel.title}
+          </h1>
+
           {novel.author && (
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 10px' }}>
-              oleh {novel.author}
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', margin: '0 0 16px' }}>
+              oleh <strong style={{ color: 'var(--text)' }}>{novel.author}</strong>
             </p>
           )}
+
+          {/* Rating & Stats */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
-              color: isOngoing ? 'var(--gold)' : 'var(--text-muted)',
-              fontSize: '0.9rem',
+              gap: 12,
               flexWrap: 'wrap',
+              marginBottom: 16,
+              fontSize: '0.85rem',
             }}
           >
-            {isOngoing ? <PlayCircle size={15} /> : <CheckCircle2 size={15} />}
-            <span>{isOngoing ? 'Berjalan' : 'Tamat'}</span>
-            {novel.original_language && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)' }}>
-                <Languages size={14} />
-                {novel.original_language}
-              </span>
+            {avgRating > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  color: 'var(--gold)',
+                  fontWeight: 600,
+                }}
+              >
+                <Star size={16} fill="var(--gold)" />
+                {avgRating.toFixed(1)}
+                <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                  ({reviewCount})
+                </span>
+              </div>
             )}
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)' }}>
-              <ListOrdered size={14} />
-              {chapters.length} chapter
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)' }}>
               <Eye size={14} />
               {(novel.total_views ?? 0).toLocaleString('id-ID')} views
-            </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)' }}>
+              <ListOrdered size={14} />
+              {chapters.length} chapter
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                color: isOngoing ? 'var(--gold)' : 'var(--text-muted)',
+                fontWeight: 600,
+              }}
+            >
+              {isOngoing ? <PlayCircle size={14} /> : <CheckCircle2 size={14} />}
+              {isOngoing ? 'Berjalan' : 'Tamat'}
+            </div>
+            {novel.original_language && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)' }}>
+                <Languages size={14} />
+                {novel.original_language}
+              </div>
+            )}
           </div>
+
+          {/* Genre Tags */}
           {novel.genre && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 20 }}>
               {novel.genre.split(',').map((g) => g.trim()).filter(Boolean).map((g) => (
                 <span
                   key={g}
@@ -191,7 +254,7 @@ export default function NovelDetail() {
                     color: 'var(--text-muted)',
                     border: '1px solid var(--border)',
                     borderRadius: 20,
-                    padding: '2px 10px',
+                    padding: '3px 12px',
                   }}
                 >
                   {g}
@@ -199,45 +262,74 @@ export default function NovelDetail() {
               ))}
             </div>
           )}
+
+          {/* Tombol Aksi */}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {chapters.length > 0 && resumeChapterNumber !== null && (
+              <Link
+                to={`/novel/${slug}/chapter/${resumeChapterNumber}`}
+                className="btn btn--filled"
+                style={{ padding: '12px 24px', fontSize: '0.95rem', fontWeight: 600 }}
+              >
+                <BookOpen size={18} />
+                {bookmark?.last_chapter_read ? `Lanjut Chapter ${resumeChapterNumber}` : 'Mulai Baca'}
+              </Link>
+            )}
+            <FavoriteButton novelId={novel.id} novelTitle={novel.title} />
+          </div>
         </div>
       </div>
 
-      <div style={{ marginBottom: 24 }}>
+      {/* SINOPSIS */}
+      <div
+        className="card"
+        style={{
+          padding: 20,
+          marginBottom: 24,
+          background: 'rgba(255, 255, 255, 0.02)',
+        }}
+      >
+        <h3
+          style={{
+            fontSize: '0.8rem',
+            color: 'var(--gold)',
+            textTransform: 'uppercase',
+            letterSpacing: 0.5,
+            marginBottom: 12,
+          }}
+        >
+          Sinopsis
+        </h3>
         <p
           style={{
             color: 'var(--text-muted)',
-            margin: '0 0 6px',
+            margin: 0,
             whiteSpace: 'pre-wrap',
-            ...(novel.synopsis && novel.synopsis.length > 220 && !synopsisExpanded
+            lineHeight: 1.7,
+            fontSize: '0.95rem',
+            ...(novel.synopsis && novel.synopsis.length > 400 && !synopsisExpanded
               ? { display: '-webkit-box', WebkitLineClamp: 6, WebkitBoxOrient: 'vertical', overflow: 'hidden' }
               : {}),
           }}
         >
           {novel.synopsis}
         </p>
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginTop: 8 }}>
-          {novel.synopsis && novel.synopsis.length > 220 && (
-            <button
-              onClick={() => setSynopsisExpanded(!synopsisExpanded)}
-              style={{ background: 'none', border: 'none', color: 'var(--gold)', fontSize: '0.85rem', padding: 0, cursor: 'pointer' }}
-            >
-              {synopsisExpanded ? 'Sembunyikan' : 'Baca selengkapnya'}
-            </button>
-          )}
-
-          <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap', alignItems: 'center' }}>
-            {chapters.length > 0 && resumeChapterNumber !== null && (
-              <Link
-                to={`/novel/${slug}/chapter/${resumeChapterNumber}`}
-                className="btn btn--filled"
-              >
-                <BookOpen size={16} />
-                {bookmark?.last_chapter_read ? `Lanjut ke Chapter ${resumeChapterNumber}` : 'Mulai Baca'}
-              </Link>
-            )}
-            <FavoriteButton novelId={novel.id} novelTitle={novel.title} />
-          </div>
-        </div>
+        {novel.synopsis && novel.synopsis.length > 400 && (
+          <button
+            onClick={() => setSynopsisExpanded(!synopsisExpanded)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--gold)',
+              fontSize: '0.85rem',
+              padding: 0,
+              marginTop: 12,
+              cursor: 'pointer',
+            }}
+          >
+            {synopsisExpanded ? 'Sembunyikan' : 'Baca selengkapnya'}
+          </button>
+        )}
       </div>
 
       {/* REVIEW SECTION (collapsible) */}
@@ -247,7 +339,7 @@ export default function NovelDetail() {
           className="card"
           style={{
             width: '100%',
-            padding: '14px 16px',
+            padding: '16px 20px',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -261,7 +353,7 @@ export default function NovelDetail() {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Star size={20} color="var(--gold)" />
-            <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>
+            <span style={{ fontSize: '1.05rem', fontWeight: 600 }}>
               Review Pembaca ({reviewCount})
             </span>
           </div>
@@ -278,53 +370,81 @@ export default function NovelDetail() {
         )}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8, flexWrap: 'wrap' }}>
-        <h2 style={{ fontSize: '1.3rem' }}>Daftar Chapter</h2>
-        <button
-          className="btn"
-          onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-          style={{ fontSize: '0.85rem', padding: '6px 12px' }}
+      {/* DAFTAR CHAPTER */}
+      <div>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 16,
+            gap: 8,
+            flexWrap: 'wrap',
+          }}
         >
-          <ArrowUpDown size={14} />
-          {sortOrder === 'asc' ? 'Terlama dulu' : 'Terbaru dulu'}
-        </button>
+          <h2 style={{ fontSize: '1.3rem' }}>Daftar Chapter ({chapters.length})</h2>
+          <button
+            className="btn"
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            style={{ fontSize: '0.85rem', padding: '6px 12px' }}
+          >
+            <ArrowUpDown size={14} />
+            {sortOrder === 'asc' ? 'Terlama dulu' : 'Terbaru dulu'}
+          </button>
+        </div>
+
+        <div style={{ position: 'relative', marginBottom: 16 }}>
+          <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
+          <input
+            type="text"
+            placeholder="Cari nomor atau judul chapter..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ paddingLeft: 38 }}
+          />
+        </div>
+
+        {filteredChapters.length === 0 && (
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Gak ada chapter yang cocok.</p>
+        )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {filteredChapters.map((ch) => {
+            const isRead = readChapterIds.has(ch.id)
+            return (
+              <Link
+                key={ch.id}
+                to={`/novel/${slug}/chapter/${ch.chapter_number}`}
+                className="card"
+                style={{
+                  padding: '12px 16px',
+                  fontSize: '0.95rem',
+                  color: isRead ? 'var(--accent)' : 'var(--text-muted)',
+                  borderColor: isRead ? 'var(--accent)' : 'var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                }}
+              >
+                {isRead && <CheckCircle2 size={14} color="var(--accent)" />}
+                <span>
+                  Chapter {ch.chapter_number}{ch.title ? ` — ${ch.title}` : ''}
+                </span>
+              </Link>
+            )
+          })}
+        </div>
       </div>
 
-      <div style={{ position: 'relative', marginBottom: 16 }}>
-        <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
-        <input
-          type="text"
-          placeholder="Cari nomor atau judul chapter..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ paddingLeft: 38 }}
-        />
-      </div>
-
-      {filteredChapters.length === 0 && (
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Gak ada chapter yang cocok.</p>
-      )}
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {filteredChapters.map((ch) => {
-          const isRead = readChapterIds.has(ch.id)
-          return (
-            <Link
-              key={ch.id}
-              to={`/novel/${slug}/chapter/${ch.chapter_number}`}
-              className="card"
-              style={{
-                padding: '12px 16px',
-                fontSize: '0.95rem',
-                color: isRead ? 'var(--accent)' : 'var(--text-muted)',
-                borderColor: isRead ? 'var(--accent)' : 'var(--border)',
-              }}
-            >
-              Chapter {ch.chapter_number}{ch.title ? ` — ${ch.title}` : ''}
-            </Link>
-          )
-        })}
-      </div>
+      {/* CSS untuk responsive */}
+      <style>{`
+        @media (min-width: 700px) {
+          .novel-header {
+            grid-template-columns: 220px 1fr !important;
+            align-items: start;
+          }
+        }
+      `}</style>
     </div>
   )
-    }
+      }
