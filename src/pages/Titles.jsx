@@ -337,30 +337,29 @@ export default function Titles() {
 
           {details.map((d, i) => (
             <div key={i} style={{ marginBottom: i < details.length - 1 ? 10 : 0 }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  fontSize: '0.75rem',
-                  marginBottom: 4,
-                  color: 'var(--text-muted)',
-                  gap: 8,
-                }}
-              >
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {d.label}
-                </span>
-                <span
-                  style={{
-                    color: d.done ? '#5BBF8A' : 'var(--text-muted)',
-                    fontWeight: 600,
-                    flexShrink: 0,
-                  }}
-                >
-                  {d.value.toLocaleString('id-ID')} / {d.target.toLocaleString('id-ID')}
-                  {d.done && ' ✓'}
-                </span>
-              </div>
+              <div style={{ marginBottom: 4 }}>
+  <div
+    style={{
+      fontSize: '0.75rem',
+      color: 'var(--text-muted)',
+      marginBottom: 4,
+      lineHeight: 1.4,
+    }}
+  >
+    {d.label}
+  </div>
+  <div
+    style={{
+      fontSize: '0.75rem',
+      color: d.done ? '#5BBF8A' : 'var(--text-muted)',
+      fontWeight: 600,
+      textAlign: 'right',
+    }}
+  >
+    {d.value.toLocaleString('id-ID')} / {d.target.toLocaleString('id-ID')}
+    {d.done && ' ✓'}
+  </div>
+</div>
               <div
                 style={{
                   height: 6,
