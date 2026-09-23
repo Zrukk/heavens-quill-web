@@ -7,6 +7,7 @@ import { useDocumentMeta } from '../lib/useDocumentMeta'
 import { useAuth } from '../lib/AuthContext'
 import FavoriteButton from '../components/FavoriteButton'
 import ReviewSection from '../components/ReviewSection'
+import SimilarNovels from '../components/SimilarNovels'
 
 async function fetchAllReadIds(novelId, userId) {
   const pageSize = 1000
@@ -408,33 +409,38 @@ export default function NovelDetail() {
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Gak ada chapter yang cocok.</p>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {filteredChapters.map((ch) => {
-            const isRead = readChapterIds.has(ch.id)
-            return (
-              <Link
-                key={ch.id}
-                to={`/novel/${slug}/chapter/${ch.chapter_number}`}
-                className="card"
-                style={{
-                  padding: '12px 16px',
-                  fontSize: '0.95rem',
-                  color: isRead ? 'var(--accent)' : 'var(--text-muted)',
-                  borderColor: isRead ? 'var(--accent)' : 'var(--border)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                }}
-              >
-                {isRead && <CheckCircle2 size={14} color="var(--accent)" />}
-                <span>
-                  Chapter {ch.chapter_number}{ch.title ? ` — ${ch.title}` : ''}
-                </span>
-              </Link>
-            )
-          })}
-        </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {filteredChapters.map((ch) => {
+          const isRead = readChapterIds.has(ch.id)
+          return (
+            <Link
+              key={ch.id}
+              to={`/novel/${slug}/chapter/${ch.chapter_number}`}
+              className="card"
+              style={{
+                padding: '12px 16px',
+                fontSize: '0.95rem',
+                color: isRead ? 'var(--accent)' : 'var(--text-muted)',
+                borderColor: isRead ? 'var(--accent)' : 'var(--border)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+              }}
+            >
+              {isRead && <CheckCircle2 size={14} color="var(--accent)" />}
+              <span>
+                Chapter {ch.chapter_number}{ch.title ? ` — ${ch.title}` : ''}
+              </span>
+            </Link>
+          )
+        })}
       </div>
+
+      {/* NOVEL SERUPA */}
+      <SimilarNovels novelId={novel.id} novelGenre={novel.genre} />
+    </div>
+  )
+    }
 
       {/* CSS untuk responsive */}
       <style>{`
