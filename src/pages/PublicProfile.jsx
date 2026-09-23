@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { X, UserCircle2, BookOpen, Heart, MessageCircle, Star, BarChart3, Flame } from 'lucide-react'
+import { ArrowLeft, UserCircle2, BookOpen, Heart, MessageCircle, Star, BarChart3, Flame } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import UserReviews from '../components/UserReviews'
 import LevelBadge from '../components/LevelBadge'
@@ -75,22 +75,22 @@ export default function PublicProfile() {
     setLoadingFavorites(false)
   }
 
-  const StatCard = ({ icon, value, label }) => (
+  const StatCard = ({ icon, value, label, color }) => (
     <div
       className="card"
       style={{
-        padding: 12,
+        padding: 14,
         flex: '1 1 100px',
         minWidth: 100,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 2,
+        gap: 4,
         textAlign: 'center',
       }}
     >
-      <div style={{ color: 'var(--gold)', marginBottom: 2 }}>{icon}</div>
-      <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text)' }}>
+      <div style={{ fontSize: '1.5rem', marginBottom: 2 }}>{icon}</div>
+      <div style={{ fontSize: '1.3rem', fontWeight: 700, color: color || 'var(--gold)' }}>
         {value.toLocaleString('id-ID')}
       </div>
       <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{label}</div>
@@ -98,7 +98,8 @@ export default function PublicProfile() {
   )
 
   return (
-    <div className="container" style={{ paddingTop: 24, paddingBottom: 60, maxWidth: 500 }}>
+    <div className="container" style={{ paddingTop: 24, paddingBottom: 60, maxWidth: 700 }}>
+      {/* Tombol kembali */}
       <button
         onClick={() => navigate(-1)}
         style={{
@@ -114,111 +115,159 @@ export default function PublicProfile() {
           color: 'var(--text)',
           marginBottom: 24,
         }}
+        title="Kembali"
       >
-        <X size={18} />
+        <ArrowLeft size={18} />
       </button>
 
       {loading && <p style={{ color: 'var(--text-muted)' }}>Memuat...</p>}
       {!loading && !profile && (
         <p style={{ color: 'var(--text-muted)' }}>Pengguna tidak ditemukan.</p>
       )}
+
       {!loading && profile && (
         <>
-          {/* Header Profil */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center', marginBottom: 24 }}>
+          {/* HEADER PROFIL */}
+          <div
+            className="card"
+            style={{
+              padding: 0,
+              marginBottom: 24,
+              overflow: 'hidden',
+              border: '1px solid var(--border)',
+            }}
+          >
+            {/* Banner gradient */}
             <div
               style={{
-                width: 96,
-                height: 96,
-                borderRadius: '50%',
-                background: profile.avatar_url ? `url(${profile.avatar_url}) center/cover` : 'var(--bg)',
-                border: '2px solid var(--gold)',
+                height: 120,
+                background: 'linear-gradient(135deg, rgba(212, 175, 91, 0.25), rgba(91, 168, 212, 0.15), transparent)',
+              }}
+            />
+
+            {/* Avatar & info */}
+            <div
+              style={{
+                padding: '0 24px 20px',
+                marginTop: -50,
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center',
+                textAlign: 'center',
               }}
             >
-              {!profile.avatar_url && <UserCircle2 size={52} color="var(--text-muted)" />}
-            </div>
-            <h1 style={{ fontSize: '1.6rem' }}>{profile.display_name || 'Pembaca'}</h1>
-
-            {/* LEVEL & TITLE */}
-            {!loadingStats && (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                <LevelBadge totalChapters={stats.chaptersRead} size="medium" />
-                <UserTitles userId={userId} size="medium" />
+              <div
+                style={{
+                  width: 100,
+                  height: 100,
+                  borderRadius: '50%',
+                  background: profile.avatar_url ? `url(${profile.avatar_url}) center/cover` : 'var(--surface)',
+                  border: '4px solid var(--bg)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 12,
+                }}
+              >
+                {!profile.avatar_url && <UserCircle2 size={52} color="var(--text-muted)" />}
               </div>
-            )}
+
+              <h1
+                className="gradient-text"
+                style={{
+                  fontSize: '1.6rem',
+                  marginBottom: 12,
+                  fontWeight: 700,
+                }}
+              >
+                {profile.display_name || 'Pembaca'}
+              </h1>
+
+              {/* LEVEL & TITLE */}
+              {!loadingStats && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                  <LevelBadge totalChapters={stats.chaptersRead} size="medium" />
+                  <UserTitles userId={userId} size="medium" />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* DAILY STREAK (read-only) */}
           <StreakDisplay userId={userId} />
 
-          {/* Statistik */}
-          <h2 style={{ fontSize: '1.1rem', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <BarChart3 size={18} color="var(--gold)" />
-            Statistik
-          </h2>
-          {loadingStats ? (
-            <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>Memuat...</p>
-          ) : (
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 32 }}>
-              <StatCard icon={<BookOpen size={18} />} value={stats.chaptersRead} label="Chapter Dibaca" />
-              <StatCard icon={<Heart size={18} />} value={stats.favorites} label="Novel Favorit" />
-              <StatCard icon={<MessageCircle size={18} />} value={stats.comments} label="Komentar" />
-              <StatCard icon={<Star size={18} />} value={stats.reviews} label="Review Ditulis" />
+          {/* STATISTIK */}
+          <div style={{ marginTop: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <BarChart3 size={18} color="var(--gold)" />
+              <h2 style={{ fontSize: '1.1rem' }}>Statistik</h2>
             </div>
-          )}
 
-          {/* Review yang Ditulis */}
-          <h2 style={{ fontSize: '1.1rem', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Star size={18} color="var(--gold)" />
-            Review yang Ditulis
-          </h2>
-          <div style={{ marginBottom: 32 }}>
+            {loadingStats ? (
+              <p style={{ color: 'var(--text-muted)' }}>Memuat...</p>
+            ) : (
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <StatCard icon="📖" value={stats.chaptersRead} label="Chapter Dibaca" color="var(--accent)" />
+                <StatCard icon="❤️" value={stats.favorites} label="Novel Favorit" color="#D46B7B" />
+                <StatCard icon="💬" value={stats.comments} label="Komentar" color="#5BBF8A" />
+                <StatCard icon="⭐" value={stats.reviews} label="Review Ditulis" color="var(--gold)" />
+              </div>
+            )}
+          </div>
+
+          {/* REVIEW YANG DITULIS */}
+          <div style={{ marginTop: 32 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Star size={18} color="var(--gold)" />
+              <h2 style={{ fontSize: '1.1rem' }}>Review yang Ditulis</h2>
+            </div>
             <UserReviews userId={userId} />
           </div>
 
-          {/* Novel Favorit */}
-          <h2 style={{ fontSize: '1.1rem', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Heart size={18} color="var(--gold)" />
-            Novel Favorit
-          </h2>
-          {loadingFavorites && <p style={{ color: 'var(--text-muted)' }}>Memuat...</p>}
-          {!loadingFavorites && favorites.length === 0 && (
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              Belum ada novel favorit.
-            </p>
-          )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {favorites.map((f) => f.novels && (
-              <Link
-                key={f.novels.id}
-                to={`/novel/${f.novels.slug}`}
-                className="card"
-                style={{
-                  display: 'flex',
-                  gap: 12,
-                  padding: 12,
-                }}
-              >
-                <div
+          {/* NOVEL FAVORIT */}
+          <div style={{ marginTop: 32 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Heart size={18} color="var(--gold)" />
+              <h2 style={{ fontSize: '1.1rem' }}>Novel Favorit</h2>
+            </div>
+
+            {loadingFavorites && <p style={{ color: 'var(--text-muted)' }}>Memuat...</p>}
+            {!loadingFavorites && favorites.length === 0 && (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                Belum ada novel favorit.
+              </p>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {favorites.map((f) => f.novels && (
+                <Link
+                  key={f.novels.id}
+                  to={`/novel/${f.novels.slug}`}
+                  className="card"
                   style={{
-                    width: 48,
-                    height: 66,
-                    flexShrink: 0,
-                    background: f.novels.cover_url ? `url(${f.novels.cover_url}) center/cover` : 'var(--border)',
-                    borderRadius: 'var(--radius)',
+                    display: 'flex',
+                    gap: 12,
+                    padding: 12,
                   }}
-                />
-                <div>
-                  <div style={{ marginBottom: 4 }}>{f.novels.title}</div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                    {f.novels.author || 'Tanpa author'}
+                >
+                  <div
+                    style={{
+                      width: 48,
+                      height: 66,
+                      flexShrink: 0,
+                      background: f.novels.cover_url ? `url(${f.novels.cover_url}) center/cover` : 'var(--border)',
+                      borderRadius: 'var(--radius)',
+                    }}
+                  />
+                  <div>
+                    <div style={{ marginBottom: 4 }}>{f.novels.title}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                      {f.novels.author || 'Tanpa author'}
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ))}
+            </div>
           </div>
         </>
       )}
@@ -287,4 +336,4 @@ function StreakDisplay({ userId }) {
       </div>
     </div>
   )
-                      }
+        }
