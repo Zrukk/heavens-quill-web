@@ -293,3 +293,80 @@ input:focus {
   --accent: #B84B5B;
   --accent-hover: #9A3B4A;
   }
+/* ============================================ */
+/* ===== ANIMASI GLOBAL ===== */
+/* ============================================ */
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Fade-in saat halaman dibuka */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInFast {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Card hover transition (halus) */
+.card {
+  transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Button transition (halus) */
+.btn {
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+/* Link subtle */
+a {
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+/* Route transition — fade-in konten */
+.route-fade {
+  animation: fadeIn 0.35s ease-out;
+}
+
+/* Image loading */
+img {
+  transition: opacity 0.3s ease;
+}
+
+/* Skeleton loading (kalau butuh nanti) */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-hover) 50%, var(--surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius);
+}
+
+/* Respect user preference: reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
