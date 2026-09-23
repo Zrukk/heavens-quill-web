@@ -318,7 +318,7 @@ export default function Profile() {
           {!loadingStats && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
               <LevelBadge totalChapters={stats.chaptersRead} size="large" showProgress />
-              <UserTitles userId={user.id} size="medium" />
+              <UserTitles userId={user.id} size="medium" editable />
             </div>
           )}
         </div>
