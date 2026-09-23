@@ -6,11 +6,10 @@ export default function BackToTop() {
 
   useEffect(() => {
     function handleScroll() {
-      // Muncul kalau sudah scroll > 400px
       setVisible(window.scrollY > 400)
     }
     window.addEventListener('scroll', handleScroll)
-    handleScroll() // cek posisi awal
+    handleScroll()
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
@@ -18,16 +17,15 @@ export default function BackToTop() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  if (!visible) return null
-
   return (
     <button
       onClick={scrollToTop}
       title="Kembali ke atas"
+      aria-label="Kembali ke atas"
       style={{
         position: 'fixed',
-        bottom: 24,
-        right: 24,
+        bottom: 80,
+        right: 16,
         width: 44,
         height: 44,
         borderRadius: '50%',
@@ -38,14 +36,23 @@ export default function BackToTop() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
         zIndex: 90,
-        transition: 'transform 0.2s, opacity 0.2s',
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(20px)',
+        pointerEvents: visible ? 'auto' : 'none',
+        transition: 'opacity 0.3s ease, transform 0.3s ease, background 0.2s ease',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
-      onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'var(--gold-hover)'
+        e.currentTarget.style.transform = 'translateY(-2px)'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'var(--gold)'
+        e.currentTarget.style.transform = 'translateY(0)'
+      }}
     >
       <ArrowUp size={20} strokeWidth={2.5} />
     </button>
   )
-    }
+}
