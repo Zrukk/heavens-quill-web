@@ -11,6 +11,7 @@ import PublicProfile from './pages/PublicProfile'
 import Settings from './pages/Settings'
 import Leaderboard from './pages/Leaderboard'
 import Titles from './pages/Titles'
+import NotFound from './pages/NotFound'
 import { About, Contact, Privacy, Rules } from './pages/StaticPages'
 import BackToTop from './components/BackToTop'
 import RouteTransition from './components/RouteTransition'
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="/kontak" element={<Contact />} />
             <Route path="/peraturan" element={<Rules />} />
             <Route path="/kebijakan-privasi" element={<Privacy />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </RouteTransition>
       </div>
