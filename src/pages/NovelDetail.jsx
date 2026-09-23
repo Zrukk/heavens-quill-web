@@ -9,6 +9,8 @@ import FavoriteButton from '../components/FavoriteButton'
 import ReviewSection from '../components/ReviewSection'
 import SimilarNovels from '../components/SimilarNovels'
 
+const CHAPTERS_PREVIEW = 20
+
 async function fetchAllReadIds(novelId, userId) {
   const pageSize = 1000
   let allRows = []
@@ -43,6 +45,7 @@ export default function NovelDetail() {
   const [reviewOpen, setReviewOpen] = useState(false)
   const [reviewCount, setReviewCount] = useState(0)
   const [avgRating, setAvgRating] = useState(0)
+  const [showAllChapters, setShowAllChapters] = useState(false)
 
   useEffect(() => {
     if (!location.hash.startsWith('#review-')) return
@@ -142,6 +145,15 @@ export default function NovelDetail() {
       )
     })
     .sort((a, b) => (sortOrder === 'asc' ? a.chapter_number - b.chapter_number : b.chapter_number - a.chapter_number))
+
+  // Batasi tampilan kalau gak search & belum klik "Lihat Semua"
+  const visibleChapters = searchQuery.trim()
+    ? filteredChapters
+    : showAllChapters
+    ? filteredChapters
+    : filteredChapters.slice(0, CHAPTERS_PREVIEW)
+
+  const hasMoreChapters = !searchQuery.trim() && !showAllChapters && filteredChapters.length > CHAPTERS_PREVIEW
 
   return (
     <div className="container" style={{ paddingTop: 32, paddingBottom: 60, maxWidth: 900 }}>
@@ -409,40 +421,68 @@ export default function NovelDetail() {
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Gak ada chapter yang cocok.</p>
         )}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {filteredChapters.map((ch) => {
-          const isRead = readChapterIds.has(ch.id)
-          return (
-            <Link
-              key={ch.id}
-              to={`/novel/${slug}/chapter/${ch.chapter_number}`}
-              className="card"
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {visibleChapters.map((ch) => {
+            const isRead = readChapterIds.has(ch.id)
+            return (
+              <Link
+                key={ch.id}
+                to={`/novel/${slug}/chapter/${ch.chapter_number}`}
+                className="card"
+                style={{
+                  padding: '12px 16px',
+                  fontSize: '0.95rem',
+                  color: isRead ? 'var(--accent)' : 'var(--text-muted)',
+                  borderColor: isRead ? 'var(--accent)' : 'var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                }}
+              >
+                {isRead && <CheckCircle2 size={14} color="var(--accent)" />}
+                <span>
+                  Chapter {ch.chapter_number}{ch.title ? ` — ${ch.title}` : ''}
+                </span>
+              </Link>
+            )
+          })}
+        </div>
+
+        {/* TOMBOL LIHAT SEMUA / SEMBUNYIKAN */}
+        {(hasMoreChapters || showAllChapters) && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+            <button
+              onClick={() => setShowAllChapters((v) => !v)}
+              className="btn"
               style={{
-                padding: '12px 16px',
-                fontSize: '0.95rem',
-                color: isRead ? 'var(--accent)' : 'var(--text-muted)',
-                borderColor: isRead ? 'var(--accent)' : 'var(--border)',
-                display: 'flex',
+                padding: '10px 20px',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                display: 'inline-flex',
                 alignItems: 'center',
-                gap: 10,
+                gap: 8,
               }}
             >
-              {isRead && <CheckCircle2 size={14} color="var(--accent)" />}
-              <span>
-                Chapter {ch.chapter_number}{ch.title ? ` — ${ch.title}` : ''}
-              </span>
-            </Link>
-          )
-        })}
+              {showAllChapters ? (
+                <>
+                  <ChevronUp size={16} />
+                  Sembunyikan Chapter
+                </>
+              ) : (
+                <>
+                  <ChevronDown size={16} />
+                  Lihat Semua ({filteredChapters.length} Chapter)
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* NOVEL SERUPA */}
       <SimilarNovels novelId={novel.id} novelGenre={novel.genre} />
-    </div>
-  )
-    }
 
-      {/* CSS untuk responsive */}
+      {/* CSS responsive */}
       <style>{`
         @media (min-width: 700px) {
           .novel-header {
@@ -453,4 +493,4 @@ export default function NovelDetail() {
       `}</style>
     </div>
   )
-      }
+}
