@@ -12,12 +12,25 @@ import SimilarNovels from '../components/SimilarNovels'
 const CHAPTERS_PREVIEW = 20
 
 function slugify(name) {
-  return name
+  const cleaned = name
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+
+  // Kalau ada huruf latin, pakai slug biasa
+  if (cleaned) return cleaned
+
+  // Kalau gak ada (nama Hanzi/Karakter khusus), pakai hash
+  let hash = 0
+  const str = name.trim().toLowerCase()
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i)
+    hash |= 0
+  }
+  return `author-${Math.abs(hash).toString(36)}`
 }
 
 async function fetchAllReadIds(novelId, userId) {
