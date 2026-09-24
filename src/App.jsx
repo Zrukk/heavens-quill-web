@@ -8,6 +8,7 @@ import Login from './pages/Login'
 import Admin from './pages/Admin'
 import Profile from './pages/Profile'
 import PublicProfile from './pages/PublicProfile'
+import AuthorPage from './pages/AuthorPage'
 import Settings from './pages/Settings'
 import Leaderboard from './pages/Leaderboard'
 import Titles from './pages/Titles'
@@ -33,6 +34,7 @@ export default function App() {
             <Route path="/admin" element={<Admin />} />
             <Route path="/profil" element={<Profile />} />
             <Route path="/pembaca/:userId" element={<PublicProfile />} />
+            <Route path="/author/:slug" element={<AuthorPage />} />
             <Route path="/pengaturan" element={<Settings />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/gelar" element={<Titles />} />
