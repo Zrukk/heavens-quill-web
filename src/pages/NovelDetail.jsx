@@ -11,6 +11,15 @@ import SimilarNovels from '../components/SimilarNovels'
 
 const CHAPTERS_PREVIEW = 20
 
+function slugify(name) {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+}
+
 async function fetchAllReadIds(novelId, userId) {
   const pageSize = 1000
   let allRows = []
