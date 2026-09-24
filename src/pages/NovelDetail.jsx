@@ -204,10 +204,22 @@ export default function NovelDetail() {
           </h1>
 
           {novel.author && (
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', margin: '0 0 16px' }}>
-              oleh <strong style={{ color: 'var(--text)' }}>{novel.author}</strong>
-            </p>
-          )}
+  <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', margin: '0 0 16px' }}>
+    oleh{' '}
+    <Link
+      to={`/author/${slugify(novel.author)}`}
+      style={{
+        color: 'var(--gold)',
+        fontWeight: 600,
+        textDecoration: 'underline',
+        textDecorationColor: 'rgba(212, 175, 91, 0.3)',
+        textUnderlineOffset: 3,
+      }}
+    >
+      {novel.author}
+    </Link>
+  </p>
+)}
 
           {/* Rating & Stats */}
           <div
