@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import { Flame, Check, Loader, Sparkles } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
+import { useStreak } from '../lib/StreakContext'
 
 export default function DailyStreakCard() {
   const { user } = useAuth()
+  const { setCheckedInToday } = useStreak()
   const [streak, setStreak] = useState(null)
   const [loading, setLoading] = useState(true)
   const [checking, setChecking] = useState(false)
@@ -42,6 +44,9 @@ export default function DailyStreakCard() {
       if (result.new_title) setNewTitle(result.new_title)
       setTimeout(() => setNewTitle(null), 5000)
       loadStreak()
+
+      // Update global state — biar titik merah di navbar hilang
+      setCheckedInToday(true)
     }
   }
 
@@ -64,7 +69,6 @@ export default function DailyStreakCard() {
         overflow: 'hidden',
       }}
     >
-      {/* Tanda merah kalau belum check-in */}
       {notCheckedInYet && (
         <div
           style={{
@@ -204,4 +208,4 @@ export default function DailyStreakCard() {
       `}</style>
     </div>
   )
-            }
+    }
