@@ -4,6 +4,7 @@ import { BookPlus, FilePlus2, UploadCloud, ListChecks, Trash2, Save, Pencil, Inf
 import { useAuth } from '../lib/AuthContext'
 import { supabase } from '../lib/supabase'
 import { fetchAllChapterRows } from '../lib/fetchAllChapterRows'
+import { notifyDiscord } from '../lib/notifyDiscord'
 
 function escapeHtml(str) {
   return str
@@ -155,7 +156,6 @@ function parseBulkText(text) {
       content: c.paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join('\n'),
     }))
 }
-
 export default function Admin() {
   const { user, isAdmin, loading } = useAuth()
   const [novels, setNovels] = useState([])
@@ -253,6 +253,11 @@ export default function Admin() {
     setSelectedIds((prev) => (prev.length === manageChapters.length ? [] : manageChapters.map((c) => c.id)))
   }
 
+  function showMessage(text, type = 'info') {
+    setMessage(text)
+    setMessageType(type)
+  }
+
   async function startEdit(chapter) {
     setEditingChapterId(chapter.id)
     setEditNumber(chapter.chapter_number)
@@ -285,11 +290,6 @@ export default function Admin() {
       setEditingChapterId(null)
       loadManageChapters(manageNovel)
     }
-  }
-
-  function showMessage(text, type = 'info') {
-    setMessage(text)
-    setMessageType(type)
   }
 
   async function handleDeleteChapters() {
@@ -330,38 +330,79 @@ export default function Admin() {
       coverUrl = urlData.publicUrl
     }
 
-    const { error } = await supabase.from('novels').insert({
-      title, slug, author: author || null, genre: genre || null, synopsis, cover_url: coverUrl, original_language: language, status,
-    })
+    const { data: newNovel, error } = await supabase
+      .from('novels')
+      .insert({
+        title,
+        slug,
+        author: author || null,
+        genre: genre || null,
+        synopsis,
+        cover_url: coverUrl,
+        original_language: language,
+        status,
+      })
+      .select()
+      .single()
+
     if (error) {
       showMessage(error.message, 'error')
     } else {
       showMessage('Novel berhasil ditambahkan.', 'success')
-      setTitle(''); setSlug(''); setAuthor(''); setGenre(''); setSynopsis(''); setCoverFile(null); setLanguage('')
+      setTitle('')
+      setSlug('')
+      setAuthor('')
+      setGenre('')
+      setSynopsis('')
+      setCoverFile(null)
+      setLanguage('')
       loadNovels()
+
+      if (newNovel) {
+        notifyDiscord({ type: 'new_novel', data: newNovel })
+      }
     }
   }
 
   async function handleAddChapter(e) {
     e.preventDefault()
     setMessage(null)
+
     const htmlContent = content
       .split('\n')
       .map((line) => line.trim())
       .filter(Boolean)
       .map((line) => `<p>${escapeHtml(line)}</p>`)
       .join('\n')
+
     const { error } = await supabase.from('chapters').insert({
       novel_id: selectedNovel,
       chapter_number: Number(chapterNumber),
       title: chapterTitle || null,
       content: htmlContent,
     })
+
     if (error) {
       showMessage(error.message, 'error')
     } else {
       showMessage('Chapter berhasil ditambahkan.', 'success')
-      setChapterNumber(''); setChapterTitle(''); setContent('')
+      setChapterNumber('')
+      setChapterTitle('')
+      setContent('')
+
+      const novelInfo = novels.find((n) => n.id === selectedNovel)
+      if (novelInfo) {
+        notifyDiscord({
+          type: 'new_chapter',
+          data: {
+            novel_title: novelInfo.title,
+            novel_slug: novelInfo.slug,
+            cover_url: novelInfo.cover_url,
+            chapter_number: chapterNumber,
+            chapter_title: chapterTitle,
+          },
+        })
+      }
     }
   }
 
@@ -521,10 +562,20 @@ export default function Admin() {
     } else {
       showMessage(`${data.length} chapter berhasil diimport.`, 'success')
       setParsedChapters([])
-    }
-  }
 
-  if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
+      const novelInfo = novels.find((n) => n.id === importNovel)
+      if (novelInfo) {
+        notifyDiscord({
+          type: 'bulk_import',
+          data: {
+            novel_title: novelInfo.title,
+            novel_slug: novelInfo.slug,
+            count: data.length,
+          },
+        })
+      }
+    }
+                                           }  if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
   if (!user) return <div className="container" style={{ paddingTop: 40 }}>Silakan masuk dulu.</div>
   if (!isAdmin) return <div className="container" style={{ paddingTop: 40 }}>Akun ini bukan admin.</div>
 
@@ -615,7 +666,6 @@ export default function Admin() {
         Kelola novel, chapter, dan import massal.
       </p>
 
-      {/* TAB NAVIGATION */}
       <div
         style={{
           display: 'flex',
@@ -632,31 +682,17 @@ export default function Admin() {
         <TabButton id="manage" icon={<ListChecks size={16} />} label="Kelola Chapter" />
       </div>
 
-      {/* MESSAGE */}
       <MessageBanner />
 
-      {/* TAB: NOVEL */}
       {tab === 'novel' && (
         <div className="card" style={{ padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: '50%',
-                background: 'rgba(212, 175, 91, 0.12)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(212, 175, 91, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <BookPlus size={18} color="var(--gold)" />
             </div>
             <div>
               <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 2 }}>Tambah Novel Baru</h2>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
-                Isi data novel yang mau ditambahkan
-              </p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>Isi data novel yang mau ditambahkan</p>
             </div>
           </div>
 
@@ -704,28 +740,15 @@ export default function Admin() {
         </div>
       )}
 
-      {/* TAB: CHAPTER */}
       {tab === 'chapter' && (
         <div className="card" style={{ padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: '50%',
-                background: 'rgba(212, 175, 91, 0.12)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(212, 175, 91, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <FilePlus2 size={18} color="var(--gold)" />
             </div>
             <div>
               <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 2 }}>Tambah Chapter</h2>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
-                Tambah 1 chapter manual ke novel
-              </p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>Tambah 1 chapter manual ke novel</p>
             </div>
           </div>
 
@@ -757,28 +780,15 @@ export default function Admin() {
         </div>
       )}
 
-      {/* TAB: IMPORT */}
       {tab === 'import' && (
         <div className="card" style={{ padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: '50%',
-                background: 'rgba(212, 175, 91, 0.12)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(212, 175, 91, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <UploadCloud size={18} color="var(--gold)" />
             </div>
             <div>
               <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 2 }}>Import Massal</h2>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
-                Upload EPUB atau tempel teks banyak chapter sekaligus
-              </p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>Upload EPUB atau tempel teks banyak chapter sekaligus</p>
             </div>
           </div>
 
@@ -807,35 +817,14 @@ export default function Admin() {
                 </div>
                 {epubFile && (
                   <>
-                    <div
-                      style={{
-                        padding: 12,
-                        background: 'rgba(91, 168, 212, 0.08)',
-                        border: '1px solid #5BA8D4',
-                        borderRadius: 'var(--radius)',
-                        fontSize: '0.8rem',
-                        color: 'var(--text-muted)',
-                      }}
-                    >
+                    <div style={{ padding: 12, background: 'rgba(91, 168, 212, 0.08)', border: '1px solid #5BA8D4', borderRadius: 'var(--radius)', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                       💡 Epub dengan ratusan chapter bisa berat diproses sekaligus di HP. Proses per beberapa chapter aja (misal 1–30, lalu 31–60, dst) kalau kerasa lag.
                       {epubTotal ? ` Total item di epub ini: ${epubTotal}.` : ''}
                     </div>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                      <input
-                        type="number"
-                        placeholder="Dari #"
-                        value={epubRangeStart}
-                        onChange={(e) => setEpubRangeStart(e.target.value)}
-                        style={{ width: 100, padding: 8, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}
-                      />
+                      <input type="number" placeholder="Dari #" value={epubRangeStart} onChange={(e) => setEpubRangeStart(e.target.value)} style={{ width: 100, padding: 8, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }} />
                       <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>sampai</span>
-                      <input
-                        type="number"
-                        placeholder="ke #"
-                        value={epubRangeEnd}
-                        onChange={(e) => setEpubRangeEnd(e.target.value)}
-                        style={{ width: 100, padding: 8, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}
-                      />
+                      <input type="number" placeholder="ke #" value={epubRangeEnd} onChange={(e) => setEpubRangeEnd(e.target.value)} style={{ width: 100, padding: 8, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }} />
                     </div>
                     <button type="button" className="btn btn--gold" onClick={handleProcessEpubRange} style={{ justifyContent: 'center' }}>
                       <UploadCloud size={16} />
@@ -848,25 +837,10 @@ export default function Admin() {
 
             {importSource === 'bulk' && (
               <>
-                <div
-                  style={{
-                    padding: 12,
-                    background: 'rgba(91, 168, 212, 0.08)',
-                    border: '1px solid #5BA8D4',
-                    borderRadius: 'var(--radius)',
-                    fontSize: '0.8rem',
-                    color: 'var(--text-muted)',
-                  }}
-                >
+                <div style={{ padding: 12, background: 'rgba(91, 168, 212, 0.08)', border: '1px solid #5BA8D4', borderRadius: 'var(--radius)', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                   💡 Tempel beberapa chapter sekaligus. Tiap baris judul chapter harus diawali "Chapter" atau "Bab" diikuti angka. Contoh: "Chapter 12" atau "Bab 12 - Pertarungan".
                 </div>
-                <textarea
-                  placeholder="Tempel teks di sini..."
-                  value={bulkText}
-                  onChange={(e) => setBulkText(e.target.value)}
-                  rows={12}
-                  style={inputStyle}
-                />
+                <textarea placeholder="Tempel teks di sini..." value={bulkText} onChange={(e) => setBulkText(e.target.value)} rows={12} style={inputStyle} />
                 <button type="button" className="btn" onClick={handleParseBulk} style={{ justifyContent: 'center' }}>
                   <FilePlus2 size={16} />
                   Pisahkan Otomatis
@@ -885,16 +859,7 @@ export default function Admin() {
                     (c) => existingNumbers.has(Number(c.number)) || numberCounts[c.number] > 1,
                   ).length
                   return conflictCount > 0 ? (
-                    <div
-                      style={{
-                        padding: 10,
-                        background: 'rgba(212, 107, 91, 0.1)',
-                        border: '1px solid #D46B5B',
-                        borderRadius: 'var(--radius)',
-                        fontSize: '0.85rem',
-                        color: '#D46B5B',
-                      }}
-                    >
+                    <div style={{ padding: 10, background: 'rgba(212, 107, 91, 0.1)', border: '1px solid #D46B5B', borderRadius: 'var(--radius)', fontSize: '0.85rem', color: '#D46B5B' }}>
                       ⚠ {conflictCount} chapter nomornya bentrok (udah ada di database atau dobel di batch ini) — cek yang bergaris merah di bawah, betulin atau uncheck sebelum import.
                     </div>
                   ) : null
@@ -910,45 +875,16 @@ export default function Admin() {
                       }, {})
                       const conflict = existingNumbers.has(Number(c.number)) || numberCounts[c.number] > 1
                       return (
-                        <div
-                          key={i}
-                          style={{
-                            padding: 12,
-                            background: 'var(--bg)',
-                            border: conflict ? '1px solid #D46B5B' : '1px solid var(--border)',
-                            borderRadius: 'var(--radius)',
-                          }}
-                        >
+                        <div key={i} style={{ padding: 12, background: 'var(--bg)', border: conflict ? '1px solid #D46B5B' : '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
                           <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
                             <input type="checkbox" checked={c.checked} onChange={(e) => updateParsed(i, 'checked', e.target.checked)} />
-                            <input
-                              type="number"
-                              value={c.number}
-                              onChange={(e) => updateParsed(i, 'number', e.target.value)}
-                              style={{
-                                width: 70,
-                                padding: 6,
-                                background: 'var(--surface)',
-                                border: conflict ? '1px solid #D46B5B' : '1px solid var(--border)',
-                                borderRadius: 'var(--radius)',
-                              }}
-                            />
-                            <input
-                              type="text"
-                              value={c.title}
-                              onChange={(e) => updateParsed(i, 'title', e.target.value)}
-                              placeholder="Judul"
-                              style={{ flex: 1, padding: 6, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}
-                            />
+                            <input type="number" value={c.number} onChange={(e) => updateParsed(i, 'number', e.target.value)} style={{ width: 70, padding: 6, background: 'var(--surface)', border: conflict ? '1px solid #D46B5B' : '1px solid var(--border)', borderRadius: 'var(--radius)' }} />
+                            <input type="text" value={c.title} onChange={(e) => updateParsed(i, 'title', e.target.value)} placeholder="Judul" style={{ flex: 1, padding: 6, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }} />
                           </div>
                           {conflict && (
-                            <p style={{ color: '#D46B5B', fontSize: '0.75rem', margin: '0 0 6px' }}>
-                              ⚠ nomor {c.number} udah ada di database atau dobel di batch ini
-                            </p>
+                            <p style={{ color: '#D46B5B', fontSize: '0.75rem', margin: '0 0 6px' }}>⚠ nomor {c.number} udah ada di database atau dobel di batch ini</p>
                           )}
-                          <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0 }}>
-                            {c.content.slice(0, 120)}{c.content.length > 120 ? '...' : ''}
-                          </p>
+                          <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0 }}>{c.content.slice(0, 120)}{c.content.length > 120 ? '...' : ''}</p>
                         </div>
                       )
                     })}
@@ -965,28 +901,15 @@ export default function Admin() {
         </div>
       )}
 
-      {/* TAB: MANAGE */}
       {tab === 'manage' && (
         <div className="card" style={{ padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: '50%',
-                background: 'rgba(212, 175, 91, 0.12)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(212, 175, 91, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <ListChecks size={18} color="var(--gold)" />
             </div>
             <div>
               <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 2 }}>Kelola Chapter</h2>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
-                Edit atau hapus chapter yang udah ada
-              </p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>Edit atau hapus chapter yang udah ada</p>
             </div>
           </div>
 
@@ -1000,9 +923,7 @@ export default function Admin() {
             </div>
 
             {manageNovel && manageChapters.length === 0 && (
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center', padding: 20 }}>
-                Novel ini belum punya chapter.
-              </p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center', padding: 20 }}>Novel ini belum punya chapter.</p>
             )}
 
             {manageChapters.length > 0 && (
@@ -1018,64 +939,21 @@ export default function Admin() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 500, overflowY: 'auto' }}>
                   {manageChapters.map((c) => (
                     <div key={c.id}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          padding: '10px 12px',
-                          background: 'var(--bg)',
-                          border: '1px solid var(--border)',
-                          borderRadius: 'var(--radius)',
-                          fontSize: '0.9rem',
-                        }}
-                      >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', fontSize: '0.9rem' }}>
                         <input type="checkbox" checked={selectedIds.includes(c.id)} onChange={() => toggleSelect(c.id)} />
                         <span style={{ flex: 1, cursor: 'pointer' }} onClick={() => toggleSelect(c.id)}>
                           Chapter {c.chapter_number}{c.title ? ` — ${c.title}` : ''}
                         </span>
-                        <button
-                          onClick={() => (editingChapterId === c.id ? cancelEdit() : startEdit(c))}
-                          style={{ background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer', padding: 4, display: 'flex' }}
-                        >
+                        <button onClick={() => (editingChapterId === c.id ? cancelEdit() : startEdit(c))} style={{ background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer', padding: 4, display: 'flex' }}>
                           <Pencil size={14} />
                         </button>
                       </div>
 
                       {editingChapterId === c.id && (
-                        <div
-                          style={{
-                            padding: 12,
-                            background: 'var(--bg)',
-                            border: '1px solid var(--gold)',
-                            borderRadius: 'var(--radius)',
-                            marginTop: 4,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 8,
-                          }}
-                        >
-                          <input
-                            type="number"
-                            step="any"
-                            value={editNumber}
-                            onChange={(e) => setEditNumber(e.target.value)}
-                            placeholder="Nomor chapter"
-                            style={inputStyle}
-                          />
-                          <input
-                            type="text"
-                            value={editTitle}
-                            onChange={(e) => setEditTitle(e.target.value)}
-                            placeholder="Judul (opsional)"
-                            style={inputStyle}
-                          />
-                          <textarea
-                            value={editContent}
-                            onChange={(e) => setEditContent(e.target.value)}
-                            rows={10}
-                            style={inputStyle}
-                          />
+                        <div style={{ padding: 12, background: 'var(--bg)', border: '1px solid var(--gold)', borderRadius: 'var(--radius)', marginTop: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <input type="number" step="any" value={editNumber} onChange={(e) => setEditNumber(e.target.value)} placeholder="Nomor chapter" style={inputStyle} />
+                          <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Judul (opsional)" style={inputStyle} />
+                          <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={10} style={inputStyle} />
                           <div style={{ display: 'flex', gap: 8 }}>
                             <button className="btn btn--gold" onClick={() => handleSaveEdit(c.id)} disabled={savingEdit}>
                               <Save size={14} />
@@ -1089,12 +967,7 @@ export default function Admin() {
                   ))}
                 </div>
 
-                <button
-                  className="btn"
-                  onClick={handleDeleteChapters}
-                  disabled={selectedIds.length === 0 || deletingChapters}
-                  style={{ borderColor: '#D46B5B', color: '#D46B5B', justifyContent: 'center' }}
-                >
+                <button className="btn" onClick={handleDeleteChapters} disabled={selectedIds.length === 0 || deletingChapters} style={{ borderColor: '#D46B5B', color: '#D46B5B', justifyContent: 'center' }}>
                   <Trash2 size={16} />
                   {deletingChapters ? 'Menghapus...' : `Hapus ${selectedIds.length} Chapter`}
                 </button>
@@ -1104,7 +977,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* NOVEL TERDAFTAR */}
       <div style={{ marginTop: 40 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
           <h2 style={{ fontSize: '1.2rem' }}>Novel Terdaftar ({novels.length})</h2>
@@ -1115,10 +987,7 @@ export default function Admin() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
                 <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>{n.title}</span>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    onClick={() => (editingNovelId === n.id ? cancelEditNovel() : startEditNovel(n))}
-                    style={{ background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer', padding: 4, display: 'flex' }}
-                  >
+                  <button onClick={() => (editingNovelId === n.id ? cancelEditNovel() : startEditNovel(n))} style={{ background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer', padding: 4, display: 'flex' }}>
                     <Pencil size={14} />
                   </button>
                   <button className="btn" onClick={() => handleDeleteNovel(n.id)} style={{ borderColor: '#D46B5B', color: '#D46B5B', padding: '4px 10px', fontSize: '0.8rem' }}>
@@ -1128,18 +997,7 @@ export default function Admin() {
               </div>
 
               {editingNovelId === n.id && (
-                <div
-                  style={{
-                    padding: 12,
-                    background: 'var(--bg)',
-                    border: '1px solid var(--gold)',
-                    borderRadius: 'var(--radius)',
-                    marginTop: 4,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 8,
-                  }}
-                >
+                <div style={{ padding: 12, background: 'var(--bg)', border: '1px solid var(--gold)', borderRadius: 'var(--radius)', marginTop: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <input type="text" placeholder="Judul novel" value={editNovelTitle} onChange={(e) => setEditNovelTitle(e.target.value)} style={inputStyle} />
                   <input type="text" placeholder="Slug" value={editNovelSlug} onChange={(e) => setEditNovelSlug(e.target.value)} style={inputStyle} />
                   <input type="text" placeholder="Nama author" value={editNovelAuthor} onChange={(e) => setEditNovelAuthor(e.target.value)} style={inputStyle} />
@@ -1169,4 +1027,4 @@ export default function Admin() {
       </div>
     </div>
   )
-                  } 
+                              }
