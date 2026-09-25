@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ShieldCheck, UserCircle2, LogOut, LogIn, Coffee, Menu, X, Settings, Trophy } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
+import { useStreak } from '../lib/StreakContext'
 import GlobalSearch from './GlobalSearch'
 import NotificationBell from './NotificationBell'
 
 export default function Navbar() {
   const { user, isAdmin, signOut, displayName, avatarUrl } = useAuth()
+  const { checkedInToday } = useStreak()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
@@ -137,10 +139,27 @@ export default function Navbar() {
               <button
                 onClick={() => setMenuOpen((v) => !v)}
                 className="btn navbar-icon-btn"
-                style={{ padding: '8px 10px' }}
+                style={{ padding: '8px 10px', position: 'relative' }}
                 title="Menu"
               >
                 {menuOpen ? <X size={18} /> : <Menu size={18} />}
+
+                {!checkedInToday && !menuOpen && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      background: '#D46B5B',
+                      border: '2px solid var(--bg)',
+                      boxShadow: '0 0 8px rgba(212, 107, 91, 0.6)',
+                      animation: 'pulseDot 1.5s ease-in-out infinite',
+                    }}
+                  />
+                )}
               </button>
 
               {menuOpen && (
@@ -221,9 +240,26 @@ export default function Navbar() {
                     </Link>
                   )}
 
-                  <Link to="/profil" style={menuItemStyle} onClick={() => setMenuOpen(false)}>
+                  <Link
+                    to="/profil"
+                    style={menuItemStyle}
+                    onClick={() => setMenuOpen(false)}
+                  >
                     <UserCircle2 size={16} color="var(--gold)" />
                     Profil
+                    {!checkedInToday && (
+                      <span
+                        style={{
+                          marginLeft: 'auto',
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          background: '#D46B5B',
+                          flexShrink: 0,
+                          boxShadow: '0 0 6px rgba(212, 107, 91, 0.6)',
+                        }}
+                      />
+                    )}
                   </Link>
 
                   <Link to="/leaderboard" style={menuItemStyle} onClick={() => setMenuOpen(false)}>
@@ -265,7 +301,11 @@ export default function Navbar() {
             padding: 10px 16px !important;
           }
         }
+        @keyframes pulseDot {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.3); opacity: 0.7; }
+        }
       `}</style>
     </header>
   )
-          }
+                  }
