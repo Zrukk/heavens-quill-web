@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import { AuthProvider } from './lib/AuthContext.jsx'
 import { SettingsProvider } from './lib/SettingsContext.jsx'
+import { StreakProvider } from './lib/StreakContext.jsx'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -11,7 +12,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <AuthProvider>
         <SettingsProvider>
-          <App />
+            <StreakProvider>
+              <App />
+            </StreakProvider>
         </SettingsProvider>
       </AuthProvider>
     </BrowserRouter>
