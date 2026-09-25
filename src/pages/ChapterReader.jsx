@@ -9,34 +9,7 @@ import ShareButton from '../components/ShareButton'
 import BackToTop from '../components/BackToTop'
 import ParagraphComments from '../components/ParagraphComments'
 import { tagParagraphs, getParagraphPreview } from '../lib/paragraphUtils'
-
-async function notifyDiscord({ authorName, novelTitle, chapterNumber, chapterTitle, content, url, isReply }) {
-  const webhookUrl = import.meta.env.VITE_DISCORD_WEBHOOK_URL
-  if (!webhookUrl) return
-  try {
-    await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        embeds: [
-          {
-            title: isReply ? 'Balasan baru' : 'Komentar baru',
-            description: content.length > 300 ? content.slice(0, 300) + '...' : content,
-            url,
-            color: 0xd4af5b,
-            author: { name: authorName },
-            fields: [
-              { name: 'Novel', value: novelTitle, inline: true },
-              { name: 'Chapter', value: `${chapterNumber}${chapterTitle ? ` — ${chapterTitle}` : ''}`, inline: true },
-            ],
-          },
-        ],
-      }),
-    })
-  } catch {
-    // notifikasi gagal gak boleh bikin komentar user gagal kesimpen
-  }
-}
+import { notifyDiscord } from '../lib/notifyDiscord'
 
 export default function ChapterReader() {
   const { slug, number } = useParams()
@@ -298,13 +271,15 @@ export default function ChapterReader() {
       setNewComment('')
       loadComments()
       notifyDiscord({
-        authorName: displayName || user.email,
-        novelTitle: novel.title,
-        chapterNumber: chapter.chapter_number,
-        chapterTitle: chapter.title,
-        content: newComment.trim(),
-        url: `${window.location.origin}/novel/${slug}/chapter/${number}`,
-        isReply: false,
+        type: 'comment',
+        data: {
+          author_name: displayName || user.email,
+          novel_title: novel.title,
+          chapter_number: chapter.chapter_number,
+          chapter_title: chapter.title,
+          content: newComment.trim(),
+          url: `${window.location.origin}/novel/${slug}/chapter/${number}`,
+        },
       })
     }
   }
@@ -330,13 +305,15 @@ export default function ChapterReader() {
       setReplyingTo(null)
       loadComments()
       notifyDiscord({
-        authorName: displayName || user.email,
-        novelTitle: novel.title,
-        chapterNumber: chapter.chapter_number,
-        chapterTitle: chapter.title,
-        content: replyText.trim(),
-        url: `${window.location.origin}/novel/${slug}/chapter/${number}`,
-        isReply: true,
+        type: 'comment_reply',
+        data: {
+          author_name: displayName || user.email,
+          novel_title: novel.title,
+          chapter_number: chapter.chapter_number,
+          chapter_title: chapter.title,
+          content: replyText.trim(),
+          url: `${window.location.origin}/novel/${slug}/chapter/${number}`,
+        },
       })
     }
   }
@@ -371,9 +348,8 @@ export default function ChapterReader() {
         [idx]: (prev[idx] || 0) + 1,
       }
     })
-  }
-
-  if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
+          }
+    if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
   if (!chapter) return <div className="container" style={{ paddingTop: 40 }}>Chapter tidak ditemukan.</div>
 
   const nums = siblings.map((s) => Number(s.chapter_number))
@@ -625,7 +601,6 @@ export default function ChapterReader() {
             margin-bottom: 0.9em;
             cursor: pointer;
           }
-          /* Hover effect cuma di desktop (bukan HP) — biar gak kedip saat scroll di HP */
           @media (hover: hover) and (pointer: fine) {
             .chapter-content p {
               border-radius: 4px;
@@ -638,7 +613,6 @@ export default function ChapterReader() {
               background: rgba(255, 255, 255, 0.04);
             }
           }
-          /* Marker paragraf yang ada komentar */
           .chapter-content p[data-has-comment="true"]::before {
             content: '';
             position: absolute;
@@ -926,4 +900,4 @@ function ParagraphHighlighter({ paragraphCounts }) {
   }, [paragraphCounts])
 
   return null
-            }
+                    }
