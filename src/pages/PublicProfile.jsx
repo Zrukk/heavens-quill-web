@@ -5,10 +5,14 @@ import { supabase } from '../lib/supabase'
 import UserReviews from '../components/UserReviews'
 import LevelBadge from '../components/LevelBadge'
 import UserTitles from '../components/UserTitles'
+import MemberBadge from '../components/MemberBadge'
+import { useMembershipList } from '../lib/useMembershipList'
 
 export default function PublicProfile() {
   const { userId } = useParams()
   const navigate = useNavigate()
+  const { isMember } = useMembershipList()
+
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
@@ -99,7 +103,6 @@ export default function PublicProfile() {
 
   return (
     <div className="container" style={{ paddingTop: 24, paddingBottom: 60, maxWidth: 700 }}>
-      {/* Tombol kembali */}
       <button
         onClick={() => navigate(-1)}
         style={{
@@ -137,7 +140,6 @@ export default function PublicProfile() {
               border: '1px solid var(--border)',
             }}
           >
-            {/* Banner gradient */}
             <div
               style={{
                 height: 120,
@@ -145,7 +147,6 @@ export default function PublicProfile() {
               }}
             />
 
-            {/* Avatar & info */}
             <div
               style={{
                 padding: '0 24px 20px',
@@ -162,28 +163,31 @@ export default function PublicProfile() {
                   height: 100,
                   borderRadius: '50%',
                   background: profile.avatar_url ? `url(${profile.avatar_url}) center/cover` : 'var(--surface)',
-                  border: '4px solid var(--bg)',
+                  border: isMember(userId) ? '4px solid var(--gold)' : '4px solid var(--bg)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: 12,
+                  boxShadow: isMember(userId) ? '0 0 24px rgba(212, 175, 91, 0.4)' : 'none',
                 }}
               >
                 {!profile.avatar_url && <UserCircle2 size={52} color="var(--text-muted)" />}
               </div>
 
-              <h1
-                className="gradient-text"
-                style={{
-                  fontSize: '1.6rem',
-                  marginBottom: 12,
-                  fontWeight: 700,
-                }}
-              >
-                {profile.display_name || 'Pembaca'}
-              </h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+                <h1
+                  className="gradient-text"
+                  style={{
+                    fontSize: '1.6rem',
+                    fontWeight: 700,
+                    margin: 0,
+                  }}
+                >
+                  {profile.display_name || 'Pembaca'}
+                </h1>
+                {isMember(userId) && <MemberBadge size="medium" />}
+              </div>
 
-              {/* LEVEL & TITLE */}
               {!loadingStats && (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                   <LevelBadge totalChapters={stats.chaptersRead} size="medium" />
