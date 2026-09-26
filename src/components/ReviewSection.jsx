@@ -3,9 +3,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Star, Heart, MessageCircle, Reply, Send, Trash2, Pencil, Eye, EyeOff, X, Save, Loader } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
+import MemberBadge from './MemberBadge'
+import { useMembershipList } from '../lib/useMembershipList'
 
 export default function ReviewSection({ novelId, onCountChange, hideTitle = false }) {
   const { user, isAdmin } = useAuth()
+  const { isMember } = useMembershipList()
   const navigate = useNavigate()
 
   const [reviews, setReviews] = useState([])
@@ -452,6 +455,7 @@ function ReviewCard({
   handleDeleteReply,
   loadRepliesForReview,
 }) {
+  const { isMember } = useMembershipList()
   const [replies, setReplies] = useState([])
   const [loadingReplies, setLoadingReplies] = useState(true)
 
@@ -577,21 +581,31 @@ function ReviewCard({
   <div className="card" id={`review-${review.id}`} style={{ padding: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, gap: 8 }}>
         <Link to={`/pembaca/${review.user_id}`} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              flexShrink: 0,
-              background: review.profiles?.avatar_url
-                ? `url(${review.profiles.avatar_url}) center/cover`
-                : 'var(--border)',
-            }}
-          />
-          <div>
-            <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>
-              {review.profiles?.display_name || 'Pembaca'}
-            </div>
+  <div
+    style={{
+      width: 36,
+      height: 36,
+      borderRadius: '50%',
+      flexShrink: 0,
+      background: review.profiles?.avatar_url
+        ? `url(${review.profiles.avatar_url}) center/cover`
+        : 'var(--border)',
+      border: isMember(review.user_id) ? '2px solid var(--gold)' : 'none',
+    }}
+  />
+  <div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+      <span
+        style={{
+          fontSize: '0.9rem',
+          fontWeight: 600,
+          color: isMember(review.user_id) ? 'var(--gold)' : 'var(--text)',
+        }}
+      >
+        {review.profiles?.display_name || 'Pembaca'}
+      </span>
+      {isMember(review.user_id) && <MemberBadge size="small" />}
+    </div>
             <div style={{ display: 'flex', gap: 2, marginTop: 2 }}>
               {[1, 2, 3, 4, 5].map((v) => (
                 <Star
