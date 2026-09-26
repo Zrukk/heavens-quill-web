@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { UserCircle2, KeyRound, BookMarked, Save, Camera, Heart, BarChart3, BookOpen, MessageCircle, Star, Award } from 'lucide-react'
+import { UserCircle2, KeyRound, BookMarked, Save, Camera, Heart, BarChart3, BookOpen, MessageCircle, Star, Award, Crown } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import { supabase } from '../lib/supabase'
 import UserReviews from '../components/UserReviews'
 import LevelBadge from '../components/LevelBadge'
 import UserTitles from '../components/UserTitles'
 import DailyStreakCard from '../components/DailyStreakCard'
+import MemberBadge from '../components/MemberBadge'
+import { useMembership } from '../lib/MembershipContext'
 
 export default function Profile() {
   const { user, displayName, avatarUrl, loading, refreshProfile } = useAuth()
+  const { isMember, membership } = useMembership()
+
   const [nameInput, setNameInput] = useState('')
   const [nameMessage, setNameMessage] = useState(null)
   const [savingName, setSavingName] = useState(false)
@@ -228,7 +232,6 @@ export default function Profile() {
           border: '1px solid var(--border)',
         }}
       >
-        {/* Banner gradient */}
         <div
           style={{
             height: 120,
@@ -237,7 +240,6 @@ export default function Profile() {
           }}
         />
 
-        {/* Avatar & info */}
         <div
           style={{
             padding: '0 24px 20px',
@@ -254,17 +256,17 @@ export default function Profile() {
               height: 100,
               borderRadius: '50%',
               background: avatarUrl ? `url(${avatarUrl}) center/cover` : 'var(--surface)',
-              border: '4px solid var(--bg)',
+              border: isMember ? '4px solid var(--gold)' : '4px solid var(--bg)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: 12,
               position: 'relative',
+              boxShadow: isMember ? '0 0 24px rgba(212, 175, 91, 0.4)' : 'none',
             }}
           >
             {!avatarUrl && <UserCircle2 size={52} color="var(--text-muted)" />}
 
-            {/* Tombol ganti foto (overlay) */}
             <label
               style={{
                 position: 'absolute',
@@ -294,16 +296,20 @@ export default function Profile() {
             </label>
           </div>
 
-          <h1
-            className="gradient-text"
-            style={{
-              fontSize: '1.6rem',
-              marginBottom: 4,
-              fontWeight: 700,
-            }}
-          >
-            {displayName || 'Pembaca'}
-          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <h1
+              className="gradient-text"
+              style={{
+                fontSize: '1.6rem',
+                fontWeight: 700,
+                margin: 0,
+              }}
+            >
+              {displayName || 'Pembaca'}
+            </h1>
+            {isMember && <MemberBadge size="medium" />}
+          </div>
+
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '0 0 12px' }}>
             {user.email}
           </p>
@@ -314,7 +320,6 @@ export default function Profile() {
             </p>
           )}
 
-          {/* Level & Title */}
           {!loadingStats && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
               <LevelBadge totalChapters={stats.chaptersRead} size="large" showProgress />
@@ -323,6 +328,62 @@ export default function Profile() {
           )}
         </div>
       </div>
+
+      {/* MEMBER BANNER */}
+      {isMember && membership && (
+        <div
+          className="card"
+          style={{
+            padding: 16,
+            marginBottom: 16,
+            background: 'linear-gradient(135deg, rgba(212, 175, 91, 0.15), rgba(212, 175, 91, 0.03))',
+            border: '1px solid var(--gold)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                background: 'var(--gold)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#1a1a1a',
+                flexShrink: 0,
+              }}
+            >
+              <Crown size={20} />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--gold)' }}>
+                Member Aktif 👑
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                Berlaku sampai{' '}
+                {new Date(membership.expires_at).toLocaleDateString('id-ID', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })}
+              </div>
+            </div>
+          </div>
+          <Link
+            to="/membership"
+            className="btn btn--gold"
+            style={{ fontSize: '0.8rem', padding: '6px 14px' }}
+          >
+            Kelola
+          </Link>
+        </div>
+      )}
 
       {/* DAILY STREAK */}
       <DailyStreakCard />
@@ -387,11 +448,7 @@ export default function Profile() {
       {/* PENGATURAN AKUN */}
       {sectionHeading(UserCircle2, 'Pengaturan Akun')}
 
-      {/* Nama Tampilan */}
-      <div
-        className="card"
-        style={{ padding: 16, marginBottom: 16 }}
-      >
+      <div className="card" style={{ padding: 16, marginBottom: 16 }}>
         <label
           style={{
             fontSize: '0.8rem',
@@ -425,7 +482,6 @@ export default function Profile() {
         )}
       </div>
 
-      {/* Ganti Password */}
       <div className="card" style={{ padding: 16, marginBottom: 24 }}>
         <label
           style={{
@@ -544,4 +600,4 @@ export default function Profile() {
       </div>
     </div>
   )
-      }
+                                                  }
