@@ -6,6 +6,8 @@ import NovelDetail from './pages/NovelDetail'
 import ChapterReader from './pages/ChapterReader'
 import Login from './pages/Login'
 import Admin from './pages/Admin'
+import AdminMembership from './pages/AdminMembership'
+import Membership from './pages/Membership'
 import Profile from './pages/Profile'
 import PublicProfile from './pages/PublicProfile'
 import AuthorPage from './pages/AuthorPage'
@@ -34,6 +36,8 @@ export default function App() {
             <Route path="/novel/:slug/chapter/:number" element={<ChapterReader />} />
             <Route path="/login" element={<Login />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/admin/membership" element={<AdminMembership />} />
+            <Route path="/membership" element={<Membership />} />
             <Route path="/profil" element={<Profile />} />
             <Route path="/pembaca/:userId" element={<PublicProfile />} />
             <Route path="/author/:slug" element={<AuthorPage />} />
