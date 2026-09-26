@@ -5,6 +5,7 @@ import App from './App.jsx'
 import { AuthProvider } from './lib/AuthContext.jsx'
 import { SettingsProvider } from './lib/SettingsContext.jsx'
 import { StreakProvider } from './lib/StreakContext.jsx'
+import { MembershipProvider } from './lib/MembershipContext.jsx'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -12,9 +13,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <AuthProvider>
         <SettingsProvider>
-            <StreakProvider>
+          <StreakProvider>
+            <MembershipProvider>
               <App />
-            </StreakProvider>
+            </MembershipProvider>
+          </StreakProvider>
         </SettingsProvider>
       </AuthProvider>
     </BrowserRouter>
