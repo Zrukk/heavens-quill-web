@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ShieldCheck, UserCircle2, LogOut, LogIn, Coffee, Menu, X, Settings, Trophy } from 'lucide-react'
+import { ShieldCheck, UserCircle2, LogOut, LogIn, Coffee, Menu, X, Settings, Trophy, Crown } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import { useStreak } from '../lib/StreakContext'
 import GlobalSearch from './GlobalSearch'
@@ -234,11 +234,26 @@ export default function Navbar() {
                   </a>
 
                   {isAdmin && (
-                    <Link to="/admin" style={menuItemStyle} onClick={() => setMenuOpen(false)}>
-                      <ShieldCheck size={16} color="var(--gold)" />
-                      Admin
-                    </Link>
+                    <>
+                      <Link to="/admin" style={menuItemStyle} onClick={() => setMenuOpen(false)}>
+                        <ShieldCheck size={16} color="var(--gold)" />
+                        Admin
+                      </Link>
+                      <Link to="/admin/membership" style={menuItemStyle} onClick={() => setMenuOpen(false)}>
+                        <Crown size={16} color="var(--gold)" />
+                        Kelola Membership
+                      </Link>
+                    </>
                   )}
+
+                  <Link
+                    to="/membership"
+                    style={menuItemStyle}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <Crown size={16} color="var(--gold)" />
+                    Membership
+                  </Link>
 
                   <Link
                     to="/profil"
@@ -308,4 +323,4 @@ export default function Navbar() {
       `}</style>
     </header>
   )
-                  }
+              }
