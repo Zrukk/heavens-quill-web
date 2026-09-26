@@ -2,19 +2,16 @@ import { useEffect } from 'react'
 import { useMembership } from '../lib/MembershipContext'
 
 export default function MonetagAds() {
-  const { isMember, loading, membership } = useMembership()
+  const { isMember, loading } = useMembership()
 
   useEffect(() => {
-    // TUNGGU sampai loading selesai (membership udah dicek)
+    // TUNGGU sampai AuthContext + MembershipContext selesai cek
+    // → biar gak salah load iklan buat member
     if (loading) return
 
-    // Kalau user member aktif → jangan load iklan
+    // Kalau user member aktif → JANGAN load iklan
     if (isMember) {
-      // Hapus script kalau ada (buat user yang baru jadi member)
-      const v = document.getElementById('monetag-vignette')
-      const p = document.getElementById('monetag-push')
-      if (v) v.remove()
-      if (p) p.remove()
+      console.log('🔍 MonetagAds: User adalah member — iklan TIDAK di-load')
       return
     }
 
@@ -23,7 +20,6 @@ export default function MonetagAds() {
 
     console.log('🔍 MonetagAds: Load iklan (user bukan member)')
 
-    // Load Vignette Banner
     const vignetteScript = document.createElement('script')
     vignetteScript.id = 'monetag-vignette'
     vignetteScript.src = 'https://n6wxm.com/vignette.min.js'
@@ -31,7 +27,6 @@ export default function MonetagAds() {
     vignetteScript.async = true
     document.body.appendChild(vignetteScript)
 
-    // Load In-Page Push
     const pushScript = document.createElement('script')
     pushScript.id = 'monetag-push'
     pushScript.src = 'https://nap5k.com/tag.min.js'
