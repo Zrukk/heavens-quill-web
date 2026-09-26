@@ -16,6 +16,7 @@ import NotFound from './pages/NotFound'
 import { About, Contact, Privacy, Rules } from './pages/StaticPages'
 import BackToTop from './components/BackToTop'
 import RouteTransition from './components/RouteTransition'
+import MonetagAds from './components/MonetagAds'
 import { useScrollToAnchor } from './lib/useScrollToAnchor'
 
 export default function App() {
@@ -23,6 +24,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <MonetagAds />
       <Navbar />
       <div style={{ flex: 1 }}>
         <RouteTransition>
