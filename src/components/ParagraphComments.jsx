@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { X, Send, Reply, Loader, MessageCircle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
+import MemberBadge from './MemberBadge'
+import { useMembershipList } from '../lib/useMembershipList'
 
 export default function ParagraphComments({
   chapterId,
@@ -12,6 +14,7 @@ export default function ParagraphComments({
   onCommentAdded,
 }) {
   const { user, isAdmin } = useAuth()
+  const { isMember } = useMembershipList()
   const navigate = useNavigate()
 
   const [comments, setComments] = useState([])
@@ -157,24 +160,32 @@ export default function ParagraphComments({
             }}
           >
             <Link
-              to={`/pembaca/${c.user_id}`}
-              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-            >
-              <div
-                style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: '50%',
-                  flexShrink: 0,
-                  background: c.profiles?.avatar_url
-                    ? `url(${c.profiles.avatar_url}) center/cover`
-                    : 'var(--border)',
-                }}
-              />
-              <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>
-                {c.profiles?.display_name || 'Pembaca'}
-              </span>
-            </Link>
+  to={`/pembaca/${c.user_id}`}
+  style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}
+>
+  <div
+    style={{
+      width: 20,
+      height: 20,
+      borderRadius: '50%',
+      flexShrink: 0,
+      background: c.profiles?.avatar_url
+        ? `url(${c.profiles.avatar_url}) center/cover`
+        : 'var(--border)',
+      border: isMember(c.user_id) ? '2px solid var(--gold)' : 'none',
+    }}
+  />
+  <span
+    style={{
+      fontSize: '0.8rem',
+      fontWeight: 600,
+      color: isMember(c.user_id) ? 'var(--gold)' : 'var(--text)',
+    }}
+  >
+    {c.profiles?.display_name || 'Pembaca'}
+  </span>
+  {isMember(c.user_id) && <MemberBadge size="small" />}
+</Link>
             <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
               {new Date(c.created_at).toLocaleDateString('id-ID', {
                 day: 'numeric',
