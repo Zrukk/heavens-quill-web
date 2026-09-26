@@ -10,10 +10,13 @@ import BackToTop from '../components/BackToTop'
 import ParagraphComments from '../components/ParagraphComments'
 import { tagParagraphs, getParagraphPreview } from '../lib/paragraphUtils'
 import { notifyDiscord } from '../lib/notifyDiscord'
+import MemberBadge from '../components/MemberBadge'
+import { useMembershipList } from '../lib/useMembershipList'
 
 export default function ChapterReader() {
   const { slug, number } = useParams()
   const { user, isAdmin, displayName } = useAuth()
+  const { isMember } = useMembershipList()
   const navigate = useNavigate()
   const [novel, setNovel] = useState(null)
   const [chapter, setChapter] = useState(null)
@@ -383,22 +386,30 @@ export default function ChapterReader() {
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 }}>
-            <Link to={`/pembaca/${comment.user_id}`} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: '50%',
-                  flexShrink: 0,
-                  background: comment.profiles?.avatar_url
-                    ? `url(${comment.profiles.avatar_url}) center/cover`
-                    : 'var(--border)',
-                }}
-              />
-              <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>
-                {comment.profiles?.display_name || 'Pembaca'}
-              </span>
-            </Link>
+            <Link to={`/pembaca/${comment.user_id}`} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+  <div
+    style={{
+      width: 24,
+      height: 24,
+      borderRadius: '50%',
+      flexShrink: 0,
+      background: comment.profiles?.avatar_url
+        ? `url(${comment.profiles.avatar_url}) center/cover`
+        : 'var(--border)',
+      border: isMember(comment.user_id) ? '2px solid var(--gold)' : 'none',
+    }}
+  />
+  <span
+    style={{
+      fontSize: '0.9rem',
+      fontWeight: 600,
+      color: isMember(comment.user_id) ? 'var(--gold)' : 'var(--text)',
+    }}
+  >
+    {comment.profiles?.display_name || 'Pembaca'}
+  </span>
+  {isMember(comment.user_id) && <MemberBadge size="small" />}
+</Link>
             <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
               {new Date(comment.created_at).toLocaleDateString('id-ID', {
                 day: 'numeric',
