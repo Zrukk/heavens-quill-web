@@ -5,60 +5,51 @@ import { useAuth } from './AuthContext'
 const MembershipContext = createContext()
 
 export function MembershipProvider({ children }) {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [membership, setMembership] = useState(null)
   const [isMember, setIsMember] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [checkDone, setCheckDone] = useState(false)
 
   async function checkMembership() {
-  console.log('🔍 MembershipContext: Mulai cek user:', user?.id)
+    // JANGAN cek membership kalau AuthContext masih loading
+    // → biar gak salah anggap user=null sebagai "bukan member"
+    if (authLoading) return
 
-  if (!user) {
-    console.log('❌ Gak ada user — bukan member')
-    setMembership(null)
-    setIsMember(false)
-    setLoading(false)
-    return
-  }
+    if (!user) {
+      setMembership(null)
+      setIsMember(false)
+      setCheckDone(true)
+      return
+    }
 
-  const { data, error } = await supabase
-    .from('memberships')
-    .select('*')
-    .eq('user_id', user.id)
-    .maybeSingle()
+    const { data } = await supabase
+      .from('memberships')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle()
 
-  console.log('📊 Data membership dari Supabase:', data)
-  console.log('📊 Error:', error)
+    if (!data) {
+      setMembership(null)
+      setIsMember(false)
+      setCheckDone(true)
+      return
+    }
 
-  if (!data) {
-    console.log('❌ Gak ada row membership')
-    setMembership(null)
-    setIsMember(false)
-    setLoading(false)
-    return
-  }
+    setMembership(data)
 
-  setMembership(data)
+    const isActive = data.status === 'active'
+    const notExpired = data.expires_at ? new Date(data.expires_at) > new Date() : false
 
-  const isActive = data.status === 'active'
-  const notExpired = data.expires_at ? new Date(data.expires_at) > new Date() : false
-
-  console.log('🔍 Cek status:', {
-    status: data.status,
-    isActive,
-    expires_at: data.expires_at,
-    now: new Date().toISOString(),
-    notExpired,
-    hasil: isActive && notExpired,
-  })
-
-  setIsMember(isActive && notExpired)
-  setLoading(false)
+    setIsMember(isActive && notExpired)
+    setCheckDone(true)
   }
 
   useEffect(() => {
     checkMembership()
-  }, [user])
+  }, [user, authLoading])
+
+  // Loading = true selama AuthContext masih loading ATAU membership belum dicek
+  const loading = authLoading || !checkDone
 
   return (
     <MembershipContext.Provider value={{ membership, isMember, loading, refreshMembership: checkMembership }}>
@@ -71,4 +62,4 @@ export function useMembership() {
   const ctx = useContext(MembershipContext)
   if (!ctx) throw new Error('useMembership must be used within MembershipProvider')
   return ctx
-  }
+}
