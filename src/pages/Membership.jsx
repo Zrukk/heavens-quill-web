@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Star,
+  Coffee,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
@@ -104,7 +105,6 @@ export default function Membership() {
     setSubmitting(true)
     setMessage(null)
 
-    // Upload bukti transfer
     const fileExt = proofFile.name.split('.').pop()
     const fileName = `${user.id}/proof-${Date.now()}.${fileExt}`
 
@@ -124,7 +124,6 @@ export default function Membership() {
 
     const plan = PLANS.find((p) => p.id === selectedPlan)
 
-    // Insert / update membership
     const { error } = await supabase
       .from('memberships')
       .upsert(
@@ -255,6 +254,7 @@ export default function Membership() {
 
   // === KALAU ADA PENDING ===
   const isPending = membership?.status === 'pending'
+  const currentPlan = PLANS.find((p) => p.id === selectedPlan)
 
   return (
     <div className="container" style={{ paddingTop: 40, paddingBottom: 60, maxWidth: 900 }}>
@@ -443,75 +443,75 @@ export default function Membership() {
       </div>
 
       {/* CARA BAYAR */}
-<div className="card" style={{ padding: 20, marginBottom: 24 }}>
-  <h3 style={{ fontSize: '1rem', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-    💳 Cara Bayar
-  </h3>
-  <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.7 }}>
-    <p style={{ marginTop: 0 }}>
-      Bayar langsung lewat <strong style={{ color: 'var(--text)' }}>Sociabuzz</strong>. Klik tombol di bawah,
-      pilih nominal sesuai paket yang kamu pilih, lalu selesaikan pembayaran.
-    </p>
+      <div className="card" style={{ padding: 20, marginBottom: 24 }}>
+        <h3 style={{ fontSize: '1rem', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+          💳 Cara Bayar
+        </h3>
+        <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.7 }}>
+          <p style={{ marginTop: 0 }}>
+            Bayar langsung lewat <strong style={{ color: 'var(--text)' }}>Sociabuzz</strong>. Klik tombol di bawah,
+            pilih nominal sesuai paket yang kamu pilih, lalu selesaikan pembayaran.
+          </p>
 
-    <div
-      style={{
-        padding: 16,
-        background: 'linear-gradient(135deg, rgba(212, 175, 91, 0.1), rgba(212, 175, 91, 0.02))',
-        border: '1px solid var(--gold)',
-        borderRadius: 'var(--radius)',
-        marginBottom: 16,
-        textAlign: 'center',
-      }}
-    >
-      <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 12 }}>
-        Nominal yang perlu dibayar:
+          <div
+            style={{
+              padding: 16,
+              background: 'linear-gradient(135deg, rgba(212, 175, 91, 0.1), rgba(212, 175, 91, 0.02))',
+              border: '1px solid var(--gold)',
+              borderRadius: 'var(--radius)',
+              marginBottom: 16,
+              textAlign: 'center',
+            }}
+          >
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 12 }}>
+              Nominal yang perlu dibayar:
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--gold)', marginBottom: 16 }}>
+              {formatRupiah(currentPlan?.price || 0)}
+            </div>
+            <a
+              href="https://sociabuzz.com/heavensquill/tribe"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn--gold"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '12px 24px',
+                fontSize: '0.95rem',
+                fontWeight: 600,
+              }}
+            >
+              <Coffee size={18} />
+              Bayar via Sociabuzz
+            </a>
+          </div>
+
+          <div
+            style={{
+              padding: 12,
+              background: 'var(--bg)',
+              borderRadius: 'var(--radius)',
+              fontSize: '0.85rem',
+              lineHeight: 1.7,
+            }}
+          >
+            <strong style={{ color: 'var(--text)' }}>📌 Langkah-langkah:</strong>
+            <ol style={{ paddingLeft: 20, margin: '8px 0 0' }}>
+              <li>Klik tombol <strong style={{ color: 'var(--gold)' }}>Bayar via Sociabuzz</strong> di atas.</li>
+              <li>Pilih nominal sesuai paket (<strong style={{ color: 'var(--text)' }}>{formatRupiah(currentPlan?.price || 0)}</strong>).</li>
+              <li>Selesaikan pembayaran (bisa via QRIS, e-wallet, atau kartu).</li>
+              <li><strong style={{ color: 'var(--text)' }}>Screenshot bukti pembayaran</strong>.</li>
+              <li>Upload screenshot-nya di form di bawah.</li>
+            </ol>
+          </div>
+
+          <p style={{ marginBottom: 0, marginTop: 12, fontSize: '0.8rem', fontStyle: 'italic' }}>
+            ⚠️ Pastikan nominal transfer <strong>sesuai</strong> dengan harga paket yang kamu pilih.
+          </p>
+        </div>
       </div>
-      <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--gold)', marginBottom: 16 }}>
-        {formatRupiah(PLANS.find((p) => p.id === selectedPlan)?.price || 0)}
-      </div>
-      <a
-        href="https://sociabuzz.com/heavensquill/tribe"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="btn btn--gold"
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 8,
-          padding: '12px 24px',
-          fontSize: '0.95rem',
-          fontWeight: 600,
-        }}
-      >
-        <Coffee size={18} />
-        Bayar via Sociabuzz
-      </a>
-    </div>
-
-    <div
-      style={{
-        padding: 12,
-        background: 'var(--bg)',
-        borderRadius: 'var(--radius)',
-        fontSize: '0.85rem',
-        lineHeight: 1.7,
-      }}
-    >
-      <strong style={{ color: 'var(--text)' }}>📌 Langkah-langkah:</strong>
-      <ol style={{ paddingLeft: 20, margin: '8px 0 0' }}>
-        <li>Klik tombol <strong style={{ color: 'var(--gold)' }}>Bayar via Sociabuzz</strong> di atas.</li>
-        <li>Pilih nominal sesuai paket (<strong style={{ color: 'var(--text)' }}>{formatRupiah(PLANS.find((p) => p.id === selectedPlan)?.price || 0)}</strong>).</li>
-        <li>Selesaikan pembayaran (bisa via QRIS, e-wallet, atau kartu).</li>
-        <li><strong style={{ color: 'var(--text)' }}>Screenshot bukti pembayaran</strong>.</li>
-        <li>Upload screenshot-nya di form di bawah.</li>
-      </ol>
-    </div>
-
-    <p style={{ marginBottom: 0, marginTop: 12, fontSize: '0.8rem', fontStyle: 'italic' }}>
-      ⚠️ Pastikan nominal transfer <strong>sesuai</strong> dengan harga paket yang kamu pilih.
-    </p>
-  </div>
-</div>
 
       {/* FORM UPLOAD BUKTI */}
       <form onSubmit={handleSubmit} className="card" style={{ padding: 20 }}>
@@ -542,7 +542,7 @@ export default function Membership() {
             Catatan (opsional)
           </label>
           <textarea
-            placeholder="Contoh: Transfer dari BCA a/n Budi, tanggal 26 Sep"
+            placeholder="Contoh: Transfer via Sociabuzz tanggal 26 Sep, a/n Budi"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
@@ -586,4 +586,4 @@ export default function Membership() {
       </form>
     </div>
   )
-                                         }
+                     }
