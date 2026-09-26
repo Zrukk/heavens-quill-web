@@ -11,33 +11,49 @@ export function MembershipProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   async function checkMembership() {
-    if (!user) {
-      setMembership(null)
-      setIsMember(false)
-      setLoading(false)
-      return
-    }
+  console.log('🔍 MembershipContext: Mulai cek user:', user?.id)
 
-    const { data } = await supabase
-      .from('memberships')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle()
-
-    if (!data) {
-      setMembership(null)
-      setIsMember(false)
-      setLoading(false)
-      return
-    }
-
-    setMembership(data)
-
-    const isActive = data.status === 'active'
-    const notExpired = data.expires_at ? new Date(data.expires_at) > new Date() : false
-
-    setIsMember(isActive && notExpired)
+  if (!user) {
+    console.log('❌ Gak ada user — bukan member')
+    setMembership(null)
+    setIsMember(false)
     setLoading(false)
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('memberships')
+    .select('*')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  console.log('📊 Data membership dari Supabase:', data)
+  console.log('📊 Error:', error)
+
+  if (!data) {
+    console.log('❌ Gak ada row membership')
+    setMembership(null)
+    setIsMember(false)
+    setLoading(false)
+    return
+  }
+
+  setMembership(data)
+
+  const isActive = data.status === 'active'
+  const notExpired = data.expires_at ? new Date(data.expires_at) > new Date() : false
+
+  console.log('🔍 Cek status:', {
+    status: data.status,
+    isActive,
+    expires_at: data.expires_at,
+    now: new Date().toISOString(),
+    notExpired,
+    hasil: isActive && notExpired,
+  })
+
+  setIsMember(isActive && notExpired)
+  setLoading(false)
   }
 
   useEffect(() => {
