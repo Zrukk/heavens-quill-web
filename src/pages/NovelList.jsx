@@ -9,6 +9,7 @@ import HeroSection from '../components/HeroSection'
 import LatestUpdates from '../components/LatestUpdates'
 import TopRated from '../components/TopRated'
 import GenreExplore from '../components/GenreExplore'
+import MembershipCTA from '../components/MembershipCTA'
 
 const NOVELS_PER_PAGE = 10
 const STORAGE_KEY = 'hq-last-page'
@@ -132,15 +133,18 @@ export default function NovelList() {
       {/* JELAJAHI GENRE */}
       <GenreExplore />
 
-      {/* UPDATE TERBARU & RATING TERTINGGI - 2 KOLOM */}
-<div className="homepage-duo">
-  <div>
-    <LatestUpdates />
-  </div>
-  <div>
-    <TopRated />
-  </div>
-</div>
+      {/* MEMBERSHIP CTA */}
+      <MembershipCTA />
+
+      {/* UPDATE TERBARU & RATING TERTINGGI */}
+      <div className="homepage-duo">
+        <div>
+          <LatestUpdates />
+        </div>
+        <div>
+          <TopRated />
+        </div>
+      </div>
 
       {/* DAFTAR NOVEL */}
       <div id="daftar-novel" style={{ paddingTop: 24 }}>
@@ -227,19 +231,19 @@ export default function NovelList() {
       {/* CSS untuk layout 2 kolom di desktop */}
       <style>{`
         .homepage-duo {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-@media (min-width: 900px) {
-  .homepage-duo {
-    display: grid;
-    grid-template-columns: 1.4fr 1fr;
-    gap: 24px;
-    align-items: start;
-  }
-}
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+        @media (min-width: 900px) {
+          .homepage-duo {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 24px;
+            align-items: start;
+          }
+        }
       `}</style>
     </div>
   )
-                                       }
+                                           }
