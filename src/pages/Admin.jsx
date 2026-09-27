@@ -431,23 +431,20 @@ if (coverFile) {
     setSavingNovelEdit(true)
 
     let coverUrl
-    if (editNovelCoverFile) {
-      if (editNovelCoverFile.size > 5 * 1024 * 1024) {
-        showMessage('Ukuran gambar maksimal 5MB.', 'error')
-        setSavingNovelEdit(false)
-        return
-      }
-      const fileExt = editNovelCoverFile.name.split('.').pop()
-      const fileName = `${editNovelSlug || 'cover'}-${Date.now()}.${fileExt}`
-      const { error: uploadError } = await supabase.storage.from('covers').upload(fileName, editNovelCoverFile)
-      if (uploadError) {
-        showMessage('Gagal upload gambar: ' + uploadError.message, 'error')
-        setSavingNovelEdit(false)
-        return
-      }
-      const { data: urlData } = supabase.storage.from('covers').getPublicUrl(fileName)
-      coverUrl = urlData.publicUrl
-    }
+if (editNovelCoverFile) {
+  if (editNovelCoverFile.size > 5 * 1024 * 1024) {
+    showMessage('Ukuran gambar maksimal 5MB.', 'error')
+    setSavingNovelEdit(false)
+    return
+  }
+  try {
+    coverUrl = await uploadToBlob(editNovelCoverFile)
+  } catch (err) {
+    showMessage('Gagal upload cover: ' + err.message, 'error')
+    setSavingNovelEdit(false)
+    return
+  }
+}
 
     const updates = {
       title: editNovelTitle,
