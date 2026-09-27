@@ -101,44 +101,42 @@ export default function Profile() {
   }
 
   async function handleAvatarChange(e) {
-    const file = e.target.files[0]
-    if (!file) return
+  async function handleAvatarChange(e) {
+  const file = e.target.files[0]
+  if (!file) return
 
-    if (file.size > 3 * 1024 * 1024) {
-      setAvatarMessage('Ukuran gambar maksimal 3MB.')
-      return
-    }
-
-    setUploadingAvatar(true)
-    setAvatarMessage(null)
-
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${user.id}/avatar-${Date.now()}.${fileExt}`
-
-    const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, file)
-    if (uploadError) {
-      setAvatarMessage('Gagal upload: ' + uploadError.message)
-      setUploadingAvatar(false)
-      return
-    }
-
-    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName)
-
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ avatar_url: urlData.publicUrl })
-      .eq('id', user.id)
-
-    setUploadingAvatar(false)
-
-    if (updateError) {
-      setAvatarMessage('Gagal simpan: ' + updateError.message)
-    } else {
-      setAvatarMessage('Foto profil diperbarui.')
-      refreshProfile()
-    }
+  if (file.size > 3 * 1024 * 1024) {
+    setAvatarMessage('Ukuran gambar maksimal 3MB.')
+    return
   }
 
+  setUploadingAvatar(true)
+  setAvatarMessage(null)
+
+  let avatarUrl
+  try {
+    avatarUrl = await uploadToBlob(file)
+  } catch (err) {
+    setAvatarMessage('Gagal upload: ' + err.message)
+    setUploadingAvatar(false)
+    return
+  }
+
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update({ avatar_url: avatarUrl })
+    .eq('id', user.id)
+
+  setUploadingAvatar(false)
+
+  if (updateError) {
+    setAvatarMessage('Gagal simpan: ' + updateError.message)
+  } else {
+    setAvatarMessage('Foto profil diperbarui.')
+    refreshProfile()
+  }
+  }
+    
   async function handleSaveName(e) {
     e.preventDefault()
     setNameMessage(null)
