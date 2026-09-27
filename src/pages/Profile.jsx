@@ -9,6 +9,7 @@ import UserTitles from '../components/UserTitles'
 import DailyStreakCard from '../components/DailyStreakCard'
 import MemberBadge from '../components/MemberBadge'
 import { useMembership } from '../lib/MembershipContext'
+import { uploadToBlob } from '../lib/upload'
 
 export default function Profile() {
   const { user, displayName, avatarUrl, loading, refreshProfile } = useAuth()
