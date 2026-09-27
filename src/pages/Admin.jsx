@@ -5,6 +5,7 @@ import { useAuth } from '../lib/AuthContext'
 import { supabase } from '../lib/supabase'
 import { fetchAllChapterRows } from '../lib/fetchAllChapterRows'
 import { notifyDiscord } from '../lib/notifyDiscord'
+import { uploadToBlob } from '../lib/upload'
 
 function escapeHtml(str) {
   return str
