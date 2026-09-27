@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useDocumentMeta } from '../lib/useDocumentMeta'
 import { useAuth } from '../lib/AuthContext'
 import NovelCard from '../components/NovelCard'
+import { uploadToBlob } from '../lib/upload'
 
 function slugify(name) {
   const cleaned = name
