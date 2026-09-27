@@ -319,17 +319,15 @@ export default function Admin() {
     }
 
     let coverUrl = null
-    if (coverFile) {
-      const fileExt = coverFile.name.split('.').pop()
-      const fileName = `${slug || 'cover'}-${Date.now()}.${fileExt}`
-      const { error: uploadError } = await supabase.storage.from('covers').upload(fileName, coverFile)
-      if (uploadError) {
-        showMessage('Gagal upload gambar: ' + uploadError.message, 'error')
-        return
-      }
-      const { data: urlData } = supabase.storage.from('covers').getPublicUrl(fileName)
-      coverUrl = urlData.publicUrl
-    }
+    let coverUrl = null
+if (coverFile) {
+  try {
+    coverUrl = await uploadToBlob(coverFile)
+  } catch (err) {
+    showMessage('Gagal upload cover: ' + err.message, 'error')
+    return
+  }
+}
 
     const { data: newNovel, error } = await supabase
       .from('novels')
