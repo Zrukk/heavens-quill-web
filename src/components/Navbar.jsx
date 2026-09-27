@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ShieldCheck, UserCircle2, LogOut, LogIn, Coffee, Menu, X, Settings, Trophy, Crown } from 'lucide-react'
+import { ShieldCheck, UserCircle2, LogOut, LogIn, Coffee, Menu, X, Settings, Trophy, Crown, FileText } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import { useStreak } from '../lib/StreakContext'
 import GlobalSearch from './GlobalSearch'
@@ -246,6 +246,15 @@ export default function Navbar() {
                     </>
                   )}
 
+                  <Link
+                   to="/request"
+                   style={menuItemStyle}
+                   onClick={() => setMenuOpen(false)}
+                >
+                  <FileText size={16} color="var(--gold)" />
+                  Request Translate
+                </Link>
+                  
                   <Link
                     to="/membership"
                     style={menuItemStyle}
