@@ -144,25 +144,18 @@ export default function AuthorPage() {
     setMessage(null)
 
     let avatarUrl = author.avatar_url
+let avatarUrl = author.avatar_url
 
-    // Upload avatar baru kalau ada
-    if (editAvatarFile) {
-      const fileExt = editAvatarFile.name.split('.').pop()
-      const fileName = `author-${author.slug}-${Date.now()}.${fileExt}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, editAvatarFile)
-
-      if (uploadError) {
-        setMessage('Gagal upload gambar: ' + uploadError.message)
-        setSaving(false)
-        return
-      }
-
-      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName)
-      avatarUrl = urlData.publicUrl
-    }
+// Upload avatar baru kalau ada
+if (editAvatarFile) {
+  try {
+    avatarUrl = await uploadToBlob(editAvatarFile)
+  } catch (err) {
+    setMessage('Gagal upload gambar: ' + err.message)
+    setSaving(false)
+    return
+  }
+}
 
     // Update author
     const { error } = await supabase
