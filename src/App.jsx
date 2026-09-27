@@ -8,6 +8,7 @@ import Login from './pages/Login'
 import Admin from './pages/Admin'
 import AdminMembership from './pages/AdminMembership'
 import Membership from './pages/Membership'
+import RequestTranslation from './pages/RequestTranslation'
 import Profile from './pages/Profile'
 import PublicProfile from './pages/PublicProfile'
 import AuthorPage from './pages/AuthorPage'
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/membership" element={<AdminMembership />} />
             <Route path="/membership" element={<Membership />} />
+            <Route path="/request" element={<RequestTranslation />} />
             <Route path="/profil" element={<Profile />} />
             <Route path="/pembaca/:userId" element={<PublicProfile />} />
             <Route path="/author/:slug" element={<AuthorPage />} />
