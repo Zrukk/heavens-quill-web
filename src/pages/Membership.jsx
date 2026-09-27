@@ -17,6 +17,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import { useMembership } from '../lib/MembershipContext'
 import { useDocumentMeta } from '../lib/useDocumentMeta'
+import { uploadToBlob } from '../lib/upload'
 
 const PLANS = [
   {
