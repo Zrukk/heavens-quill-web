@@ -55,11 +55,15 @@ async function uploadEpubImage(zip, chapterPath, src) {
   const ext = compressedBlob ? 'jpg' : normalizedPath.split('.').pop()
   const fileName = `epub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
 
-  const { error } = await supabase.storage.from('chapter-images').upload(fileName, blob)
-  if (error) return { url: null, error: error.message }
+  // Convert blob → File biar bisa pakai uploadToBlob
+  const file = new File([blob], fileName, { type: blob.type || 'image/jpeg' })
 
-  const { data } = supabase.storage.from('chapter-images').getPublicUrl(fileName)
-  return { url: data.publicUrl, error: null }
+  try {
+    const url = await uploadToBlob(file)
+    return { url, error: null }
+  } catch (err) {
+    return { url: null, error: err.message }
+  }
 }
 
 async function parseEpub(file, range) {
