@@ -106,22 +106,15 @@ export default function Membership() {
     setSubmitting(true)
     setMessage(null)
 
-    const fileExt = proofFile.name.split('.').pop()
-    const fileName = `${user.id}/proof-${Date.now()}.${fileExt}`
-
-    const { error: uploadError } = await supabase.storage
-      .from('payment-proofs')
-      .upload(fileName, proofFile)
-
-    if (uploadError) {
+    // Upload bukti transfer ke Upstash Blob
+    let proofUrl
+    try {
+      proofUrl = await uploadToBlob(proofFile)
+    } catch (err) {
       setSubmitting(false)
-      setMessage('Gagal upload bukti: ' + uploadError.message)
+      setMessage('Gagal upload bukti: ' + err.message)
       return
     }
-
-    const { data: urlData } = supabase.storage
-      .from('payment-proofs')
-      .getPublicUrl(fileName)
 
     const plan = PLANS.find((p) => p.id === selectedPlan)
 
@@ -133,7 +126,7 @@ export default function Membership() {
           plan: selectedPlan,
           status: 'pending',
           amount: plan.price,
-          payment_proof_url: urlData.publicUrl,
+          payment_proof_url: proofUrl,
           notes: notes.trim() || null,
           updated_at: new Date().toISOString(),
         },
@@ -587,4 +580,4 @@ export default function Membership() {
       </form>
     </div>
   )
-                     }
+    }
