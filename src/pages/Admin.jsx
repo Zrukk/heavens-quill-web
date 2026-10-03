@@ -368,429 +368,429 @@ export default function Admin() {
         notifyDiscord({ type: 'new_novel', data: newNovel })
       }
     }
-  }
-
+                                           }
   async function handleAddChapter(e) {
-    e.preventDefault()
-    setMessage(null)
+  e.preventDefault()
+  setMessage(null)
 
-    const htmlContent = content
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line) => `<p>${escapeHtml(line)}</p>`)
-      .join('\n')
+  const htmlContent = content
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => `<p>${escapeHtml(line)}</p>`)
+    .join('\n')
 
-    const { error } = await supabase.from('chapters').insert({
-      novel_id: selectedNovel,
-      chapter_number: Number(chapterNumber),
-      title: chapterTitle || null,
-      content: htmlContent,
-    })
+  const { error } = await supabase.from('chapters').insert({
+    novel_id: selectedNovel,
+    chapter_number: Number(chapterNumber),
+    title: chapterTitle || null,
+    content: htmlContent,
+  })
 
-    if (error) {
-      showMessage(error.message, 'error')
-    } else {
-      showMessage('Chapter berhasil ditambahkan.', 'success')
-      setChapterNumber('')
-      setChapterTitle('')
-      setContent('')
+  if (error) {
+    showMessage(error.message, 'error')
+  } else {
+    showMessage('Chapter berhasil ditambahkan.', 'success')
+    setChapterNumber('')
+    setChapterTitle('')
+    setContent('')
 
-      const novelInfo = novels.find((n) => n.id === selectedNovel)
-      if (novelInfo) {
-        notifyDiscord({
-          type: 'new_chapter',
-          data: {
-            novel_title: novelInfo.title,
-            novel_slug: novelInfo.slug,
-            cover_url: novelInfo.cover_url,
-            chapter_number: chapterNumber,
-            chapter_title: chapterTitle,
-          },
-        })
-      }
+    const novelInfo = novels.find((n) => n.id === selectedNovel)
+    if (novelInfo) {
+      notifyDiscord({
+        type: 'new_chapter',
+        data: {
+          novel_title: novelInfo.title,
+          novel_slug: novelInfo.slug,
+          cover_url: novelInfo.cover_url,
+          chapter_number: chapterNumber,
+          chapter_title: chapterTitle,
+        },
+      })
+    }
+  }
+}
+
+async function handleDeleteNovel(id) {
+  if (!confirm('Hapus novel ini beserta semua chapternya?')) return
+  await supabase.from('novels').delete().eq('id', id)
+  loadNovels()
+}
+
+function startEditNovel(novel) {
+  setEditingNovelId(novel.id)
+  setEditNovelTitle(novel.title)
+  setEditNovelSlug(novel.slug)
+  setEditNovelAuthor(novel.author || '')
+  setEditNovelTranslator(novel.translator || '')
+  setEditNovelGenre(novel.genre || '')
+  setEditNovelSynopsis(novel.synopsis || '')
+  setEditNovelLanguage(novel.original_language || '')
+  setEditNovelStatus(novel.status || 'ongoing')
+  setEditNovelCoverFile(null)
+}
+
+function cancelEditNovel() {
+  setEditingNovelId(null)
+}
+
+async function handleSaveNovelEdit(novelId) {
+  setSavingNovelEdit(true)
+
+  let coverUrl
+  if (editNovelCoverFile) {
+    if (editNovelCoverFile.size > 5 * 1024 * 1024) {
+      showMessage('Ukuran gambar maksimal 5MB.', 'error')
+      setSavingNovelEdit(false)
+      return
+    }
+    try {
+      coverUrl = await uploadToBlob(editNovelCoverFile)
+    } catch (err) {
+      showMessage('Gagal upload cover: ' + err.message, 'error')
+      setSavingNovelEdit(false)
+      return
     }
   }
 
-  async function handleDeleteNovel(id) {
-    if (!confirm('Hapus novel ini beserta semua chapternya?')) return
-    await supabase.from('novels').delete().eq('id', id)
+  const updates = {
+    title: editNovelTitle,
+    slug: editNovelSlug,
+    author: editNovelAuthor || null,
+    translator: editNovelTranslator || null,
+    genre: editNovelGenre || null,
+    synopsis: editNovelSynopsis,
+    original_language: editNovelLanguage,
+    status: editNovelStatus,
+  }
+  if (coverUrl) updates.cover_url = coverUrl
+
+  const { error } = await supabase.from('novels').update(updates).eq('id', novelId)
+  setSavingNovelEdit(false)
+
+  if (error) {
+    showMessage('Gagal simpan perubahan novel: ' + error.message, 'error')
+  } else {
+    showMessage('Novel berhasil diupdate.', 'success')
+    setEditingNovelId(null)
     loadNovels()
   }
+}
 
-  function startEditNovel(novel) {
-    setEditingNovelId(novel.id)
-    setEditNovelTitle(novel.title)
-    setEditNovelSlug(novel.slug)
-    setEditNovelAuthor(novel.author || '')
-    setEditNovelTranslator(novel.translator || '')
-    setEditNovelGenre(novel.genre || '')
-    setEditNovelSynopsis(novel.synopsis || '')
-    setEditNovelLanguage(novel.original_language || '')
-    setEditNovelStatus(novel.status || 'ongoing')
-    setEditNovelCoverFile(null)
+function handleEpubFileSelect(e) {
+  const file = e.target.files[0]
+  setEpubFile(file)
+  setEpubTotal(null)
+  setMessage(file ? `File dipilih: ${file.name}. Atur range chapter di bawah, lalu klik "Proses Range Ini".` : null)
+}
+
+async function handleProcessEpubRange() {
+  if (!epubFile) {
+    showMessage('Pilih file epub dulu.', 'error')
+    return
   }
-
-  function cancelEditNovel() {
-    setEditingNovelId(null)
-  }
-
-  async function handleSaveNovelEdit(novelId) {
-    setSavingNovelEdit(true)
-
-    let coverUrl
-    if (editNovelCoverFile) {
-      if (editNovelCoverFile.size > 5 * 1024 * 1024) {
-        showMessage('Ukuran gambar maksimal 5MB.', 'error')
-        setSavingNovelEdit(false)
-        return
-      }
-      try {
-        coverUrl = await uploadToBlob(editNovelCoverFile)
-      } catch (err) {
-        showMessage('Gagal upload cover: ' + err.message, 'error')
-        setSavingNovelEdit(false)
-        return
-      }
-    }
-
-    const updates = {
-      title: editNovelTitle,
-      slug: editNovelSlug,
-      author: editNovelAuthor || null,
-      translator: editNovelTranslator || null,
-      genre: editNovelGenre || null,
-      synopsis: editNovelSynopsis,
-      original_language: editNovelLanguage,
-      status: editNovelStatus,
-    }
-    if (coverUrl) updates.cover_url = coverUrl
-
-    const { error } = await supabase.from('novels').update(updates).eq('id', novelId)
-    setSavingNovelEdit(false)
-
-    if (error) {
-      showMessage('Gagal simpan perubahan novel: ' + error.message, 'error')
-    } else {
-      showMessage('Novel berhasil diupdate.', 'success')
-      setEditingNovelId(null)
-      loadNovels()
-    }
-  }
-
-  function handleEpubFileSelect(e) {
-    const file = e.target.files[0]
-    setEpubFile(file)
-    setEpubTotal(null)
-    setMessage(file ? `File dipilih: ${file.name}. Atur range chapter di bawah, lalu klik "Proses Range Ini".` : null)
-  }
-
-  async function handleProcessEpubRange() {
-    if (!epubFile) {
-      showMessage('Pilih file epub dulu.', 'error')
-      return
-    }
-    showMessage('Membaca epub...', 'info')
-    try {
-      const range = {}
-      if (epubRangeStart) range.start = Number(epubRangeStart)
-      if (epubRangeEnd) range.end = Number(epubRangeEnd)
-      const { chapters, imageErrors, totalInEpub } = await parseEpub(epubFile, range)
-      setEpubTotal(totalInEpub)
-      applyParsed(chapters)
-      let msg = `${chapters.length} chapter diproses (total item di epub ini: ${totalInEpub}). Cek & sesuaikan nomor di bawah sebelum import.`
-      if (imageErrors.length > 0) {
-        const uniqueErrors = [...new Set(imageErrors)].slice(0, 3)
-        msg += ` ⚠️ ${imageErrors.length} gambar gagal diupload — ${uniqueErrors.join(' | ')}`
-      }
-      showMessage(msg, imageErrors.length > 0 ? 'error' : 'success')
-    } catch (err) {
-      showMessage('Gagal baca epub: ' + err.message, 'error')
-    }
-  }
-
-  function handleParseBulk() {
-    const chapters = parseBulkText(bulkText)
+  showMessage('Membaca epub...', 'info')
+  try {
+    const range = {}
+    if (epubRangeStart) range.start = Number(epubRangeStart)
+    if (epubRangeEnd) range.end = Number(epubRangeEnd)
+    const { chapters, imageErrors, totalInEpub } = await parseEpub(epubFile, range)
+    setEpubTotal(totalInEpub)
     applyParsed(chapters)
-    showMessage(`${chapters.length} chapter terdeteksi. Cek & sesuaikan nomor di bawah sebelum import.`, 'success')
-  }
-
-  function extractChapterInfo(rawTitle, fallbackNumber) {
-    const match = (rawTitle || '').match(/^(chapter|bab)\s*(\d+(?:\.\d+)?)\s*[:\-–—.]?\s*(.*)$/i)
-    if (match) {
-      return { number: Number(match[2]), title: match[3].trim() }
+    let msg = `${chapters.length} chapter diproses (total item di epub ini: ${totalInEpub}). Cek & sesuaikan nomor di bawah sebelum import.`
+    if (imageErrors.length > 0) {
+      const uniqueErrors = [...new Set(imageErrors)].slice(0, 3)
+      msg += ` ⚠️ ${imageErrors.length} gambar gagal diupload — ${uniqueErrors.join(' | ')}`
     }
-    return { number: fallbackNumber, title: (rawTitle || '').trim() }
+    showMessage(msg, imageErrors.length > 0 ? 'error' : 'success')
+  } catch (err) {
+    showMessage('Gagal baca epub: ' + err.message, 'error')
   }
+}
 
-  function applyParsed(chapters) {
-    setParsedChapters(
-      chapters.map((c, i) => {
-        const { number, title } = extractChapterInfo(c.title, i + 1)
-        return {
-          checked: true,
-          number,
-          title,
-          content: c.content,
-        }
-      }),
-    )
+function handleParseBulk() {
+  const chapters = parseBulkText(bulkText)
+  applyParsed(chapters)
+  showMessage(`${chapters.length} chapter terdeteksi. Cek & sesuaikan nomor di bawah sebelum import.`, 'success')
+}
+
+function extractChapterInfo(rawTitle, fallbackNumber) {
+  const match = (rawTitle || '').match(/^(chapter|bab)\s*(\d+(?:\.\d+)?)\s*[:\-–—.]?\s*(.*)$/i)
+  if (match) {
+    return { number: Number(match[2]), title: match[3].trim() }
   }
+  return { number: fallbackNumber, title: (rawTitle || '').trim() }
+}
 
-  function updateParsed(index, field, value) {
-    setParsedChapters((prev) => prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)))
-  }
-
-  async function handleImport() {
-    if (!importNovel) {
-      showMessage('Pilih novel tujuan dulu.', 'error')
-      return
-    }
-    const toImport = parsedChapters.filter((c) => c.checked)
-    if (toImport.length === 0) return
-
-    setImporting(true)
-
-    const rows = toImport.map((c) => ({
-      novel_id: importNovel,
-      chapter_number: Number(c.number),
-      title: c.title || null,
-      content: c.content,
-    }))
-
-    const { data, error } = await supabase.from('chapters').insert(rows).select()
-
-    setImporting(false)
-
-    if (error) {
-      showMessage(`Import gagal: ${error.message}`, 'error')
-    } else {
-      showMessage(`${data.length} chapter berhasil diimport.`, 'success')
-      setParsedChapters([])
-
-      const novelInfo = novels.find((n) => n.id === importNovel)
-      if (novelInfo) {
-        notifyDiscord({
-          type: 'bulk_import',
-          data: {
-            novel_title: novelInfo.title,
-            novel_slug: novelInfo.slug,
-            count: data.length,
-          },
-        })
+function applyParsed(chapters) {
+  setParsedChapters(
+    chapters.map((c, i) => {
+      const { number, title } = extractChapterInfo(c.title, i + 1)
+      return {
+        checked: true,
+        number,
+        title,
+        content: c.content,
       }
-    }
-      }
-    if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
-  if (!user) return <div className="container" style={{ paddingTop: 40 }}>Silakan masuk dulu.</div>
-  if (!isAdmin) return <div className="container" style={{ paddingTop: 40 }}>Akun ini bukan admin.</div>
-
-  const inputStyle = {
-    padding: 10,
-    background: 'var(--surface)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius)',
-    fontFamily: 'inherit',
-    width: '100%',
-    fontSize: '0.9rem',
-  }
-
-  const labelStyle = {
-    display: 'block',
-    color: 'var(--text-muted)',
-    fontSize: '0.8rem',
-    marginBottom: 6,
-    fontWeight: 600,
-  }
-
-  const TabButton = ({ id, icon, label }) => (
-    <button
-      onClick={() => { setTab(id); setMessage(null) }}
-      className={tab === id ? 'btn btn--gold' : 'btn'}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
-        fontSize: '0.85rem',
-        padding: '10px 16px',
-      }}
-    >
-      {icon}
-      {label}
-    </button>
+    }),
   )
+}
 
-  const MessageBanner = () => {
-    if (!message) return null
-    const colors = {
-      info: { bg: 'rgba(91, 168, 212, 0.1)', border: '#5BA8D4', color: '#5BA8D4', icon: <Info size={16} /> },
-      success: { bg: 'rgba(91, 191, 138, 0.1)', border: '#5BBF8A', color: '#5BBF8A', icon: <CheckCircle2 size={16} /> },
-      error: { bg: 'rgba(212, 107, 91, 0.1)', border: '#D46B5B', color: '#D46B5B', icon: <AlertCircle size={16} /> },
-    }
-    const c = colors[messageType] || colors.info
+function updateParsed(index, field, value) {
+  setParsedChapters((prev) => prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)))
+}
 
-    return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 10,
-          padding: 12,
-          marginBottom: 20,
-          background: c.bg,
-          border: `1px solid ${c.border}`,
-          borderRadius: 'var(--radius)',
-          color: c.color,
-          fontSize: '0.85rem',
-        }}
-      >
-        <span style={{ flexShrink: 0, marginTop: 2 }}>{c.icon}</span>
-        <span style={{ flex: 1 }}>{message}</span>
-        <button
-          onClick={() => setMessage(null)}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: c.color,
-            cursor: 'pointer',
-            padding: 0,
-            display: 'flex',
-          }}
-        >
-          <X size={14} />
-        </button>
-      </div>
-    )
+async function handleImport() {
+  if (!importNovel) {
+    showMessage('Pilih novel tujuan dulu.', 'error')
+    return
   }
+  const toImport = parsedChapters.filter((c) => c.checked)
+  if (toImport.length === 0) return
+
+  setImporting(true)
+
+  const rows = toImport.map((c) => ({
+    novel_id: importNovel,
+    chapter_number: Number(c.number),
+    title: c.title || null,
+    content: c.content,
+  }))
+
+  const { data, error } = await supabase.from('chapters').insert(rows).select()
+
+  setImporting(false)
+
+  if (error) {
+    showMessage(`Import gagal: ${error.message}`, 'error')
+  } else {
+    showMessage(`${data.length} chapter berhasil diimport.`, 'success')
+    setParsedChapters([])
+
+    const novelInfo = novels.find((n) => n.id === importNovel)
+    if (novelInfo) {
+      notifyDiscord({
+        type: 'bulk_import',
+        data: {
+          novel_title: novelInfo.title,
+          novel_slug: novelInfo.slug,
+          count: data.length,
+        },
+      })
+    }
+  }
+}
+
+if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
+if (!user) return <div className="container" style={{ paddingTop: 40 }}>Silakan masuk dulu.</div>
+if (!isAdmin) return <div className="container" style={{ paddingTop: 40 }}>Akun ini bukan admin.</div>
+
+const inputStyle = {
+  padding: 10,
+  background: 'var(--surface)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius)',
+  fontFamily: 'inherit',
+  width: '100%',
+  fontSize: '0.9rem',
+}
+
+const labelStyle = {
+  display: 'block',
+  color: 'var(--text-muted)',
+  fontSize: '0.8rem',
+  marginBottom: 6,
+  fontWeight: 600,
+}
+
+const TabButton = ({ id, icon, label }) => (
+  <button
+    onClick={() => { setTab(id); setMessage(null) }}
+    className={tab === id ? 'btn btn--gold' : 'btn'}
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      fontSize: '0.85rem',
+      padding: '10px 16px',
+    }}
+  >
+    {icon}
+    {label}
+  </button>
+)
+
+const MessageBanner = () => {
+  if (!message) return null
+  const colors = {
+    info: { bg: 'rgba(91, 168, 212, 0.1)', border: '#5BA8D4', color: '#5BA8D4', icon: <Info size={16} /> },
+    success: { bg: 'rgba(91, 191, 138, 0.1)', border: '#5BBF8A', color: '#5BBF8A', icon: <CheckCircle2 size={16} /> },
+    error: { bg: 'rgba(212, 107, 91, 0.1)', border: '#D46B5B', color: '#D46B5B', icon: <AlertCircle size={16} /> },
+  }
+  const c = colors[messageType] || colors.info
 
   return (
-    <div className="container" style={{ paddingTop: 32, paddingBottom: 60, maxWidth: 800 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-        <h1 className="gradient-text" style={{ fontSize: '1.8rem' }}>Admin Dashboard</h1>
-      </div>
-      <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: '0.9rem' }}>
-        Kelola novel, chapter, dan import massal.
-      </p>
-
-      <div
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 10,
+        padding: 12,
+        marginBottom: 20,
+        background: c.bg,
+        border: `1px solid ${c.border}`,
+        borderRadius: 'var(--radius)',
+        color: c.color,
+        fontSize: '0.85rem',
+      }}
+    >
+      <span style={{ flexShrink: 0, marginTop: 2 }}>{c.icon}</span>
+      <span style={{ flex: 1 }}>{message}</span>
+      <button
+        onClick={() => setMessage(null)}
         style={{
+          background: 'none',
+          border: 'none',
+          color: c.color,
+          cursor: 'pointer',
+          padding: 0,
           display: 'flex',
-          gap: 8,
-          marginBottom: 24,
-          flexWrap: 'wrap',
-          paddingBottom: 16,
-          borderBottom: '1px solid var(--border)',
         }}
       >
-        <TabButton id="novel" icon={<BookPlus size={16} />} label="Tambah Novel" />
-        <TabButton id="chapter" icon={<FilePlus2 size={16} />} label="Tambah Chapter" />
-        <TabButton id="import" icon={<UploadCloud size={16} />} label="Import Massal" />
-        <TabButton id="manage" icon={<ListChecks size={16} />} label="Kelola Chapter" />
+        <X size={14} />
+      </button>
+    </div>
+  )
+}
+
+return (
+  <div className="container" style={{ paddingTop: 32, paddingBottom: 60, maxWidth: 800 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+      <h1 className="gradient-text" style={{ fontSize: '1.8rem' }}>Admin Dashboard</h1>
+    </div>
+    <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: '0.9rem' }}>
+      Kelola novel, chapter, dan import massal.
+    </p>
+
+    <div
+      style={{
+        display: 'flex',
+        gap: 8,
+        marginBottom: 24,
+        flexWrap: 'wrap',
+        paddingBottom: 16,
+        borderBottom: '1px solid var(--border)',
+      }}
+    >
+      <TabButton id="novel" icon={<BookPlus size={16} />} label="Tambah Novel" />
+      <TabButton id="chapter" icon={<FilePlus2 size={16} />} label="Tambah Chapter" />
+      <TabButton id="import" icon={<UploadCloud size={16} />} label="Import Massal" />
+      <TabButton id="manage" icon={<ListChecks size={16} />} label="Kelola Chapter" />
+      <TabButton id="manageNovel" icon={<Pencil size={16} />} label="Kelola Novel" />
+    </div>
+
+    <MessageBanner />
+
+    {tab === 'novel' && (
+      <div className="card" style={{ padding: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(212, 175, 91, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <BookPlus size={18} color="var(--gold)" />
+          </div>
+          <div>
+            <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 2 }}>Tambah Novel Baru</h2>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>Isi data novel yang mau ditambahkan</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleAddNovel} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={labelStyle}>Judul Novel *</label>
+            <input type="text" placeholder="Contoh: Lord of the Mysteries" value={title} onChange={(e) => setTitle(e.target.value)} required />
+          </div>
+          <div>
+            <label style={labelStyle}>Slug (URL) *</label>
+            <input type="text" placeholder="Contoh: lord-of-the-mysteries" value={slug} onChange={(e) => setSlug(e.target.value)} required />
+          </div>
+          <div>
+            <label style={labelStyle}>Nama Author</label>
+            <input type="text" placeholder="Penulis asli (opsional)" value={author} onChange={(e) => setAuthor(e.target.value)} />
+          </div>
+          <div>
+            <label style={labelStyle}>Nama Penerjemah</label>
+            <input type="text" placeholder="Yang nerjemahin (opsional)" value={translator} onChange={(e) => setTranslator(e.target.value)} />
+          </div>
+          <div>
+            <label style={labelStyle}>Genre</label>
+            <input type="text" placeholder="Pisah pakai koma (Action, Fantasy, Romance)" value={genre} onChange={(e) => setGenre(e.target.value)} />
+          </div>
+          <div>
+            <label style={labelStyle}>Sinopsis</label>
+            <textarea placeholder="Ringkasan cerita..." value={synopsis} onChange={(e) => setSynopsis(e.target.value)} rows={5} style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>Cover (opsional, maks 5MB)</label>
+            <input type="file" accept="image/*" onChange={(e) => setCoverFile(e.target.files[0])} />
+          </div>
+          <div>
+            <label style={labelStyle}>Bahasa Asli</label>
+            <input type="text" placeholder="Contoh: Chinese, Japanese, Korean" value={language} onChange={(e) => setLanguage(e.target.value)} />
+          </div>
+          <div>
+            <label style={labelStyle}>Status</label>
+            <select value={status} onChange={(e) => setStatus(e.target.value)} style={inputStyle}>
+              <option value="ongoing">Berjalan</option>
+              <option value="completed">Tamat</option>
+            </select>
+          </div>
+          <button type="submit" className="btn btn--gold" style={{ justifyContent: 'center' }}>
+            <Save size={16} />
+            Simpan Novel
+          </button>
+        </form>
       </div>
+    )}
 
-      <MessageBanner />
-
-      {tab === 'novel' && (
-        <div className="card" style={{ padding: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(212, 175, 91, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <BookPlus size={18} color="var(--gold)" />
-            </div>
-            <div>
-              <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 2 }}>Tambah Novel Baru</h2>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>Isi data novel yang mau ditambahkan</p>
-            </div>
+    {tab === 'chapter' && (
+      <div className="card" style={{ padding: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(212, 175, 91, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <FilePlus2 size={18} color="var(--gold)" />
           </div>
-
-          <form onSubmit={handleAddNovel} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div>
-              <label style={labelStyle}>Judul Novel *</label>
-              <input type="text" placeholder="Contoh: Lord of the Mysteries" value={title} onChange={(e) => setTitle(e.target.value)} required />
-            </div>
-            <div>
-              <label style={labelStyle}>Slug (URL) *</label>
-              <input type="text" placeholder="Contoh: lord-of-the-mysteries" value={slug} onChange={(e) => setSlug(e.target.value)} required />
-            </div>
-            <div>
-              <label style={labelStyle}>Nama Author</label>
-              <input type="text" placeholder="Penulis asli (opsional)" value={author} onChange={(e) => setAuthor(e.target.value)} />
-            </div>
-            <div>
-              <label style={labelStyle}>Nama Penerjemah</label>
-              <input type="text" placeholder="Yang nerjemahin (opsional)" value={translator} onChange={(e) => setTranslator(e.target.value)} />
-            </div>
-            <div>
-              <label style={labelStyle}>Genre</label>
-              <input type="text" placeholder="Pisah pakai koma (Action, Fantasy, Romance)" value={genre} onChange={(e) => setGenre(e.target.value)} />
-            </div>
-            <div>
-              <label style={labelStyle}>Sinopsis</label>
-              <textarea placeholder="Ringkasan cerita..." value={synopsis} onChange={(e) => setSynopsis(e.target.value)} rows={5} style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Cover (opsional, maks 5MB)</label>
-              <input type="file" accept="image/*" onChange={(e) => setCoverFile(e.target.files[0])} />
-            </div>
-            <div>
-              <label style={labelStyle}>Bahasa Asli</label>
-              <input type="text" placeholder="Contoh: Chinese, Japanese, Korean" value={language} onChange={(e) => setLanguage(e.target.value)} />
-            </div>
-            <div>
-              <label style={labelStyle}>Status</label>
-              <select value={status} onChange={(e) => setStatus(e.target.value)} style={inputStyle}>
-                <option value="ongoing">Berjalan</option>
-                <option value="completed">Tamat</option>
-              </select>
-            </div>
-            <button type="submit" className="btn btn--gold" style={{ justifyContent: 'center' }}>
-              <Save size={16} />
-              Simpan Novel
-            </button>
-          </form>
-        </div>
-      )}
-
-      {tab === 'chapter' && (
-        <div className="card" style={{ padding: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(212, 175, 91, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <FilePlus2 size={18} color="var(--gold)" />
-            </div>
-            <div>
-              <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 2 }}>Tambah Chapter</h2>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>Tambah 1 chapter manual ke novel</p>
-            </div>
+          <div>
+            <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 2 }}>Tambah Chapter</h2>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>Tambah 1 chapter manual ke novel</p>
           </div>
-
-          <form onSubmit={handleAddChapter} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div>
-              <label style={labelStyle}>Pilih Novel *</label>
-              <select value={selectedNovel} onChange={(e) => setSelectedNovel(e.target.value)} required style={inputStyle}>
-                <option value="">-- Pilih novel --</option>
-                {novels.map((n) => <option key={n.id} value={n.id}>{n.title}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>Nomor Chapter *</label>
-              <input type="number" step="any" placeholder="Contoh: 1" value={chapterNumber} onChange={(e) => setChapterNumber(e.target.value)} required />
-            </div>
-            <div>
-              <label style={labelStyle}>Judul Chapter</label>
-              <input type="text" placeholder="Opsional" value={chapterTitle} onChange={(e) => setChapterTitle(e.target.value)} />
-            </div>
-            <div>
-              <label style={labelStyle}>Isi Chapter *</label>
-              <textarea placeholder="Tulis isi chapter di sini. Tiap paragraf pisah dengan enter." value={content} onChange={(e) => setContent(e.target.value)} rows={15} required style={inputStyle} />
-            </div>
-            <button type="submit" className="btn btn--gold" style={{ justifyContent: 'center' }}>
-              <Save size={16} />
-              Simpan Chapter
-            </button>
-          </form>
         </div>
-      )}
 
-      {tab === 'import' && (
+        <form onSubmit={handleAddChapter} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={labelStyle}>Pilih Novel *</label>
+            <select value={selectedNovel} onChange={(e) => setSelectedNovel(e.target.value)} required style={inputStyle}>
+              <option value="">-- Pilih novel --</option>
+              {novels.map((n) => <option key={n.id} value={n.id}>{n.title}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={labelStyle}>Nomor Chapter *</label>
+            <input type="number" step="any" placeholder="Contoh: 1" value={chapterNumber} onChange={(e) => setChapterNumber(e.target.value)} required />
+          </div>
+          <div>
+            <label style={labelStyle}>Judul Chapter</label>
+            <input type="text" placeholder="Opsional" value={chapterTitle} onChange={(e) => setChapterTitle(e.target.value)} />
+          </div>
+          <div>
+            <label style={labelStyle}>Isi Chapter *</label>
+            <textarea placeholder="Tulis isi chapter di sini. Tiap paragraf pisah dengan enter." value={content} onChange={(e) => setContent(e.target.value)} rows={15} required style={inputStyle} />
+          </div>
+          <button type="submit" className="btn btn--gold" style={{ justifyContent: 'center' }}>
+            <Save size={16} />
+            Simpan Chapter
+          </button>
+        </form>
+      </div>
+    )}
+          {tab === 'import' && (
         <div className="card" style={{ padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
             <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(212, 175, 91, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -954,4 +954,119 @@ export default function Admin() {
                         <span style={{ flex: 1, cursor: 'pointer' }} onClick={() => toggleSelect(c.id)}>
                           Chapter {c.chapter_number}{c.title ? ` — ${c.title}` : ''}
                         </span>
-                        <button onClick={() => (editingChapterId === c.id ? cancelEdit() : startEdit(c))} style={{ background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer', padding
+                        <button
+                          onClick={() => (editingChapterId === c.id ? cancelEdit() : startEdit(c))}
+                          style={{ background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer', padding: 6 }}
+                          title="Edit"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Hapus chapter ${c.chapter_number}?`)) return
+                            await supabase.from('chapters').delete().eq('id', c.id)
+                            loadManageChapters(manageNovel)
+                          }}
+                          style={{ background: 'none', border: 'none', color: '#D46B5B', cursor: 'pointer', padding: 6 }}
+                          title="Hapus"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                      {editingChapterId === c.id && (
+                        <div style={{ padding: 12, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', marginTop: 4, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                          <input type="number" step="any" value={editNumber} onChange={(e) => setEditNumber(e.target.value)} style={inputStyle} placeholder="Nomor chapter" />
+                          <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} style={inputStyle} placeholder="Judul chapter" />
+                          <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={10} style={inputStyle} placeholder="Isi chapter" />
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button className="btn btn--gold" onClick={() => handleSaveEdit(c.id)} disabled={savingEdit} style={{ flex: 1, justifyContent: 'center' }}>
+                              <Save size={14} /> {savingEdit ? 'Menyimpan...' : 'Simpan'}
+                            </button>
+                            <button className="btn" onClick={cancelEdit} style={{ flex: 1, justifyContent: 'center' }}>Batal</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  className="btn"
+                  onClick={handleDeleteChapters}
+                  disabled={selectedIds.length === 0 || deletingChapters}
+                  style={{ justifyContent: 'center', color: '#D46B5B' }}
+                >
+                  <Trash2 size={16} />
+                  {deletingChapters ? 'Menghapus...' : `Hapus ${selectedIds.length} Chapter Terpilih`}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {tab === 'manageNovel' && (
+        <div className="card" style={{ padding: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(212, 175, 91, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Pencil size={18} color="var(--gold)" />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 2 }}>Kelola Novel</h2>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>Edit atau hapus novel</p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {novels.length === 0 && (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center', padding: 20 }}>Belum ada novel.</p>
+            )}
+            {novels.map((n) => (
+              <div key={n.id}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', fontSize: '0.9rem' }}>
+                  <span style={{ flex: 1 }}>{n.title}</span>
+                  <button
+                    onClick={() => (editingNovelId === n.id ? cancelEditNovel() : startEditNovel(n))}
+                    style={{ background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer', padding: 6 }}
+                    title="Edit"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteNovel(n.id)}
+                    style={{ background: 'none', border: 'none', color: '#D46B5B', cursor: 'pointer', padding: 6 }}
+                    title="Hapus"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+                {editingNovelId === n.id && (
+                  <div style={{ padding: 12, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', marginTop: 4, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <input type="text" value={editNovelTitle} onChange={(e) => setEditNovelTitle(e.target.value)} style={inputStyle} placeholder="Judul" />
+                    <input type="text" value={editNovelSlug} onChange={(e) => setEditNovelSlug(e.target.value)} style={inputStyle} placeholder="Slug" />
+                    <input type="text" value={editNovelAuthor} onChange={(e) => setEditNovelAuthor(e.target.value)} style={inputStyle} placeholder="Author" />
+                    <input type="text" value={editNovelTranslator} onChange={(e) => setEditNovelTranslator(e.target.value)} style={inputStyle} placeholder="Translator" />
+                    <input type="text" value={editNovelGenre} onChange={(e) => setEditNovelGenre(e.target.value)} style={inputStyle} placeholder="Genre" />
+                    <input type="text" value={editNovelLanguage} onChange={(e) => setEditNovelLanguage(e.target.value)} style={inputStyle} placeholder="Bahasa" />
+                    <textarea value={editNovelSynopsis} onChange={(e) => setEditNovelSynopsis(e.target.value)} rows={4} style={inputStyle} placeholder="Sinopsis" />
+                    <select value={editNovelStatus} onChange={(e) => setEditNovelStatus(e.target.value)} style={inputStyle}>
+                      <option value="ongoing">Berjalan</option>
+                      <option value="completed">Tamat</option>
+                    </select>
+                    <input type="file" accept="image/*" onChange={(e) => setEditNovelCoverFile(e.target.files[0])} />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button className="btn btn--gold" onClick={() => handleSaveNovelEdit(n.id)} disabled={savingNovelEdit} style={{ flex: 1, justifyContent: 'center' }}>
+                        <Save size={14} /> {savingNovelEdit ? 'Menyimpan...' : 'Simpan'}
+                      </button>
+                      <button className="btn" onClick={cancelEditNovel} style={{ flex: 1, justifyContent: 'center' }}>Batal</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+            }
