@@ -8,10 +8,10 @@ import Login from './pages/Login'
 import Admin from './pages/Admin'
 import AdminMembership from './pages/AdminMembership'
 import Membership from './pages/Membership'
-import RequestTranslation from './pages/RequestTranslation'
 import Profile from './pages/Profile'
 import PublicProfile from './pages/PublicProfile'
 import AuthorPage from './pages/AuthorPage'
+import TranslatorPage from './pages/TranslatorPage'
 import Settings from './pages/Settings'
 import Leaderboard from './pages/Leaderboard'
 import Titles from './pages/Titles'
@@ -39,10 +39,10 @@ export default function App() {
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/membership" element={<AdminMembership />} />
             <Route path="/membership" element={<Membership />} />
-            <Route path="/request" element={<RequestTranslation />} />
             <Route path="/profil" element={<Profile />} />
             <Route path="/pembaca/:userId" element={<PublicProfile />} />
             <Route path="/author/:slug" element={<AuthorPage />} />
+            <Route path="/translator/:slug" element={<TranslatorPage />} />
             <Route path="/pengaturan" element={<Settings />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/gelar" element={<Titles />} />
@@ -58,4 +58,4 @@ export default function App() {
       <BackToTop />
     </div>
   )
-}
+            }
