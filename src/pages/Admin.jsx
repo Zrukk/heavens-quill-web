@@ -55,7 +55,6 @@ async function uploadEpubImage(zip, chapterPath, src) {
   const ext = compressedBlob ? 'jpg' : normalizedPath.split('.').pop()
   const fileName = `epub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
 
-  // Convert blob → File biar bisa pakai uploadToBlob
   const file = new File([blob], fileName, { type: blob.type || 'image/jpeg' })
 
   try {
@@ -161,6 +160,7 @@ function parseBulkText(text) {
       content: c.paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join('\n'),
     }))
 }
+
 export default function Admin() {
   const { user, isAdmin, loading } = useAuth()
   const [novels, setNovels] = useState([])
@@ -171,6 +171,7 @@ export default function Admin() {
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
   const [author, setAuthor] = useState('')
+  const [translator, setTranslator] = useState('')
   const [genre, setGenre] = useState('')
   const [synopsis, setSynopsis] = useState('')
   const [coverFile, setCoverFile] = useState(null)
@@ -210,6 +211,7 @@ export default function Admin() {
   const [editNovelTitle, setEditNovelTitle] = useState('')
   const [editNovelSlug, setEditNovelSlug] = useState('')
   const [editNovelAuthor, setEditNovelAuthor] = useState('')
+  const [editNovelTranslator, setEditNovelTranslator] = useState('')
   const [editNovelGenre, setEditNovelGenre] = useState('')
   const [editNovelSynopsis, setEditNovelSynopsis] = useState('')
   const [editNovelLanguage, setEditNovelLanguage] = useState('')
@@ -323,15 +325,14 @@ export default function Admin() {
     }
 
     let coverUrl = null
-    let coverUrl = null
-if (coverFile) {
-  try {
-    coverUrl = await uploadToBlob(coverFile)
-  } catch (err) {
-    showMessage('Gagal upload cover: ' + err.message, 'error')
-    return
-  }
-}
+    if (coverFile) {
+      try {
+        coverUrl = await uploadToBlob(coverFile)
+      } catch (err) {
+        showMessage('Gagal upload cover: ' + err.message, 'error')
+        return
+      }
+    }
 
     const { data: newNovel, error } = await supabase
       .from('novels')
@@ -339,6 +340,7 @@ if (coverFile) {
         title,
         slug,
         author: author || null,
+        translator: translator || null,
         genre: genre || null,
         synopsis,
         cover_url: coverUrl,
@@ -355,6 +357,7 @@ if (coverFile) {
       setTitle('')
       setSlug('')
       setAuthor('')
+      setTranslator('')
       setGenre('')
       setSynopsis('')
       setCoverFile(null)
@@ -420,6 +423,7 @@ if (coverFile) {
     setEditNovelTitle(novel.title)
     setEditNovelSlug(novel.slug)
     setEditNovelAuthor(novel.author || '')
+    setEditNovelTranslator(novel.translator || '')
     setEditNovelGenre(novel.genre || '')
     setEditNovelSynopsis(novel.synopsis || '')
     setEditNovelLanguage(novel.original_language || '')
@@ -435,25 +439,26 @@ if (coverFile) {
     setSavingNovelEdit(true)
 
     let coverUrl
-if (editNovelCoverFile) {
-  if (editNovelCoverFile.size > 5 * 1024 * 1024) {
-    showMessage('Ukuran gambar maksimal 5MB.', 'error')
-    setSavingNovelEdit(false)
-    return
-  }
-  try {
-    coverUrl = await uploadToBlob(editNovelCoverFile)
-  } catch (err) {
-    showMessage('Gagal upload cover: ' + err.message, 'error')
-    setSavingNovelEdit(false)
-    return
-  }
-}
+    if (editNovelCoverFile) {
+      if (editNovelCoverFile.size > 5 * 1024 * 1024) {
+        showMessage('Ukuran gambar maksimal 5MB.', 'error')
+        setSavingNovelEdit(false)
+        return
+      }
+      try {
+        coverUrl = await uploadToBlob(editNovelCoverFile)
+      } catch (err) {
+        showMessage('Gagal upload cover: ' + err.message, 'error')
+        setSavingNovelEdit(false)
+        return
+      }
+    }
 
     const updates = {
       title: editNovelTitle,
       slug: editNovelSlug,
       author: editNovelAuthor || null,
+      translator: editNovelTranslator || null,
       genre: editNovelGenre || null,
       synopsis: editNovelSynopsis,
       original_language: editNovelLanguage,
@@ -575,7 +580,8 @@ if (editNovelCoverFile) {
         })
       }
     }
-                                           }  if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
+      }
+    if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
   if (!user) return <div className="container" style={{ paddingTop: 40 }}>Silakan masuk dulu.</div>
   if (!isAdmin) return <div className="container" style={{ paddingTop: 40 }}>Akun ini bukan admin.</div>
 
@@ -708,6 +714,10 @@ if (editNovelCoverFile) {
             <div>
               <label style={labelStyle}>Nama Author</label>
               <input type="text" placeholder="Penulis asli (opsional)" value={author} onChange={(e) => setAuthor(e.target.value)} />
+            </div>
+            <div>
+              <label style={labelStyle}>Nama Penerjemah</label>
+              <input type="text" placeholder="Yang nerjemahin (opsional)" value={translator} onChange={(e) => setTranslator(e.target.value)} />
             </div>
             <div>
               <label style={labelStyle}>Genre</label>
@@ -944,87 +954,4 @@ if (editNovelCoverFile) {
                         <span style={{ flex: 1, cursor: 'pointer' }} onClick={() => toggleSelect(c.id)}>
                           Chapter {c.chapter_number}{c.title ? ` — ${c.title}` : ''}
                         </span>
-                        <button onClick={() => (editingChapterId === c.id ? cancelEdit() : startEdit(c))} style={{ background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer', padding: 4, display: 'flex' }}>
-                          <Pencil size={14} />
-                        </button>
-                      </div>
-
-                      {editingChapterId === c.id && (
-                        <div style={{ padding: 12, background: 'var(--bg)', border: '1px solid var(--gold)', borderRadius: 'var(--radius)', marginTop: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                          <input type="number" step="any" value={editNumber} onChange={(e) => setEditNumber(e.target.value)} placeholder="Nomor chapter" style={inputStyle} />
-                          <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Judul (opsional)" style={inputStyle} />
-                          <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={10} style={inputStyle} />
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <button className="btn btn--gold" onClick={() => handleSaveEdit(c.id)} disabled={savingEdit}>
-                              <Save size={14} />
-                              {savingEdit ? 'Menyimpan...' : 'Simpan'}
-                            </button>
-                            <button className="btn" onClick={cancelEdit}>Batal</button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <button className="btn" onClick={handleDeleteChapters} disabled={selectedIds.length === 0 || deletingChapters} style={{ borderColor: '#D46B5B', color: '#D46B5B', justifyContent: 'center' }}>
-                  <Trash2 size={16} />
-                  {deletingChapters ? 'Menghapus...' : `Hapus ${selectedIds.length} Chapter`}
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div style={{ marginTop: 40 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-          <h2 style={{ fontSize: '1.2rem' }}>Novel Terdaftar ({novels.length})</h2>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {novels.map((n) => (
-            <div key={n.id}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
-                <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>{n.title}</span>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => (editingNovelId === n.id ? cancelEditNovel() : startEditNovel(n))} style={{ background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer', padding: 4, display: 'flex' }}>
-                    <Pencil size={14} />
-                  </button>
-                  <button className="btn" onClick={() => handleDeleteNovel(n.id)} style={{ borderColor: '#D46B5B', color: '#D46B5B', padding: '4px 10px', fontSize: '0.8rem' }}>
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-
-              {editingNovelId === n.id && (
-                <div style={{ padding: 12, background: 'var(--bg)', border: '1px solid var(--gold)', borderRadius: 'var(--radius)', marginTop: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <input type="text" placeholder="Judul novel" value={editNovelTitle} onChange={(e) => setEditNovelTitle(e.target.value)} style={inputStyle} />
-                  <input type="text" placeholder="Slug" value={editNovelSlug} onChange={(e) => setEditNovelSlug(e.target.value)} style={inputStyle} />
-                  <input type="text" placeholder="Nama author" value={editNovelAuthor} onChange={(e) => setEditNovelAuthor(e.target.value)} style={inputStyle} />
-                  <input type="text" placeholder="Genre (pisah pakai koma)" value={editNovelGenre} onChange={(e) => setEditNovelGenre(e.target.value)} style={inputStyle} />
-                  <textarea placeholder="Sinopsis" value={editNovelSynopsis} onChange={(e) => setEditNovelSynopsis(e.target.value)} rows={4} style={inputStyle} />
-                  <div>
-                    <label style={labelStyle}>Ganti cover (opsional, maks 5MB)</label>
-                    <input type="file" accept="image/*" onChange={(e) => setEditNovelCoverFile(e.target.files[0])} />
-                  </div>
-                  <input type="text" placeholder="Bahasa asli" value={editNovelLanguage} onChange={(e) => setEditNovelLanguage(e.target.value)} style={inputStyle} />
-                  <select value={editNovelStatus} onChange={(e) => setEditNovelStatus(e.target.value)} style={inputStyle}>
-                    <option value="ongoing">Berjalan</option>
-                    <option value="completed">Tamat</option>
-                  </select>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn btn--gold" onClick={() => handleSaveNovelEdit(n.id)} disabled={savingNovelEdit}>
-                      <Save size={14} />
-                      {savingNovelEdit ? 'Menyimpan...' : 'Simpan'}
-                    </button>
-                    <button className="btn" onClick={cancelEditNovel}>Batal</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-                              }
+                        <button onClick={() => (editingChapterId === c.id ? cancelEdit() : startEdit(c))} style={{ background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer', padding
