@@ -955,22 +955,33 @@ export default function Admin() {
                         <span style={{ flex: 1, cursor: 'pointer' }} onClick={() => toggleSelect(c.id)}>
                           Chapter {c.chapter_number}{c.title ? ` — ${c.title}` : ''}
                         </span>
-                        <button onClick={() => (editingChapterId === c.id ? cancelEdit() : startEdit(c))} style={{ background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer', padding: 4, display: 'flex' }}>
-                          <Pencil size={14} />
+                        <button onClick={() => (editingChapterId === c.id ? cancelEdit() : startEdit(c))} style={{ background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer', padding: 4, display: 'flex' }} title="Edit chapter">
+                          <Pencil size={16} />
                         </button>
                       </div>
 
                       {editingChapterId === c.id && (
-                        <div style={{ padding: 12, background: 'var(--bg)', border: '1px solid var(--gold)', borderRadius: 'var(--radius)', marginTop: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                          <input type="number" step="any" value={editNumber} onChange={(e) => setEditNumber(e.target.value)} placeholder="Nomor chapter" style={inputStyle} />
-                          <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Judul (opsional)" style={inputStyle} />
-                          <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={10} style={inputStyle} />
+                        <div style={{ padding: 14, marginTop: 4, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                          <div>
+                            <label style={labelStyle}>Nomor Chapter</label>
+                            <input type="number" step="any" value={editNumber} onChange={(e) => setEditNumber(e.target.value)} />
+                          </div>
+                          <div>
+                            <label style={labelStyle}>Judul Chapter</label>
+                            <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Opsional" />
+                          </div>
+                          <div>
+                            <label style={labelStyle}>Isi Chapter (HTML)</label>
+                            <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={14} style={inputStyle} />
+                          </div>
                           <div style={{ display: 'flex', gap: 8 }}>
-                            <button className="btn btn--gold" onClick={() => handleSaveEdit(c.id)} disabled={savingEdit}>
-                              <Save size={14} />
-                              {savingEdit ? 'Menyimpan...' : 'Simpan'}
+                            <button type="button" className="btn btn--gold" onClick={() => handleSaveEdit(c.id)} disabled={savingEdit} style={{ flex: 1, justifyContent: 'center' }}>
+                              <Save size={16} />
+                              {savingEdit ? 'Menyimpan...' : 'Simpan Perubahan'}
                             </button>
-                            <button className="btn" onClick={cancelEdit}>Batal</button>
+                            <button type="button" className="btn" onClick={cancelEdit} style={{ justifyContent: 'center' }}>
+                              Batal
+                            </button>
                           </div>
                         </div>
                       )}
@@ -978,72 +989,108 @@ export default function Admin() {
                   ))}
                 </div>
 
-                <button className="btn" onClick={handleDeleteChapters} disabled={selectedIds.length === 0 || deletingChapters} style={{ borderColor: '#D46B5B', color: '#D46B5B', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={handleDeleteChapters}
+                  disabled={selectedIds.length === 0 || deletingChapters}
+                  style={{ justifyContent: 'center', color: '#D46B5B', borderColor: '#D46B5B' }}
+                >
                   <Trash2 size={16} />
-                  {deletingChapters ? 'Menghapus...' : `Hapus ${selectedIds.length} Chapter`}
-                </button>
+                  {deletingChapters ? 'Menghapus...' : `Hapus ${selectedIds.length} Chapter Terpilih`}
+                  </button>
               </>
             )}
           </div>
         </div>
       )}
 
-      <div style={{ marginTop: 40 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-          <h2 style={{ fontSize: '1.2rem' }}>Novel Terdaftar ({novels.length})</h2>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {novels.map((n) => (
-            <div key={n.id}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>{n.title}</div>
-                  {n.translator && (
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                      🌐 {n.translator}
-                    </div>
-                  )}
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => (editingNovelId === n.id ? cancelEditNovel() : startEditNovel(n))} style={{ background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer', padding: 4, display: 'flex' }}>
-                    <Pencil size={14} />
-                  </button>
-                  <button className="btn" onClick={() => handleDeleteNovel(n.id)} style={{ borderColor: '#D46B5B', color: '#D46B5B', padding: '4px 10px', fontSize: '0.8rem' }}>
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-
-              {editingNovelId === n.id && (
-                <div style={{ padding: 12, background: 'var(--bg)', border: '1px solid var(--gold)', borderRadius: 'var(--radius)', marginTop: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <input type="text" placeholder="Judul novel" value={editNovelTitle} onChange={(e) => setEditNovelTitle(e.target.value)} style={inputStyle} />
-                  <input type="text" placeholder="Slug" value={editNovelSlug} onChange={(e) => setEditNovelSlug(e.target.value)} style={inputStyle} />
-                  <input type="text" placeholder="Nama author" value={editNovelAuthor} onChange={(e) => setEditNovelAuthor(e.target.value)} style={inputStyle} />
-                  <input type="text" placeholder="Nama penerjemah" value={editNovelTranslator} onChange={(e) => setEditNovelTranslator(e.target.value)} style={inputStyle} />
-                  <input type="text" placeholder="Genre (pisah pakai koma)" value={editNovelGenre} onChange={(e) => setEditNovelGenre(e.target.value)} style={inputStyle} />
-                  <textarea placeholder="Sinopsis" value={editNovelSynopsis} onChange={(e) => setEditNovelSynopsis(e.target.value)} rows={4} style={inputStyle} />
-                  <div>
-                    <label style={labelStyle}>Ganti cover (opsional, maks 5MB)</label>
-                    <input type="file" accept="image/*" onChange={(e) => setEditNovelCoverFile(e.target.files[0])} />
-                  </div>
-                  <input type="text" placeholder="Bahasa asli" value={editNovelLanguage} onChange={(e) => setEditNovelLanguage(e.target.value)} style={inputStyle} />
-                  <select value={editNovelStatus} onChange={(e) => setEditNovelStatus(e.target.value)} style={inputStyle}>
-                    <option value="ongoing">Berjalan</option>
-                    <option value="completed">Tamat</option>
-                  </select>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn btn--gold" onClick={() => handleSaveNovelEdit(n.id)} disabled={savingNovelEdit}>
-                      <Save size={14} />
-                      {savingNovelEdit ? 'Menyimpan...' : 'Simpan'}
-                    </button>
-                    <button className="btn" onClick={cancelEditNovel}>Batal</button>
-                  </div>
-                </div>
-              )}
+      {tab === 'manage' && (
+        <div className="card" style={{ padding: 20, marginTop: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(212, 175, 91, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <BookPlus size={18} color="var(--gold)" />
             </div>
-          ))}
+            <div>
+              <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 2 }}>Kelola Novel</h2>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>Edit atau hapus novel yang udah ada</p>
+            </div>
+          </div>
+
+          {novels.length === 0 && (
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center', padding: 20 }}>Belum ada novel.</p>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {novels.map((n) => (
+              <div key={n.id}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', fontSize: '0.9rem' }}>
+                  <span style={{ flex: 1 }}>{n.title}</span>
+                  <button onClick={() => (editingNovelId === n.id ? cancelEditNovel() : startEditNovel(n))} style={{ background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer', padding: 4, display: 'flex' }} title="Edit novel">
+                    <Pencil size={16} />
+                  </button>
+                  <button onClick={() => handleDeleteNovel(n.id)} style={{ background: 'none', border: 'none', color: '#D46B5B', cursor: 'pointer', padding: 4, display: 'flex' }} title="Hapus novel">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+
+                {editingNovelId === n.id && (
+                  <div style={{ padding: 14, marginTop: 4, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div>
+                      <label style={labelStyle}>Judul Novel</label>
+                      <input type="text" value={editNovelTitle} onChange={(e) => setEditNovelTitle(e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Slug (URL)</label>
+                      <input type="text" value={editNovelSlug} onChange={(e) => setEditNovelSlug(e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Nama Author</label>
+                      <input type="text" value={editNovelAuthor} onChange={(e) => setEditNovelAuthor(e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Nama Penerjemah</label>
+                      <input type="text" value={editNovelTranslator} onChange={(e) => setEditNovelTranslator(e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Genre</label>
+                      <input type="text" value={editNovelGenre} onChange={(e) => setEditNovelGenre(e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Sinopsis</label>
+                      <textarea value={editNovelSynopsis} onChange={(e) => setEditNovelSynopsis(e.target.value)} rows={5} style={inputStyle} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Ganti Cover (opsional, maks 5MB)</label>
+                      <input type="file" accept="image/*" onChange={(e) => setEditNovelCoverFile(e.target.files[0])} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Bahasa Asli</label>
+                      <input type="text" value={editNovelLanguage} onChange={(e) => setEditNovelLanguage(e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Status</label>
+                      <select value={editNovelStatus} onChange={(e) => setEditNovelStatus(e.target.value)} style={inputStyle}>
+                        <option value="ongoing">Berjalan</option>
+                        <option value="completed">Tamat</option>
+                      </select>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button type="button" className="btn btn--gold" onClick={() => handleSaveNovelEdit(n.id)} disabled={savingNovelEdit} style={{ flex: 1, justifyContent: 'center' }}>
+                        <Save size={16} />
+                        {savingNovelEdit ? 'Menyimpan...' : 'Simpan Perubahan'}
+                      </button>
+                      <button type="button" className="btn" onClick={cancelEditNovel} style={{ justifyContent: 'center' }}>
+                        Batal
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
-                                     }
+            }
