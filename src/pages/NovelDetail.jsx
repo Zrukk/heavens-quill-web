@@ -20,17 +20,15 @@ function slugify(name) {
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
 
-  // Kalau ada huruf latin, pakai slug biasa
   if (cleaned) return cleaned
 
-  // Kalau gak ada (nama Hanzi/Karakter khusus), pakai hash
   let hash = 0
   const str = name.trim().toLowerCase()
   for (let i = 0; i < str.length; i++) {
     hash = (hash << 5) - hash + str.charCodeAt(i)
     hash |= 0
   }
-  return `author-${Math.abs(hash).toString(36)}`
+  return `translator-${Math.abs(hash).toString(36)}`
 }
 
 async function fetchAllReadIds(novelId, userId) {
@@ -217,22 +215,40 @@ export default function NovelDetail() {
           </h1>
 
           {novel.author && (
-  <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', margin: '0 0 16px' }}>
-    oleh{' '}
-    <Link
-      to={`/author/${slugify(novel.author)}`}
-      style={{
-        color: 'var(--gold)',
-        fontWeight: 600,
-        textDecoration: 'underline',
-        textDecorationColor: 'rgba(212, 175, 91, 0.3)',
-        textUnderlineOffset: 3,
-      }}
-    >
-      {novel.author}
-    </Link>
-  </p>
-)}
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', margin: '0 0 4px' }}>
+              oleh{' '}
+              <Link
+                to={`/author/${slugify(novel.author)}`}
+                style={{
+                  color: 'var(--gold)',
+                  fontWeight: 600,
+                  textDecoration: 'underline',
+                  textDecorationColor: 'rgba(212, 175, 91, 0.3)',
+                  textUnderlineOffset: 3,
+                }}
+              >
+                {novel.author}
+              </Link>
+            </p>
+          )}
+
+          {novel.translator && (
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 16px' }}>
+              diterjemahkan oleh{' '}
+              <Link
+                to={`/translator/${slugify(novel.translator)}`}
+                style={{
+                  color: 'var(--accent)',
+                  fontWeight: 600,
+                  textDecoration: 'underline',
+                  textDecorationColor: 'rgba(91, 168, 212, 0.3)',
+                  textUnderlineOffset: 3,
+                }}
+              >
+                {novel.translator}
+              </Link>
+            </p>
+          )}
 
           {/* Rating & Stats */}
           <div
@@ -527,4 +543,4 @@ export default function NovelDetail() {
       `}</style>
     </div>
   )
-}
+        }
