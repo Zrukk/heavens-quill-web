@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import JSZip from 'jszip'
-import { BookPlus, FilePlus2, UploadCloud, ListChecks, Trash2, Save, Pencil, Info, CheckCircle2, AlertCircle, X } from 'lucide-react'
+import { BookPlus, FilePlus2, UploadCloud, ListChecks, Trash2, Save, Pencil, Info, CheckCircle2, AlertCircle, X, Users, Inbox } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import { supabase } from '../lib/supabase'
 import { fetchAllChapterRows } from '../lib/fetchAllChapterRows'
 import { notifyDiscord } from '../lib/notifyDiscord'
 import { uploadToBlob } from '../lib/upload'
+import TranslatorManager from '../components/admin/TranslatorManager'
+import TranslationRequestsManager from '../components/admin/TranslationRequestsManager'
 
 function escapeHtml(str) {
   return str
@@ -580,7 +582,7 @@ export default function Admin() {
         })
       }
     }
-      }
+    }
     if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
   if (!user) return <div className="container" style={{ paddingTop: 40 }}>Silakan masuk dulu.</div>
   if (!isAdmin) return <div className="container" style={{ paddingTop: 40 }}>Akun ini bukan admin.</div>
@@ -669,7 +671,7 @@ export default function Admin() {
         <h1 className="gradient-text" style={{ fontSize: '1.8rem' }}>Admin Dashboard</h1>
       </div>
       <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: '0.9rem' }}>
-        Kelola novel, chapter, dan import massal.
+        Kelola novel, chapter, translator, dan request translate.
       </p>
 
       <div
@@ -686,6 +688,8 @@ export default function Admin() {
         <TabButton id="chapter" icon={<FilePlus2 size={16} />} label="Tambah Chapter" />
         <TabButton id="import" icon={<UploadCloud size={16} />} label="Import Massal" />
         <TabButton id="manage" icon={<ListChecks size={16} />} label="Kelola Chapter" />
+        <TabButton id="translator" icon={<Users size={16} />} label="Translator" />
+        <TabButton id="requests" icon={<Inbox size={16} />} label="Request Translate" />
       </div>
 
       <MessageBanner />
@@ -987,6 +991,18 @@ export default function Admin() {
         </div>
       )}
 
+      {tab === 'translator' && (
+        <div className="card" style={{ padding: 20 }}>
+          <TranslatorManager />
+        </div>
+      )}
+
+      {tab === 'requests' && (
+        <div className="card" style={{ padding: 20 }}>
+          <TranslationRequestsManager />
+        </div>
+      )}
+
       <div style={{ marginTop: 40 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
           <h2 style={{ fontSize: '1.2rem' }}>Novel Terdaftar ({novels.length})</h2>
@@ -1045,4 +1061,4 @@ export default function Admin() {
       </div>
     </div>
   )
-}
+                                                }
