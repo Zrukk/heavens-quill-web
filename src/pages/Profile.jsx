@@ -101,42 +101,41 @@ export default function Profile() {
   }
 
   async function handleAvatarChange(e) {
-  async function handleAvatarChange(e) {
-  const file = e.target.files[0]
-  if (!file) return
+    const file = e.target.files[0]
+    if (!file) return
 
-  if (file.size > 3 * 1024 * 1024) {
-    setAvatarMessage('Ukuran gambar maksimal 3MB.')
-    return
-  }
+    if (file.size > 3 * 1024 * 1024) {
+      setAvatarMessage('Ukuran gambar maksimal 3MB.')
+      return
+    }
 
-  setUploadingAvatar(true)
-  setAvatarMessage(null)
+    setUploadingAvatar(true)
+    setAvatarMessage(null)
 
-  let avatarUrl
-  try {
-    avatarUrl = await uploadToBlob(file)
-  } catch (err) {
-    setAvatarMessage('Gagal upload: ' + err.message)
+    let avatarUrl
+    try {
+      avatarUrl = await uploadToBlob(file)
+    } catch (err) {
+      setAvatarMessage('Gagal upload: ' + err.message)
+      setUploadingAvatar(false)
+      return
+    }
+
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ avatar_url: avatarUrl })
+      .eq('id', user.id)
+
     setUploadingAvatar(false)
-    return
+
+    if (updateError) {
+      setAvatarMessage('Gagal simpan: ' + updateError.message)
+    } else {
+      setAvatarMessage('Foto profil diperbarui.')
+      refreshProfile()
+    }
   }
 
-  const { error: updateError } = await supabase
-    .from('profiles')
-    .update({ avatar_url: avatarUrl })
-    .eq('id', user.id)
-
-  setUploadingAvatar(false)
-
-  if (updateError) {
-    setAvatarMessage('Gagal simpan: ' + updateError.message)
-  } else {
-    setAvatarMessage('Foto profil diperbarui.')
-    refreshProfile()
-  }
-  }
-    
   async function handleSaveName(e) {
     e.preventDefault()
     setNameMessage(null)
@@ -599,4 +598,4 @@ export default function Profile() {
       </div>
     </div>
   )
-                                                  }
+                                              }
