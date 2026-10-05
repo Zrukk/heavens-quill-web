@@ -16,10 +16,8 @@ function slugify(name) {
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
 
-  // Kalau ada huruf latin, pakai slug biasa
   if (cleaned) return cleaned
 
-  // Kalau gak ada (nama Hanzi/Karakter khusus), pakai hash
   let hash = 0
   const str = name.trim().toLowerCase()
   for (let i = 0; i < str.length; i++) {
@@ -38,7 +36,6 @@ export default function AuthorPage() {
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({ totalNovels: 0, totalChapters: 0, totalViews: 0 })
 
-  // Edit mode
   const [editing, setEditing] = useState(false)
   const [editName, setEditName] = useState('')
   const [editBio, setEditBio] = useState('')
@@ -58,14 +55,12 @@ export default function AuthorPage() {
   async function load() {
     setLoading(true)
 
-    // Fetch author dari tabel authors
     let { data: authorData } = await supabase
       .from('authors')
       .select('*')
       .eq('slug', slug)
       .maybeSingle()
 
-    // Kalau gak ada di tabel authors, coba cari dari novels
     if (!authorData) {
       const { data: novelsData } = await supabase
         .from('novels')
@@ -77,7 +72,6 @@ export default function AuthorPage() {
         .find((name) => name && slugify(name) === slug)
 
       if (matchedName) {
-        // Auto-create entry di authors
         const { data: newAuthor } = await supabase
           .from('authors')
           .insert({ name: matchedName, slug })
@@ -96,7 +90,6 @@ export default function AuthorPage() {
     setEditName(authorData.name || '')
     setEditBio(authorData.bio || '')
 
-    // Fetch novel dengan author ini
     const { data: novelsData } = await supabase
       .from('novels')
       .select('*')
@@ -106,7 +99,6 @@ export default function AuthorPage() {
     const matched = novelsData ?? []
     setNovels(matched)
 
-    // Hitung total chapters & views
     if (matched.length > 0) {
       const novelIds = matched.map((n) => n.id)
       const { count: chapterCount } = await supabase
@@ -144,20 +136,17 @@ export default function AuthorPage() {
     setMessage(null)
 
     let avatarUrl = author.avatar_url
-let avatarUrl = author.avatar_url
 
-// Upload avatar baru kalau ada
-if (editAvatarFile) {
-  try {
-    avatarUrl = await uploadToBlob(editAvatarFile)
-  } catch (err) {
-    setMessage('Gagal upload gambar: ' + err.message)
-    setSaving(false)
-    return
-  }
-}
+    if (editAvatarFile) {
+      try {
+        avatarUrl = await uploadToBlob(editAvatarFile)
+      } catch (err) {
+        setMessage('Gagal upload gambar: ' + err.message)
+        setSaving(false)
+        return
+      }
+    }
 
-    // Update author
     const { error } = await supabase
       .from('authors')
       .update({
@@ -201,7 +190,6 @@ if (editAvatarFile) {
 
   return (
     <div className="container" style={{ paddingTop: 24, paddingBottom: 60, maxWidth: 900 }}>
-      {/* Tombol kembali */}
       <button
         onClick={() => navigate(-1)}
         style={{
@@ -222,7 +210,6 @@ if (editAvatarFile) {
         <ArrowLeft size={18} />
       </button>
 
-      {/* HEADER AUTHOR */}
       <div
         className="card"
         style={{
@@ -249,7 +236,6 @@ if (editAvatarFile) {
             textAlign: 'center',
           }}
         >
-          {/* Avatar */}
           <div
             style={{
               width: 100,
@@ -282,7 +268,6 @@ if (editAvatarFile) {
             {author.name}
           </h1>
 
-          {/* Bio */}
           {author.bio && !editing && (
             <p
               style={{
@@ -298,7 +283,6 @@ if (editAvatarFile) {
             </p>
           )}
 
-          {/* Tombol Edit (admin) */}
           {isAdmin && !editing && (
             <button
               onClick={() => setEditing(true)}
@@ -312,7 +296,6 @@ if (editAvatarFile) {
         </div>
       </div>
 
-      {/* FORM EDIT (admin) */}
       {editing && (
         <div
           className="card"
@@ -338,7 +321,6 @@ if (editAvatarFile) {
             </button>
           </div>
 
-          {/* Avatar upload */}
           <div>
             <label
               style={{
@@ -379,7 +361,6 @@ if (editAvatarFile) {
             </div>
           </div>
 
-          {/* Nama */}
           <div>
             <label
               style={{
@@ -407,7 +388,6 @@ if (editAvatarFile) {
             />
           </div>
 
-          {/* Bio */}
           <div>
             <label
               style={{
@@ -462,7 +442,6 @@ if (editAvatarFile) {
         </div>
       )}
 
-      {/* STATISTIK */}
       <div
         style={{
           display: 'grid',
@@ -476,7 +455,6 @@ if (editAvatarFile) {
         <StatCard icon={<Eye size={18} />} value={stats.totalViews} label="Views" color="#5BBF8A" />
       </div>
 
-      {/* DAFTAR NOVEL */}
       <div>
         <h2
           style={{
@@ -521,4 +499,4 @@ function StatCard({ icon, value, label, color }) {
       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{label}</div>
     </div>
   )
-    }
+  }
