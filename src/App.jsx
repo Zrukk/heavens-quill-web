@@ -40,7 +40,7 @@ export default function App() {
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/membership" element={<AdminMembership />} />
             <Route path="/membership" element={<Membership />} />
-            <Route path="/request-translate" element={<RequestTranslation />} />
+            <Route path="/request" element={<RequestTranslation />} />
             <Route path="/profil" element={<Profile />} />
             <Route path="/pembaca/:userId" element={<PublicProfile />} />
             <Route path="/author/:slug" element={<AuthorPage />} />
