@@ -15,6 +15,7 @@ import TranslatorPage from './pages/TranslatorPage'
 import Settings from './pages/Settings'
 import Leaderboard from './pages/Leaderboard'
 import Titles from './pages/Titles'
+import RequestTranslation from './pages/RequestTranslation'
 import NotFound from './pages/NotFound'
 import { About, Contact, Privacy, Rules } from './pages/StaticPages'
 import BackToTop from './components/BackToTop'
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/membership" element={<AdminMembership />} />
             <Route path="/membership" element={<Membership />} />
+            <Route path="/request-translate" element={<RequestTranslation />} />
             <Route path="/profil" element={<Profile />} />
             <Route path="/pembaca/:userId" element={<PublicProfile />} />
             <Route path="/author/:slug" element={<AuthorPage />} />
@@ -58,4 +60,4 @@ export default function App() {
       <BackToTop />
     </div>
   )
-            }
+                                                        }
