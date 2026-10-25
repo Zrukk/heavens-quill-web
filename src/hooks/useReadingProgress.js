@@ -8,7 +8,6 @@ export function useReadingProgress(slug, chapter, opts = {}) {
     restoreOffset = 120,
   } = typeof opts === 'object' && opts !== null ? opts : {}
 
-  // ChapterReader saat ini mengirim taggedContent sebagai argumen ketiga.
   const contentKey =
     typeof opts === 'string' ? opts : opts?.contentKey
 
@@ -17,6 +16,8 @@ export function useReadingProgress(slug, chapter, opts = {}) {
       ? opts.length > 0
       : opts?.contentReady !== false
 
+  const chapterKey = `${slug}:${chapter}`
+
   const [saved, setSaved] = useState(null)
   const [percent, setPercent] = useState(0)
   const [loadedKey, setLoadedKey] = useState(null)
@@ -24,9 +25,7 @@ export function useReadingProgress(slug, chapter, opts = {}) {
   const timerRef = useRef(null)
   const restoredKeyRef = useRef(null)
 
-  const chapterKey = `${slug}:${chapter}`
-
-  // Load progress for the current story and chapter.
+  // Muat progres untuk novel dan chapter yang sedang dibuka.
   useEffect(() => {
     setSaved(null)
     setPercent(0)
@@ -41,12 +40,10 @@ export function useReadingProgress(slug, chapter, opts = {}) {
 
       setSaved(data)
 
-      if (
-        data &&
-        Number(data.chapter) === Number(chapter)
-      ) {
-        const value = Number(data.percent) || 0
-        setPercent(Math.min(100, Math.max(0, value)))
+      if (data && Number(data.chapter) === Number(chapter)) {
+        setPercent(
+          Math.min(100, Math.max(0, Number(data.percent) || 0)),
+        )
       }
     } catch {
       setSaved(null)
@@ -56,37 +53,32 @@ export function useReadingProgress(slug, chapter, opts = {}) {
     setLoadedKey(chapterKey)
   }, [slug, chapter, chapterKey])
 
-  // Restore the last reading position after chapter content is ready.
+  // Pulihkan posisi setelah isi chapter selesai dimuat.
   useEffect(() => {
-    if (!slug || loadedKey !== chapterKey || !contentReady) {
-      return
-    }
-
     if (
+      !slug ||
+      loadedKey !== chapterKey ||
+      !contentReady ||
       !saved ||
-      Number(saved.chapter) !== Number(chapter)
+      Number(saved.chapter) !== Number(chapter) ||
+      restoredKeyRef.current === chapterKey
     ) {
-      return
-    }
-
-    if (restoredKeyRef.current === chapterKey) return
-
-    if (!saved.paragraphId && !saved.percent) {
-      restoredKeyRef.current = chapterKey
       return
     }
 
     restoredKeyRef.current = chapterKey
 
-    const raf = requestAnimationFrame(() => {
+    if (!saved.paragraphId && !saved.percent) return
+
+    const frame = requestAnimationFrame(() => {
       if (saved.paragraphId) {
-        const element = document.getElementById(
-          saved.paragraphId
+        const paragraph = document.getElementById(
+          saved.paragraphId,
         )
 
-        if (element) {
+        if (paragraph) {
           const top =
-            element.getBoundingClientRect().top +
+            paragraph.getBoundingClientRect().top +
             window.scrollY -
             restoreOffset
 
@@ -99,82 +91,83 @@ export function useReadingProgress(slug, chapter, opts = {}) {
         }
       }
 
-      if (saved.percent) {
-        const max = Math.max(
-          0,
-          document.documentElement.scrollHeight -
-            window.innerHeight
-        )
+      const maxScroll = Math.max(
+        0,
+        document.documentElement.scrollHeight -
+          window.innerHeight,
+      )
 
-        window.scrollTo({
-          top: (saved.percent / 100) * max,
-          behavior: 'auto',
-        })
-      }
+      window.scrollTo({
+        top: (Number(saved.percent) / 100) * maxScroll,
+        behavior: 'auto',
+      })
     })
 
-    return () => cancelAnimationFrame(raf)
+    return () => cancelAnimationFrame(frame)
   }, [
     slug,
     chapter,
     chapterKey,
     loadedKey,
-    saved,
     contentReady,
     contentKey,
+    saved,
     restoreOffset,
   ])
 
-  // Save the current paragraph and scroll percentage.
+  // Simpan paragraf aktif dan persentase bacaan.
   const saveProgress = useCallback(() => {
-    if (!slug || loadedKey !== chapterKey || !contentReady) {
+    if (
+      !slug ||
+      loadedKey !== chapterKey ||
+      !contentReady
+    ) {
       return
     }
 
     const paragraphs = document.querySelectorAll(
-      '[data-paragraph-id]'
+      '[data-paragraph-id]',
     )
 
-    let currentId = null
+    let paragraphId = null
 
     for (const paragraph of paragraphs) {
-      const rect = paragraph.getBoundingClientRect()
-
-      if (rect.top - restoreOffset <= 0) {
-        currentId = paragraph.id || null
+      if (
+        paragraph.getBoundingClientRect().top <= restoreOffset
+      ) {
+        paragraphId = paragraph.id || null
       } else {
         break
       }
     }
 
-    const max = Math.max(
+    const maxScroll = Math.max(
       0,
       document.documentElement.scrollHeight -
-        window.innerHeight
+        window.innerHeight,
     )
 
     const nextPercent =
-      max > 0
+      maxScroll > 0
         ? Math.min(
             100,
-            Math.max(0, (window.scrollY / max) * 100)
+            Math.max(0, (window.scrollY / maxScroll) * 100),
           )
         : 0
 
     const data = {
       chapter: Number(chapter),
-      paragraphId: currentId,
+      paragraphId,
       percent: nextPercent,
       updatedAt: Date.now(),
     }
 
-    setPercent(nextPercent)
-
     try {
       localStorage.setItem(KEY(slug), JSON.stringify(data))
       setSaved(data)
+      setPercent(nextPercent)
     } catch (error) {
-      console.error('Failed to save reading progress:', error)
+      console.error('Gagal menyimpan progres bacaan:', error)
     }
   }, [
     slug,
@@ -185,7 +178,7 @@ export function useReadingProgress(slug, chapter, opts = {}) {
     restoreOffset,
   ])
 
-  // Track scrolling and save after a short pause.
+  // Simpan otomatis setelah pembaca berhenti menggulir.
   useEffect(() => {
     if (
       !slug ||
@@ -199,16 +192,23 @@ export function useReadingProgress(slug, chapter, opts = {}) {
       clearTimeout(timerRef.current)
       timerRef.current = setTimeout(
         saveProgress,
-        debounceMs
+        debounceMs,
       )
+    }
+
+    const saveImmediately = () => {
+      clearTimeout(timerRef.current)
+      saveProgress()
     }
 
     window.addEventListener('scroll', onScroll, {
       passive: true,
     })
+    window.addEventListener('pagehide', saveImmediately)
 
     return () => {
       window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('pagehide', saveImmediately)
       clearTimeout(timerRef.current)
     }
   }, [
@@ -226,7 +226,7 @@ export function useReadingProgress(slug, chapter, opts = {}) {
     try {
       localStorage.removeItem(KEY(slug))
     } catch (error) {
-      console.error('Failed to clear reading progress:', error)
+      console.error('Gagal menghapus progres bacaan:', error)
     }
 
     setSaved(null)
@@ -239,5 +239,5 @@ export function useReadingProgress(slug, chapter, opts = {}) {
     savedProgress: saved,
     clearProgress,
   }
-    }
-          
+      }
+    
