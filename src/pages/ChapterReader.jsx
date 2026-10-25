@@ -593,42 +593,55 @@ export default function ChapterReader() {
       </div>
 
       <div className="container" style={{ paddingTop: 40, paddingBottom: 100, maxWidth: 700 }}>
-        {/* Notif melanjutkan bacaan */}
-        {!hideResume &&
-          savedProgress?.chapter === Number(number) &&
-          (savedProgress?.percent ?? 0) > 3 && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 8,
-                padding: '8px 12px',
-                marginBottom: 16,
-                background: 'rgba(212, 175, 91, 0.08)',
-                border: '1px solid rgba(212, 175, 91, 0.35)',
-                borderRadius: 'var(--radius)',
-                fontSize: '0.8rem',
-                color: 'var(--gold)',
-              }}
-            >
-              <span>↻ Melanjutkan dari posisi terakhir ({Math.round(savedProgress.percent)}%)</span>
-              <button
-                onClick={() => setHideResume(true)}
-                aria-label="Tutup"
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--gold)',
-                  cursor: 'pointer',
-                  fontSize: '1rem',
-                  lineHeight: 1,
-                }}
-              >
-                ✕
-              </button>
-            </div>
-          )}
+        {/* Notifikasi melanjutkan bacaan: tetap di atas layar */}
+{!hideResume &&
+  savedProgress?.chapter === Number(number) &&
+  (savedProgress?.percent ?? 0) > 3 && (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        position: 'fixed',
+        top: 'calc(env(safe-area-inset-top, 0px) + 12px)',
+        left: '12px',
+        right: '12px',
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '12px',
+        padding: '12px 14px',
+        background: 'var(--card, #1e1e1e)',
+        border: '1px solid rgba(212, 175, 91, 0.55)',
+        borderRadius: '12px',
+        boxShadow: '0 8px 28px rgba(0, 0, 0, 0.28)',
+        color: 'var(--gold, #d4af5b)',
+        fontSize: '0.85rem',
+      }}
+    >
+      <span>
+        Melanjutkan dari posisi terakhir (
+        {Math.round(savedProgress.percent)}%)
+      </span>
+
+      <button
+        type="button"
+        onClick={() => setHideResume(true)}
+        aria-label="Tutup notifikasi"
+        style={{
+          flexShrink: 0,
+          padding: '4px 8px',
+          background: 'transparent',
+          border: 'none',
+          color: 'inherit',
+          cursor: 'pointer',
+          fontSize: '1.1rem',
+        }}
+      >
+        ✕
+      </button>
+    </div>
+  )}
 
          {/* Breadcrumb */}
         <div
