@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart, MessageCircle, Send, Reply, Coffee, UserCircle2, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { fetchAllChapterRows } from '../lib/fetchAllChapterRows'
-import { useDocumentMeta, stripHtml } from '../lib/useDocumentMeta'
+import { stripHtml } from '../lib/useDocumentMeta'
 import { useAuth } from '../lib/AuthContext'
 import ShareButton from '../components/ShareButton'
 import BackToTop from '../components/BackToTop'
@@ -12,6 +12,8 @@ import { tagParagraphs, getParagraphPreview } from '../lib/paragraphUtils'
 import { notifyDiscord } from '../lib/notifyDiscord'
 import MemberBadge from '../components/MemberBadge'
 import { useMembershipList } from '../lib/useMembershipList'
+import { useReadingProgress } from '../hooks/useReadingProgress'
+import Seo from '../components/Seo'
 
 export default function ChapterReader() {
   const { slug, number } = useParams()
@@ -40,10 +42,20 @@ export default function ChapterReader() {
   const [openParagraph, setOpenParagraph] = useState(null)
 
   const [showToolbar, setShowToolbar] = useState(true)
-  const [readProgress, setReadProgress] = useState(0)
+  const [hideResume, setHideResume] = useState(false)
 
   const longPressTimer = useRef(null)
   const pressedParagraph = useRef(null)
+
+  const { percent: readProgress, savedProgress } = useReadingProgress(
+    slug,
+    Number(number),
+    taggedContent,
+  )
+
+  useEffect(() => {
+    setHideResume(false)
+  }, [slug, number])
 
   useEffect(() => {
     async function load() {
@@ -71,6 +83,8 @@ export default function ChapterReader() {
       if (chapterData?.content) {
         const { htmlWithIds } = tagParagraphs(chapterData.content)
         setTaggedContent(htmlWithIds)
+      } else {
+        setTaggedContent('')
       }
 
       const allChapters = await fetchAllChapterRows(novelData.id, 'chapter_number')
@@ -166,25 +180,27 @@ export default function ChapterReader() {
     if (chapter?.id) loadComments()
   }, [chapter?.id])
 
-  useDocumentMeta(
-    chapter && novel
-      ? `Chapter ${chapter.chapter_number}${chapter.title ? ` — ${chapter.title}` : ''} - ${novel.title}`
-      : undefined,
-    chapter ? stripHtml(chapter.content).slice(0, 160) : undefined,
-  )
-
-  // Progress bar berdasarkan scroll
+  // Pintasan keyboard ← → untuk navigasi chapter
   useEffect(() => {
-    function handleScroll() {
-      const scrollTop = window.scrollY
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight
-      const progress = docHeight > 0 ? Math.min(100, (scrollTop / docHeight) * 100) : 0
-      setReadProgress(progress)
+    if (!siblings.length) return
+    const nums = siblings.map((s) => Number(s.chapter_number))
+    const currentIndex = nums.indexOf(Number(number))
+    const prevNum = currentIndex > 0 ? nums[currentIndex - 1] : null
+    const nextNum = currentIndex < nums.length - 1 ? nums[currentIndex + 1] : null
+
+    function onKey(e) {
+      const tag = (e.target.tagName || '').toLowerCase()
+      if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return
+      if (e.key === 'ArrowLeft' && prevNum != null) {
+        navigate(`/novel/${slug}/chapter/${prevNum}`)
+      }
+      if (e.key === 'ArrowRight' && nextNum != null) {
+        navigate(`/novel/${slug}/chapter/${nextNum}`)
+      }
     }
-    window.addEventListener('scroll', handleScroll)
-    handleScroll()
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [siblings, number, slug, navigate])
 
   function findParagraph(e) {
     let target = e.target
@@ -351,8 +367,9 @@ export default function ChapterReader() {
         [idx]: (prev[idx] || 0) + 1,
       }
     })
-          }
-    if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
+  }
+
+  if (loading) return <div className="container" style={{ paddingTop: 40 }}>Memuat...</div>
   if (!chapter) return <div className="container" style={{ paddingTop: 40 }}>Chapter tidak ditemukan.</div>
 
   const nums = siblings.map((s) => Number(s.chapter_number))
@@ -369,6 +386,42 @@ export default function ChapterReader() {
       .filter((c) => c.parent_id === parentId)
       .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
   }
+
+  // SEO
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const chapterUrl = `${origin}/novel/${slug}/chapter/${number}`
+  const seoTitle = `Chapter ${chapter.chapter_number}${chapter.title ? ` — ${chapter.title}` : ''} - ${novel.title}`
+  const plain = stripHtml(chapter.content || '')
+  const seoDescription = plain.slice(0, 160)
+  const wordCount = plain ? plain.trim().split(/\s+/).length : undefined
+
+  const jsonLd = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Chapter',
+      name: chapter.title || `Chapter ${chapter.chapter_number}`,
+      position: chapter.chapter_number,
+      inLanguage: 'id',
+      url: chapterUrl,
+      datePublished: chapter.created_at,
+      dateModified: chapter.updated_at || chapter.created_at,
+      wordCount,
+      isPartOf: {
+        '@type': 'Book',
+        name: novel.title,
+        url: `${origin}/novel/${slug}`,
+      },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Beranda', item: origin || '/' },
+        { '@type': 'ListItem', position: 2, name: novel.title, item: `${origin}/novel/${slug}` },
+        { '@type': 'ListItem', position: 3, name: `Chapter ${chapter.chapter_number}`, item: chapterUrl },
+      ],
+    },
+  ]
 
   function renderCommentTree(comment, depth = 0) {
     const replies = getReplies(comment.id)
@@ -387,29 +440,29 @@ export default function ChapterReader() {
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 }}>
             <Link to={`/pembaca/${comment.user_id}`} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-  <div
-    style={{
-      width: 24,
-      height: 24,
-      borderRadius: '50%',
-      flexShrink: 0,
-      background: comment.profiles?.avatar_url
-        ? `url(${comment.profiles.avatar_url}) center/cover`
-        : 'var(--border)',
-      border: isMember(comment.user_id) ? '2px solid var(--gold)' : 'none',
-    }}
-  />
-  <span
-    style={{
-      fontSize: '0.9rem',
-      fontWeight: 600,
-      color: isMember(comment.user_id) ? 'var(--gold)' : 'var(--text)',
-    }}
-  >
-    {comment.profiles?.display_name || 'Pembaca'}
-  </span>
-  {isMember(comment.user_id) && <MemberBadge size="small" />}
-</Link>
+              <div
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: '50%',
+                  flexShrink: 0,
+                  background: comment.profiles?.avatar_url
+                    ? `url(${comment.profiles.avatar_url}) center/cover`
+                    : 'var(--border)',
+                  border: isMember(comment.user_id) ? '2px solid var(--gold)' : 'none',
+                }}
+              />
+              <span
+                style={{
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  color: isMember(comment.user_id) ? 'var(--gold)' : 'var(--text)',
+                }}
+              >
+                {comment.profiles?.display_name || 'Pembaca'}
+              </span>
+              {isMember(comment.user_id) && <MemberBadge size="small" />}
+            </Link>
             <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
               {new Date(comment.created_at).toLocaleDateString('id-ID', {
                 day: 'numeric',
@@ -510,6 +563,13 @@ export default function ChapterReader() {
 
   return (
     <>
+      <Seo
+        title={seoTitle}
+        description={seoDescription}
+        canonical={chapterUrl}
+        jsonLd={jsonLd}
+      />
+
       {/* Progress bar di atas */}
       <div
         style={{
@@ -533,7 +593,44 @@ export default function ChapterReader() {
       </div>
 
       <div className="container" style={{ paddingTop: 40, paddingBottom: 100, maxWidth: 700 }}>
-        {/* Breadcrumb */}
+        {/* Notif melanjutkan bacaan */}
+        {!hideResume &&
+          savedProgress?.chapter === Number(number) &&
+          (savedProgress?.percent ?? 0) > 3 && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 8,
+                padding: '8px 12px',
+                marginBottom: 16,
+                background: 'rgba(212, 175, 91, 0.08)',
+                border: '1px solid rgba(212, 175, 91, 0.35)',
+                borderRadius: 'var(--radius)',
+                fontSize: '0.8rem',
+                color: 'var(--gold)',
+              }}
+            >
+              <span>↻ Melanjutkan dari posisi terakhir ({Math.round(savedProgress.percent)}%)</span>
+              <button
+                onClick={() => setHideResume(true)}
+                aria-label="Tutup"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--gold)',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  lineHeight: 1,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+         {/* Breadcrumb */}
         <div
           style={{
             display: 'flex',
@@ -911,4 +1008,4 @@ function ParagraphHighlighter({ paragraphCounts }) {
   }, [paragraphCounts])
 
   return null
-                    }
+          }
