@@ -24,12 +24,11 @@ export function useReadingProgress(slug, chapter, opts = {}) {
   const restoredKeyRef = useRef(null)
   const isRestoringRef = useRef(false)
 
-  // Muat progres tersimpan.
+  // Muat progres yang tersimpan.
   useEffect(() => {
     setSaved(null)
     setPercent(0)
     setLoadedKey(null)
-
     restoredKeyRef.current = null
     isRestoringRef.current = false
 
@@ -55,7 +54,7 @@ export function useReadingProgress(slug, chapter, opts = {}) {
     setLoadedKey(chapterKey)
   }, [slug, chapter, chapterKey])
 
-  // Pulihkan posisi setelah konten tersedia.
+  // Pulihkan posisi bacaan dan pantau perubahan tinggi konten.
   useEffect(() => {
     if (
       !slug ||
@@ -91,28 +90,25 @@ export function useReadingProgress(slug, chapter, opts = {}) {
 
     let cancelled = false
     let frameId = null
+    let releaseTimer = null
+    let lastHeight = 0
     let stableFrames = 0
-    let previousHeight = 0
     let attempts = 0
-
-    const maxAttempts = 90
 
     const restore = () => {
       if (cancelled) return
 
       attempts += 1
 
-      const documentHeight = document.documentElement.scrollHeight
-      const maxScroll = Math.max(
-        0,
-        documentHeight - window.innerHeight,
-      )
+      const root = document.documentElement
+      const height = root.scrollHeight
+      const maxScroll = Math.max(0, height - window.innerHeight)
 
       const paragraph = saved.paragraphId
         ? document.getElementById(saved.paragraphId)
         : null
 
-      let target
+      let target = 0
 
       if (paragraph) {
         target =
@@ -123,28 +119,24 @@ export function useReadingProgress(slug, chapter, opts = {}) {
         target = savedScrollY
       } else if (hasPercent) {
         target = (savedPercent / 100) * maxScroll
-      } else {
-        target = 0
       }
 
       window.scrollTo({
-        top: Math.min(maxScroll, Math.max(0, target)),
+        top: Math.max(0, Math.min(target, maxScroll)),
         behavior: 'auto',
       })
 
-      if (documentHeight === previousHeight) {
+      if (height === lastHeight) {
         stableFrames += 1
       } else {
+        lastHeight = height
         stableFrames = 0
-        previousHeight = documentHeight
       }
 
-      // Beri waktu untuk layout dan gambar menyesuaikan tinggi halaman.
-      if (attempts < maxAttempts && stableFrames < 8) {
+      if (attempts < 120 && stableFrames < 12) {
         frameId = requestAnimationFrame(restore)
       } else {
-        // Tunda penyimpanan sampai pemulihan selesai.
-        window.setTimeout(() => {
+        releaseTimer = window.setTimeout(() => {
           if (!cancelled) {
             isRestoringRef.current = false
           }
@@ -152,13 +144,34 @@ export function useReadingProgress(slug, chapter, opts = {}) {
       }
     }
 
-    frameId = requestAnimationFrame(restore)
+    // Tunggu elemen chapter muncul jika konten belum siap dirender.
+    const waitForContent = () => {
+      if (cancelled) return
+
+      const paragraph = saved.paragraphId
+        ? document.getElementById(saved.paragraphId)
+        : null
+
+      const content = document.querySelector('.chapter-content')
+
+      if (content || paragraph || attempts > 120) {
+        frameId = requestAnimationFrame(restore)
+      } else {
+        frameId = requestAnimationFrame(waitForContent)
+      }
+    }
+
+    frameId = requestAnimationFrame(waitForContent)
 
     return () => {
       cancelled = true
 
       if (frameId !== null) {
         cancelAnimationFrame(frameId)
+      }
+
+      if (releaseTimer !== null) {
+        clearTimeout(releaseTimer)
       }
 
       isRestoringRef.current = false
@@ -175,7 +188,7 @@ export function useReadingProgress(slug, chapter, opts = {}) {
     restoreOffset,
   ])
 
-  // Simpan posisi bacaan.
+  // Simpan posisi paragraf, scroll, dan persentase.
   const saveProgress = useCallback(() => {
     if (
       isRestoringRef.current ||
@@ -207,10 +220,7 @@ export function useReadingProgress(slug, chapter, opts = {}) {
 
     const nextPercent =
       maxScroll > 0
-        ? Math.min(
-            100,
-            Math.max(0, (window.scrollY / maxScroll) * 100),
-          )
+        ? Math.min(100, Math.max(0, (window.scrollY / maxScroll) * 100))
         : 0
 
     const data = {
@@ -237,13 +247,9 @@ export function useReadingProgress(slug, chapter, opts = {}) {
     restoreOffset,
   ])
 
-  // Simpan saat scroll dan ketika halaman ditinggalkan.
+  // Simpan saat menggulir atau meninggalkan halaman.
   useEffect(() => {
-    if (
-      !slug ||
-      loadedKey !== chapterKey ||
-      !contentReady
-    ) {
+    if (!slug || loadedKey !== chapterKey || !contentReady) {
       return
     }
 
@@ -263,28 +269,16 @@ export function useReadingProgress(slug, chapter, opts = {}) {
       }
     }
 
-    window.addEventListener('scroll', scheduleSave, {
-      passive: true,
-    })
-
+    window.addEventListener('scroll', scheduleSave, { passive: true })
     window.addEventListener('pagehide', saveImmediately)
     window.addEventListener('beforeunload', saveImmediately)
-
-    document.addEventListener(
-      'visibilitychange',
-      onVisibilityChange,
-    )
+    document.addEventListener('visibilitychange', onVisibilityChange)
 
     return () => {
       window.removeEventListener('scroll', scheduleSave)
       window.removeEventListener('pagehide', saveImmediately)
       window.removeEventListener('beforeunload', saveImmediately)
-
-      document.removeEventListener(
-        'visibilitychange',
-        onVisibilityChange,
-      )
-
+      document.removeEventListener('visibilitychange', onVisibilityChange)
       clearTimeout(timerRef.current)
     }
   }, [
@@ -316,4 +310,4 @@ export function useReadingProgress(slug, chapter, opts = {}) {
     savedProgress: saved,
     clearProgress,
   }
-  }
+        }
