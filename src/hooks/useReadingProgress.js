@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 
-const KEY = (slug) => "hq-progress-${slug}"
+const KEY = (slug) => `hq-progress-${slug}`
 
 export function useReadingProgress(slug, chapter, opts = {}) {
 const debounceMs = opts?.debounceMs ?? 300
@@ -14,8 +14,8 @@ typeof opts === 'string'
 ? opts.length > 0
 : opts?.contentReady !== false
 
-const chapterKey = "${slug}:${chapter}"
-
+const chapterKey = `${slug}:${chapter}`
+  
 const [saved, setSaved] = useState(null)
 const [percent, setPercent] = useState(0)
 const [loadedKey, setLoadedKey] = useState(null)
