@@ -1,18 +1,27 @@
+
 /**
- * Ambil HTML chapter, kasih data-paragraph ke setiap <p>,
- * dan bungkus <img> yang belum ada di dalam <p> jadi <p><img /></p>.
+ * Tambahkan ID unik pada setiap paragraf chapter
+ * agar posisi membaca bisa disimpan dan dipulihkan.
+ *
+ * Gambar yang berdiri sendiri akan dibungkus dalam <p>.
  */
 export function tagParagraphs(html) {
-  if (!html) return { htmlWithIds: '', totalParagraphs: 0 }
+  if (!html) {
+    return {
+      htmlWithIds: '',
+      totalParagraphs: 0,
+    }
+  }
 
   const parser = new DOMParser()
   const doc = parser.parseFromString(html, 'text/html')
 
-  // Bungkus <img> yang berdiri sendiri jadi <p><img /></p>
-  const images = doc.querySelectorAll('img')
+  // Bungkus gambar yang belum berada di dalam paragraf.
+  const images = Array.from(doc.querySelectorAll('img'))
+
   images.forEach((img) => {
     const parent = img.parentElement
-    // Kalau parent-nya bukan <p>, bungkus img jadi <p>
+
     if (parent && parent.tagName !== 'P') {
       const wrapper = doc.createElement('p')
       img.parentNode.insertBefore(wrapper, img)
@@ -20,10 +29,21 @@ export function tagParagraphs(html) {
     }
   })
 
-  // Kasih data-paragraph ke semua <p>
+  // Beri setiap paragraf ID yang konsisten dalam chapter.
   const paragraphs = doc.querySelectorAll('p')
-  paragraphs.forEach((p, index) => {
-    p.setAttribute('data-paragraph', String(index))
+
+  paragraphs.forEach((paragraph, index) => {
+    const paragraphId = `chapter-paragraph-${index}`
+
+    paragraph.setAttribute('id', paragraphId)
+    paragraph.setAttribute(
+      'data-paragraph',
+      String(index)
+    )
+    paragraph.setAttribute(
+      'data-paragraph-id',
+      paragraphId
+    )
   })
 
   return {
@@ -33,20 +53,30 @@ export function tagParagraphs(html) {
 }
 
 /**
- * Ambil cuplikan teks paragraf tertentu (kalau paragraf-nya gambar, kasih label "[Gambar]")
+ * Ambil cuplikan teks paragraf.
+ * Jika paragraf hanya berisi gambar, tampilkan "[Gambar]".
  */
-export function getParagraphPreview(html, index, maxLength = 80) {
+export function getParagraphPreview(
+  html,
+  index,
+  maxLength = 80
+) {
   if (!html) return ''
+
   const parser = new DOMParser()
   const doc = parser.parseFromString(html, 'text/html')
   const paragraphs = doc.querySelectorAll('p')
-  const p = paragraphs[index]
-  if (!p) return ''
+  const paragraph = paragraphs[index]
 
-  // Kalau paragraf isinya cuma gambar
-  const img = p.querySelector('img')
-  const text = p.textContent.trim()
-  if (!text && img) return '[Gambar]'
+  if (!paragraph) return ''
 
-  return text.length > maxLength ? text.slice(0, maxLength) + '...' : text
-}
+  const image = paragraph.querySelector('img')
+  const text = paragraph.textContent.trim()
+
+  if (!text && image) return '[Gambar]'
+
+  return text.length > maxLength
+    ? `${text.slice(0, maxLength)}...`
+    : text
+      }
+  
