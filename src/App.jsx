@@ -21,6 +21,8 @@ import { About, Contact, Privacy, Rules } from './pages/StaticPages'
 import BackToTop from './components/BackToTop'
 import RouteTransition from './components/RouteTransition'
 import MonetagAds from './components/MonetagAds'
+import PWAUpdatePrompt from './components/PWAUpdatePrompt'
+import InstallBanner from './components/InstallBanner'
 import { useScrollToAnchor } from './lib/useScrollToAnchor'
 
 export default function App() {
@@ -58,6 +60,8 @@ export default function App() {
       </div>
       <Footer />
       <BackToTop />
+      <PWAUpdatePrompt />
+      <InstallBanner />
     </div>
   )
-                                                        }
+            }
