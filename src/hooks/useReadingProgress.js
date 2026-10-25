@@ -3,87 +3,241 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 const KEY = (slug) => `hq-progress-${slug}`
 
 export function useReadingProgress(slug, chapter, opts = {}) {
-  const { debounceMs = 300, restoreOffset = 120 } = opts
-  const [saved, setSaved] = useState(null)
-  const timerRef = useRef(null)
-  const restoredRef = useRef(false)
+  const {
+    debounceMs = 300,
+    restoreOffset = 120,
+  } = typeof opts === 'object' && opts !== null ? opts : {}
 
+  // ChapterReader saat ini mengirim taggedContent sebagai argumen ketiga.
+  const contentKey =
+    typeof opts === 'string' ? opts : opts?.contentKey
+
+  const contentReady =
+    typeof opts === 'string'
+      ? opts.length > 0
+      : opts?.contentReady !== false
+
+  const [saved, setSaved] = useState(null)
+  const [percent, setPercent] = useState(0)
+  const [loadedKey, setLoadedKey] = useState(null)
+
+  const timerRef = useRef(null)
+  const restoredKeyRef = useRef(null)
+
+  const chapterKey = `${slug}:${chapter}`
+
+  // Load progress for the current story and chapter.
   useEffect(() => {
+    setSaved(null)
+    setPercent(0)
+    setLoadedKey(null)
+    restoredKeyRef.current = null
+
     if (!slug) return
+
     try {
       const raw = localStorage.getItem(KEY(slug))
-      setSaved(raw ? JSON.parse(raw) : null)
+      const data = raw ? JSON.parse(raw) : null
+
+      setSaved(data)
+
+      if (
+        data &&
+        Number(data.chapter) === Number(chapter)
+      ) {
+        const value = Number(data.percent) || 0
+        setPercent(Math.min(100, Math.max(0, value)))
+      }
     } catch {
       setSaved(null)
+      setPercent(0)
     }
-  }, [slug])
 
+    setLoadedKey(chapterKey)
+  }, [slug, chapter, chapterKey])
+
+  // Restore the last reading position after chapter content is ready.
   useEffect(() => {
-    if (!saved || restoredRef.current) return
-    if (saved.chapter !== chapter) return
-    if (!saved.paragraphId && !saved.percent) return
+    if (!slug || loadedKey !== chapterKey || !contentReady) {
+      return
+    }
 
-    restoredRef.current = true
+    if (
+      !saved ||
+      Number(saved.chapter) !== Number(chapter)
+    ) {
+      return
+    }
+
+    if (restoredKeyRef.current === chapterKey) return
+
+    if (!saved.paragraphId && !saved.percent) {
+      restoredKeyRef.current = chapterKey
+      return
+    }
+
+    restoredKeyRef.current = chapterKey
 
     const raf = requestAnimationFrame(() => {
       if (saved.paragraphId) {
-        const el = document.getElementById(saved.paragraphId)
-        if (el) {
-          const top = el.getBoundingClientRect().top + window.scrollY - restoreOffset
-          window.scrollTo({ top, behavior: 'auto' })
+        const element = document.getElementById(
+          saved.paragraphId
+        )
+
+        if (element) {
+          const top =
+            element.getBoundingClientRect().top +
+            window.scrollY -
+            restoreOffset
+
+          window.scrollTo({
+            top: Math.max(0, top),
+            behavior: 'auto',
+          })
+
           return
         }
       }
+
       if (saved.percent) {
-        const max = document.body.scrollHeight - window.innerHeight
-        window.scrollTo({ top: (saved.percent / 100) * max, behavior: 'auto' })
+        const max = Math.max(
+          0,
+          document.documentElement.scrollHeight -
+            window.innerHeight
+        )
+
+        window.scrollTo({
+          top: (saved.percent / 100) * max,
+          behavior: 'auto',
+        })
       }
     })
-    return () => cancelAnimationFrame(raf)
-  }, [saved, chapter, restoreOffset])
 
+    return () => cancelAnimationFrame(raf)
+  }, [
+    slug,
+    chapter,
+    chapterKey,
+    loadedKey,
+    saved,
+    contentReady,
+    contentKey,
+    restoreOffset,
+  ])
+
+  // Save the current paragraph and scroll percentage.
   const saveProgress = useCallback(() => {
-    const paragraphs = document.querySelectorAll('[data-paragraph-id]')
-    let currentId = null
-    for (const p of paragraphs) {
-      const rect = p.getBoundingClientRect()
-      if (rect.top - restoreOffset <= 0) currentId = p.dataset.paragraphId
-      else break
+    if (!slug || loadedKey !== chapterKey || !contentReady) {
+      return
     }
-    const max = document.body.scrollHeight - window.innerHeight
-    const percent = max > 0 ? Math.min(100, Math.max(0, (window.scrollY / max) * 100)) : 0
+
+    const paragraphs = document.querySelectorAll(
+      '[data-paragraph-id]'
+    )
+
+    let currentId = null
+
+    for (const paragraph of paragraphs) {
+      const rect = paragraph.getBoundingClientRect()
+
+      if (rect.top - restoreOffset <= 0) {
+        currentId = paragraph.id || null
+      } else {
+        break
+      }
+    }
+
+    const max = Math.max(
+      0,
+      document.documentElement.scrollHeight -
+        window.innerHeight
+    )
+
+    const nextPercent =
+      max > 0
+        ? Math.min(
+            100,
+            Math.max(0, (window.scrollY / max) * 100)
+          )
+        : 0
 
     const data = {
-      chapter,
+      chapter: Number(chapter),
       paragraphId: currentId,
-      percent,
+      percent: nextPercent,
       updatedAt: Date.now(),
     }
+
+    setPercent(nextPercent)
+
     try {
       localStorage.setItem(KEY(slug), JSON.stringify(data))
-    } catch {}
-  }, [slug, chapter, restoreOffset])
+      setSaved(data)
+    } catch (error) {
+      console.error('Failed to save reading progress:', error)
+    }
+  }, [
+    slug,
+    chapter,
+    chapterKey,
+    loadedKey,
+    contentReady,
+    restoreOffset,
+  ])
 
+  // Track scrolling and save after a short pause.
   useEffect(() => {
-    if (!slug) return
+    if (
+      !slug ||
+      loadedKey !== chapterKey ||
+      !contentReady
+    ) {
+      return
+    }
+
     const onScroll = () => {
       clearTimeout(timerRef.current)
-      timerRef.current = setTimeout(saveProgress, debounceMs)
+      timerRef.current = setTimeout(
+        saveProgress,
+        debounceMs
+      )
     }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    saveProgress()
+
+    window.addEventListener('scroll', onScroll, {
+      passive: true,
+    })
 
     return () => {
       window.removeEventListener('scroll', onScroll)
       clearTimeout(timerRef.current)
-      saveProgress()
     }
-  }, [slug, chapter, debounceMs, saveProgress])
+  }, [
+    slug,
+    chapterKey,
+    loadedKey,
+    contentReady,
+    debounceMs,
+    saveProgress,
+  ])
 
   const clearProgress = useCallback(() => {
-    localStorage.removeItem(KEY(slug))
+    if (!slug) return
+
+    try {
+      localStorage.removeItem(KEY(slug))
+    } catch (error) {
+      console.error('Failed to clear reading progress:', error)
+    }
+
     setSaved(null)
+    setPercent(0)
+    restoredKeyRef.current = null
   }, [slug])
 
-  return { savedProgress: saved, clearProgress }
-}
+  return {
+    percent,
+    savedProgress: saved,
+    clearProgress,
+  }
+    }
+          
