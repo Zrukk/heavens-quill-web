@@ -1,9 +1,6 @@
-
 /**
- * Tambahkan ID unik pada setiap paragraf chapter
- * agar posisi membaca bisa disimpan dan dipulihkan.
- *
- * Gambar yang berdiri sendiri akan dibungkus dalam <p>.
+ * Memberikan ID pada setiap paragraf agar posisi bacaan
+ * dapat disimpan dan dipulihkan.
  */
 export function tagParagraphs(html) {
   if (!html) {
@@ -29,21 +26,14 @@ export function tagParagraphs(html) {
     }
   })
 
-  // Beri setiap paragraf ID yang konsisten dalam chapter.
   const paragraphs = doc.querySelectorAll('p')
 
   paragraphs.forEach((paragraph, index) => {
     const paragraphId = `chapter-paragraph-${index}`
 
     paragraph.setAttribute('id', paragraphId)
-    paragraph.setAttribute(
-      'data-paragraph',
-      String(index)
-    )
-    paragraph.setAttribute(
-      'data-paragraph-id',
-      paragraphId
-    )
+    paragraph.setAttribute('data-paragraph', String(index))
+    paragraph.setAttribute('data-paragraph-id', paragraphId)
   })
 
   return {
@@ -53,20 +43,14 @@ export function tagParagraphs(html) {
 }
 
 /**
- * Ambil cuplikan teks paragraf.
- * Jika paragraf hanya berisi gambar, tampilkan "[Gambar]".
+ * Mengambil cuplikan teks untuk sebuah paragraf.
  */
-export function getParagraphPreview(
-  html,
-  index,
-  maxLength = 80
-) {
+export function getParagraphPreview(html, index, maxLength = 80) {
   if (!html) return ''
 
   const parser = new DOMParser()
   const doc = parser.parseFromString(html, 'text/html')
-  const paragraphs = doc.querySelectorAll('p')
-  const paragraph = paragraphs[index]
+  const paragraph = doc.querySelectorAll('p')[index]
 
   if (!paragraph) return ''
 
@@ -78,5 +62,5 @@ export function getParagraphPreview(
   return text.length > maxLength
     ? `${text.slice(0, maxLength)}...`
     : text
-      }
+}
   
